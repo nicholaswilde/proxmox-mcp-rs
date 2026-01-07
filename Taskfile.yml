@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task: build
+
+  build:
+    desc: Build the project in release mode
+    cmds:
+      - cargo build --release
+
+  build-debug:
+    desc: Build the project in debug mode
+    cmds:
+      - cargo build
+
+  run:
+    desc: Run the project (requires arguments or env vars, runs help by default)
+    cmds:
+      - cargo run -- --help
+
+  check:
+    desc: Check code for errors without generating binary
+    cmds:
+      - cargo check
+
+  test:
+    desc: Run all tests
+    cmds:
+      - cargo test
+
+  fmt:
+    desc: Format code with rustfmt
+    cmds:
+      - cargo fmt
+
+  lint:
+    desc: Lint code with clippy
+    cmds:
+      - cargo clippy -- -D warnings
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
