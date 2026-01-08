@@ -145,24 +145,6 @@ impl ProxmoxClient {
         self.request(Method::GET, "nodes", None).await
     }
 
-    pub async fn get_vms(&self, node: &str) -> Result<Vec<VmInfo>> {
-        // qemu and lxc are separate.
-        // GET /nodes/{node}/qemu
-        // GET /nodes/{node}/lxc
-        // We can aggregate.
-        
-        let qemu: Vec<VmInfo> = self.request(Method::GET, &format!("nodes/{}/qemu", node), None).await.unwrap_or_default();
-        let lxc: Vec<VmInfo> = self.request(Method::GET, &format!("nodes/{}/lxc", node), None).await.unwrap_or_default();
-
-        let mut all = qemu;
-        all.extend(lxc);
-        // Fill in 'node' field since API might not return it in the list context of a specific node
-        for vm in &mut all {
-            vm.node = Some(node.to_string());
-        }
-        Ok(all)
-    }
-
     pub async fn get_all_vms(&self) -> Result<Vec<VmInfo>> {
         let resources = self.get_resources().await?;
         let vms = resources.into_iter()
