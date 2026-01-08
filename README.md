@@ -1,4 +1,4 @@
-# proxmox-mcp-rs
+# Proxmox MCP RS
 
 A Rust implementation of a Proxmox MCP (Model Context Protocol) server. This server connects to a Proxmox VE instance and exposes tools to manage nodes, VMs, and containers via the Model Context Protocol.
 

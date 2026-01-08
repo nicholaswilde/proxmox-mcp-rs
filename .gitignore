@@ -25,3 +25,8 @@ target
 
 /target
 *.log
+
+# Configuration files
+config.yaml
+config.toml
+config.json
