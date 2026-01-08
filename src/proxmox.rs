@@ -11,6 +11,7 @@ pub struct ProxmoxClient {
     base_url: Url,
     ticket: Option<String>,
     csrf_token: Option<String>,
+    api_token: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -67,7 +68,13 @@ impl ProxmoxClient {
             base_url,
             ticket: None,
             csrf_token: None,
+            api_token: None,
         })
+    }
+
+    pub fn set_api_token(&mut self, user: &str, token_name: &str, token_value: &str) {
+        // Format: PVEAPIToken=USER@REALM!TOKENID=UUID
+        self.api_token = Some(format!("PVEAPIToken={}!{}={}", user, token_name, token_value));
     }
 
     pub async fn login(&mut self, user: &str, password: &str) -> Result<()> {
@@ -99,13 +106,17 @@ impl ProxmoxClient {
         let url = self.base_url.join(path)?;
         let mut req = self.client.request(method, url);
 
-        if let Some(token) = &self.csrf_token {
-             req = req.header("CSRFPreventionToken", token);
-        }
-        
-        // Manually add cookie if we have a ticket
-        if let Some(ticket) = &self.ticket {
-            req = req.header("Cookie", format!("PVEAuthCookie={}", ticket));
+        if let Some(token) = &self.api_token {
+            req = req.header("Authorization", token);
+        } else {
+            if let Some(token) = &self.csrf_token {
+                 req = req.header("CSRFPreventionToken", token);
+            }
+            
+            // Manually add cookie if we have a ticket
+            if let Some(ticket) = &self.ticket {
+                req = req.header("Cookie", format!("PVEAuthCookie={}", ticket));
+            }
         }
 
         if let Some(b) = body {

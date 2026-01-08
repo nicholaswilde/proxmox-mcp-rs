@@ -7,8 +7,16 @@ host = "192.168.1.10:8006"
 # Proxmox User (Realm is required, e.g. @pam or @pve)
 user = "root@pam"
 
-# Proxmox Password or Token Secret
-password = "your-password-here"
+# Authentication: Use EITHER password OR token_name + token_value
+
+# 1. Password Authentication
+# password = "your-password-here"
+
+# 2. API Token Authentication
+# Token Name (Token ID)
+# token_name = "mytoken"
+# Token Value (Secret/UUID)
+# token_value = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 
 # Disable SSL Verification (useful for self-signed certificates common in Proxmox)
 # Default is false (verification enabled)

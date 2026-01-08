@@ -7,6 +7,8 @@ pub struct Settings {
     pub host: Option<String>,
     pub user: Option<String>,
     pub password: Option<String>,
+    pub token_name: Option<String>,
+    pub token_value: Option<String>,
     pub no_verify_ssl: Option<bool>,
 }
 
@@ -43,8 +45,13 @@ impl Settings {
         if self.user.is_none() || self.user.as_ref().unwrap().is_empty() {
             return Err("User is required".to_string());
         }
-        if self.password.is_none() || self.password.as_ref().unwrap().is_empty() {
-            return Err("Password is required".to_string());
+        
+        let has_password = self.password.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
+        let has_token = self.token_name.as_ref().map(|s| !s.is_empty()).unwrap_or(false)
+            && self.token_value.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
+
+        if !has_password && !has_token {
+             return Err("Either Password or API Token (name and value) is required".to_string());
         }
         Ok(())
     }
@@ -76,8 +83,23 @@ mod tests {
             host: None,
             user: Some("u".into()),
             password: Some("p".into()),
+            token_name: None,
+            token_value: None,
             no_verify_ssl: Some(false),
         };
         assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn test_validation_token() {
+        let s = Settings {
+            host: Some("h".into()),
+            user: Some("u".into()),
+            password: None,
+            token_name: Some("t".into()),
+            token_value: Some("v".into()),
+            no_verify_ssl: Some(false),
+        };
+        assert!(s.validate().is_ok());
     }
 }

@@ -29,6 +29,14 @@ struct Args {
     #[arg(long, env = "PROXMOX_PASSWORD")]
     password: Option<String>,
 
+    /// API Token Name (e.g., mytoken)
+    #[arg(long, env = "PROXMOX_TOKEN_NAME")]
+    token_name: Option<String>,
+
+    /// API Token Value (UUID)
+    #[arg(long, env = "PROXMOX_TOKEN_VALUE")]
+    token_value: Option<String>,
+
     /// Disable SSL verification (for self-signed certs)
     #[arg(long, env = "PROXMOX_NO_VERIFY_SSL", default_value_t = false)]
     no_verify_ssl: bool,
@@ -58,6 +66,12 @@ async fn main() {
     if let Some(password) = args.password {
         settings.password = Some(password);
     }
+    if let Some(token_name) = args.token_name {
+        settings.token_name = Some(token_name);
+    }
+    if let Some(token_value) = args.token_value {
+        settings.token_value = Some(token_value);
+    }
     // For boolean flag, if it's true in CLI, it overrides settings to true.
     // If CLI is false (default), we keep settings value (which might be true or false).
     if args.no_verify_ssl {
@@ -72,7 +86,9 @@ async fn main() {
     // Safe to unwrap because validate() checks these
     let host = settings.host.unwrap();
     let user = settings.user.unwrap();
-    let password = settings.password.unwrap();
+    let password = settings.password;
+    let token_name = settings.token_name;
+    let token_value = settings.token_value;
     let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
 
     info!("Connecting to Proxmox at {}", host);
@@ -85,9 +101,17 @@ async fn main() {
         }
     };
 
-    if let Err(e) = client.login(&user, &password).await {
-        error!("Authentication failed: {}", e);
-        process::exit(1);
+    if let (Some(t_name), Some(t_value)) = (token_name, token_value) {
+        info!("Using API Token authentication");
+        client.set_api_token(&user, &t_name, &t_value);
+    } else if let Some(pass) = password {
+        if let Err(e) = client.login(&user, &pass).await {
+            error!("Authentication failed: {}", e);
+            process::exit(1);
+        }
+    } else {
+         error!("No authentication method provided");
+         process::exit(1);
     }
 
     let mut server = McpServer::new(client);

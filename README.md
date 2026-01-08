@@ -46,7 +46,9 @@ Arguments:
 - `--config`, `-c`: Path to a configuration file (TOML, JSON, or YAML).
 - `--host`: Proxmox Host (e.g., `192.168.1.10:8006`).
 - `--user`: Proxmox User (e.g., `root@pam`).
-- `--password`: Proxmox Password.
+- `--password`: Proxmox Password (optional if using token).
+- `--token-name`: API Token Name (e.g., `mytoken`).
+- `--token-value`: API Token Secret.
 - `--no-verify-ssl`: Disable SSL verification (useful for self-signed certs).
 
 ### Configuration File
@@ -60,6 +62,8 @@ You can also configure the server using environment variables:
 - `PROXMOX_HOST`
 - `PROXMOX_USER`
 - `PROXMOX_PASSWORD`
+- `PROXMOX_TOKEN_NAME`
+- `PROXMOX_TOKEN_VALUE`
 - `PROXMOX_NO_VERIFY_SSL` (set to `true` to disable verification)
 
 ### Configuration Example (Claude Desktop)
