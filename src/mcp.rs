@@ -357,6 +357,23 @@ impl McpServer {
                     },
                     "required": ["node"]
                 }
+            }),
+            json!({
+                "name": "update_container_resources",
+                "description": "Update LXC container resources (cores, memory, swap, disk)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The Container ID" },
+                        "cores": { "type": "integer", "description": "New core count" },
+                        "memory": { "type": "integer", "description": "New memory (MB)" },
+                        "swap": { "type": "integer", "description": "New swap (MB)" },
+                        "disk_gb": { "type": "integer", "description": "Additional disk size in GB to add (e.g. 2 for +2G)" },
+                        "disk": { "type": "string", "description": "Disk to resize (default: rootfs)" }
+                    },
+                    "required": ["node", "vmid"]
+                }
             })
         ]
     }
@@ -399,8 +416,41 @@ impl McpServer {
                 let templates = self.client.get_storage_content(node, storage, content).await?;
                 Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&templates)? }] }))
             },
+            "update_container_resources" => self.handle_update_resources(args, "lxc").await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_update_resources(&self, args: &Value, resource_type: &str) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        let mut output = Vec::new();
+
+        // Handle Disk Resize
+        if let Some(gb) = args.get("disk_gb").and_then(|v| v.as_i64()) {
+            let disk = args.get("disk").and_then(|v| v.as_str()).unwrap_or("rootfs");
+            let size = format!("+{}G", gb);
+            let upid = self.client.resize_disk(node, vmid, resource_type, disk, &size).await?;
+            output.push(format!("Disk {} resize initiated (+{}GB). UPID: {}", disk, gb, upid));
+        }
+
+        // Handle Config Update
+        let mut config_params = serde_json::Map::new();
+        if let Some(c) = args.get("cores") { config_params.insert("cores".to_string(), c.clone()); }
+        if let Some(m) = args.get("memory") { config_params.insert("memory".to_string(), m.clone()); }
+        if let Some(s) = args.get("swap") { config_params.insert("swap".to_string(), s.clone()); }
+
+        if !config_params.is_empty() {
+             self.client.update_config(node, vmid, resource_type, &Value::Object(config_params)).await?;
+             output.push("Resource config updated.".to_string());
+        }
+
+        if output.is_empty() {
+            output.push("No changes requested.".to_string());
+        }
+
+        Ok(json!({ "content": [{ "type": "text", "text": output.join("\n") }] }))
     }
 
     async fn handle_reset(&self, args: &Value, expected_type: &str) -> Result<Value> {

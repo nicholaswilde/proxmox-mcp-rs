@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use reqwest::{Client, Method};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use log::info;
 use url::Url;
 
@@ -222,5 +222,17 @@ impl ProxmoxClient {
             path.push_str(&format!("?content={}", ct));
         }
         self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn update_config(&self, node: &str, vmid: i64, resource_type: &str, params: &Value) -> Result<()> {
+        let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
+        self.request(Method::PUT, &path, Some(params)).await
+    }
+
+    pub async fn resize_disk(&self, node: &str, vmid: i64, resource_type: &str, disk: &str, size: &str) -> Result<String> {
+         let path = format!("nodes/{}/{}/{}/resize", node, resource_type, vmid);
+         let params = json!({ "disk": disk, "size": size });
+         let res: String = self.request(Method::PUT, &path, Some(&params)).await?;
+         Ok(res)
     }
 }

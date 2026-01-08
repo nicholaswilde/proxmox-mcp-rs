@@ -221,4 +221,41 @@ mod tests {
         let content = res["content"][0]["text"].as_str().unwrap();
         assert!(content.contains("ubuntu-20.04"));
     }
+
+    #[tokio::test]
+    async fn test_update_container_resources() {
+        let mock_server = MockServer::start().await;
+        
+        // Mock Config Update
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/lxc/200/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock Disk Resize
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/lxc/200/resize"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        
+        // Update both
+        let args = json!({ 
+            "node": "pve1", 
+            "vmid": 200, 
+            "cores": 2, 
+            "memory": 1024,
+            "disk_gb": 5 
+        });
+        
+        let res = server.call_tool("update_container_resources", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        
+        assert!(content.contains("Resource config updated"));
+        assert!(content.contains("Disk rootfs resize initiated"));
+    }
 }
