@@ -1,4 +1,6 @@
-# 🦀 Proxmox MCP RS
+# 🦀 Proxmox MCP RS 🤖
+
+[![task](https://img.shields.io/badge/Task-Enabled-brightgreen?style=for-the-badge&logo=task&logoColor=white)](https://taskfile.dev/#/)
 
 > [!WARNING]
 > This project is currently in active development (v0.x.x) and is **not production-ready**. Features may change, and breaking changes may occur without notice.
