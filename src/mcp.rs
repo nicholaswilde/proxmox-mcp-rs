@@ -167,6 +167,15 @@ impl McpServer {
                 }
             }),
             json!({
+                "name": "list_containers",
+                "description": "List all LXC containers across all nodes",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
                 "name": "start_vm",
                 "description": "Start a VM or container",
                 "inputSchema": {
@@ -175,6 +184,18 @@ impl McpServer {
                         "node": { "type": "string", "description": "The node name" },
                         "vmid": { "type": "integer", "description": "The VM ID" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type: qemu or lxc (optional, defaults to qemu if not found)" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "start_container",
+                "description": "Start an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The Container ID" }
                     },
                     "required": ["node", "vmid"]
                 }
@@ -193,6 +214,18 @@ impl McpServer {
                 }
             }),
             json!({
+                "name": "stop_container",
+                "description": "Stop (power off) an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The Container ID" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
                 "name": "shutdown_vm",
                 "description": "Gracefully shutdown a VM or container",
                 "inputSchema": {
@@ -201,6 +234,18 @@ impl McpServer {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "shutdown_container",
+                "description": "Gracefully shutdown an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" }
                     },
                     "required": ["node", "vmid"]
                 }
@@ -231,18 +276,33 @@ impl McpServer {
                 let vms = self.client.get_all_vms().await?;
                 Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&vms)? }] }))
             },
-            "start_vm" => self.handle_vm_action(args, "start").await,
-            "stop_vm" => self.handle_vm_action(args, "stop").await,
-            "shutdown_vm" => self.handle_vm_action(args, "shutdown").await,
-            "reboot_vm" => self.handle_vm_action(args, "reboot").await,
+            "list_containers" => {
+                let vms = self.client.get_all_vms().await?;
+                let containers: Vec<_> = vms.into_iter()
+                    .filter(|vm| vm.vm_type.as_deref() == Some("lxc"))
+                    .collect();
+                Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&containers)? }] }))
+            },
+            "start_vm" => self.handle_vm_action(args, "start", None).await,
+            "start_container" => self.handle_vm_action(args, "start", Some("lxc")).await,
+            "stop_vm" => self.handle_vm_action(args, "stop", None).await,
+            "stop_container" => self.handle_vm_action(args, "stop", Some("lxc")).await,
+            "shutdown_vm" => self.handle_vm_action(args, "shutdown", None).await,
+            "shutdown_container" => self.handle_vm_action(args, "shutdown", Some("lxc")).await,
+            "reboot_vm" => self.handle_vm_action(args, "reboot", None).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
 
-    async fn handle_vm_action(&self, args: &Value, action: &str) -> Result<Value> {
+    async fn handle_vm_action(&self, args: &Value, action: &str, forced_type: Option<&str>) -> Result<Value> {
         let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
         let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
-        let vm_type = args.get("type").and_then(|v| v.as_str());
+        
+        let vm_type = if let Some(t) = forced_type {
+            Some(t)
+        } else {
+            args.get("type").and_then(|v| v.as_str())
+        };
 
         let res = self.client.vm_action(node, vmid, action, vm_type).await?;
         Ok(json!({ "content": [{ "type": "text", "text": format!("Action '{}' initiated. UPID: {}", action, res) }] }))
