@@ -98,4 +98,104 @@ mod tests {
         
         assert!(res.is_err());
     }
+
+    #[tokio::test]
+    async fn test_list_nodes() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "node": "pve1", "status": "online" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        let res = server.call_tool("list_nodes", &json!({})).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        assert!(content.contains("pve1"));
+    }
+
+    #[tokio::test]
+    async fn test_list_vms_and_containers() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "vmid": 100, "node": "pve1", "type": "qemu", "status": "running" },
+                    { "vmid": 200, "node": "pve1", "type": "lxc", "status": "stopped" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+
+        // Test list_vms (should return both)
+        let res_vms = server.call_tool("list_vms", &json!({})).await.unwrap();
+        let text_vms = res_vms["content"][0]["text"].as_str().unwrap();
+        assert!(text_vms.contains("100"));
+        assert!(text_vms.contains("200"));
+
+        // Test list_containers (should return only lxc)
+        let res_ct = server.call_tool("list_containers", &json!({})).await.unwrap();
+        let text_ct = res_ct["content"][0]["text"].as_str().unwrap();
+        assert!(!text_ct.contains("100")); // qemu shouldn't be here
+        assert!(text_ct.contains("200"));
+    }
+
+    #[tokio::test]
+    async fn test_start_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/status/start"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        // Default type is qemu
+        let res = server.call_tool("start_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_create_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 101, "name": "test-vm", "memory": 2048 });
+        let res = server.call_tool("create_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_delete_container() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/nodes/pve1/lxc/200"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 200 });
+        let res = server.call_tool("delete_container", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
 }
