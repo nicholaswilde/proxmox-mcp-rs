@@ -1,0 +1,15 @@
+# Proxmox MCP Server Configuration Example
+# Copy this to 'config.toml' in the same directory as the binary
+
+# Proxmox Host (IP:Port or Domain)
+host = "192.168.1.10:8006"
+
+# Proxmox User (Realm is required, e.g. @pam or @pve)
+user = "root@pam"
+
+# Proxmox Password or Token Secret
+password = "your-password-here"
+
+# Disable SSL Verification (useful for self-signed certificates common in Proxmox)
+# Default is false (verification enabled)
+# no_verify_ssl = true
