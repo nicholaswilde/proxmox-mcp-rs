@@ -1,6 +1,7 @@
 mod proxmox;
 mod mcp;
 mod settings;
+mod tests;
 
 use clap::Parser;
 use log::{info, error};

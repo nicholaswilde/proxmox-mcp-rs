@@ -35,9 +35,25 @@ pub struct VmInfo {
     pub vm_type: Option<String>, // qemu or lxc
 }
 
+#[derive(Deserialize, Debug)]
+pub struct ClusterResource {
+    pub vmid: Option<i64>,
+    pub node: String,
+    #[serde(rename = "type")]
+    pub res_type: String,
+    pub status: Option<String>,
+    pub name: Option<String>,
+}
+
 impl ProxmoxClient {
     pub fn new(host: &str, verify_ssl: bool) -> Result<Self> {
-        let base_url = Url::parse(&format!("https://{}/api2/json/", host))
+        let url_str = if host.starts_with("http://") || host.starts_with("https://") {
+            format!("{}/api2/json/", host.trim_end_matches('/'))
+        } else {
+            format!("https://{}/api2/json/", host)
+        };
+
+        let base_url = Url::parse(&url_str)
             .context("Invalid host URL")?;
 
         let client = Client::builder()
@@ -137,16 +153,34 @@ impl ProxmoxClient {
     }
 
     pub async fn get_all_vms(&self) -> Result<Vec<VmInfo>> {
-        let nodes = self.get_nodes().await?;
-        let mut all_vms = Vec::new();
-        
-        for node in nodes {
-            if let Some(node_name) = node.get("node").and_then(|n| n.as_str()) {
-                let vms = self.get_vms(node_name).await?;
-                all_vms.extend(vms);
+        let resources = self.get_resources().await?;
+        let vms = resources.into_iter()
+            .filter(|r| (r.res_type == "qemu" || r.res_type == "lxc") && r.vmid.is_some())
+            .map(|r| VmInfo {
+                vmid: r.vmid.unwrap(),
+                name: r.name,
+                status: r.status.unwrap_or("unknown".to_string()),
+                node: Some(r.node),
+                vm_type: Some(r.res_type),
+            })
+            .collect();
+        Ok(vms)
+    }
+
+    pub async fn get_resources(&self) -> Result<Vec<ClusterResource>> {
+        self.request(Method::GET, "cluster/resources", None).await
+    }
+
+    pub async fn find_vm_location(&self, vmid: i64) -> Result<(String, String)> {
+        let resources = self.get_resources().await?;
+        for res in resources {
+            if let Some(id) = res.vmid {
+                if id == vmid {
+                    return Ok((res.node, res.res_type));
+                }
             }
         }
-        Ok(all_vms)
+        anyhow::bail!("VMID {} not found", vmid);
     }
 
     pub async fn vm_action(&self, node: &str, vmid: i64, action: &str, vm_type: Option<&str>) -> Result<String> {

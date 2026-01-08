@@ -322,11 +322,33 @@ impl McpServer {
                     },
                     "required": ["node", "vmid"]
                 }
+            }),
+            json!({
+                "name": "reset_vm",
+                "description": "Reset (Stop and Start) a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "vm_id": { "type": "string", "description": "The VM ID" }
+                    },
+                    "required": ["vm_id"]
+                }
+            }),
+            json!({
+                "name": "reset_container",
+                "description": "Reset (Stop and Start) a Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "container_id": { "type": "string", "description": "The Container ID" }
+                    },
+                    "required": ["container_id"]
+                }
             })
         ]
     }
 
-    async fn call_tool(&self, name: &str, args: &Value) -> Result<Value> {
+    pub async fn call_tool(&self, name: &str, args: &Value) -> Result<Value> {
         match name {
             "list_nodes" => {
                 let nodes = self.client.get_nodes().await?;
@@ -354,8 +376,31 @@ impl McpServer {
             "create_container" => self.handle_create(args, "lxc").await,
             "delete_vm" => self.handle_delete(args, "qemu").await,
             "delete_container" => self.handle_delete(args, "lxc").await,
+            "reset_vm" => self.handle_reset(args, "qemu").await,
+            "reset_container" => self.handle_reset(args, "lxc").await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_reset(&self, args: &Value, expected_type: &str) -> Result<Value> {
+        let id_key = if expected_type == "qemu" { "vm_id" } else { "container_id" };
+        let id_str = args.get(id_key).and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing {}", id_key))?;
+        let vmid: i64 = id_str.parse()?;
+        
+        info!("Resetting {} {}...", expected_type, vmid);
+
+        let (node, vm_type) = self.client.find_vm_location(vmid).await?;
+        
+        if vm_type != expected_type {
+            anyhow::bail!("ID {} is not a {}", vmid, expected_type);
+        }
+
+        let action = if expected_type == "qemu" { "reset" } else { "reboot" };
+        
+        let res = self.client.vm_action(&node, vmid, action, Some(expected_type)).await?;
+        
+        info!("Reset initiated for {} {}. UPID: {}", expected_type, vmid, res);
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Reset initiated. UPID: {}", res) }] }))
     }
 
     async fn handle_create(&self, args: &Value, resource_type: &str) -> Result<Value> {
