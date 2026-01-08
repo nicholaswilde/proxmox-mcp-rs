@@ -26,15 +26,15 @@ struct Args {
     user: Option<String>,
 
     /// Proxmox Password
-    #[arg(long, env = "PROXMOX_PASSWORD")]
+    #[arg(long, env = "PROXMOX_PASSWORD", conflicts_with_all = ["token_name", "token_value"])]
     password: Option<String>,
 
     /// API Token Name (e.g., mytoken)
-    #[arg(long, env = "PROXMOX_TOKEN_NAME")]
+    #[arg(long, env = "PROXMOX_TOKEN_NAME", requires = "token_value")]
     token_name: Option<String>,
 
     /// API Token Value (UUID)
-    #[arg(long, env = "PROXMOX_TOKEN_VALUE")]
+    #[arg(long, env = "PROXMOX_TOKEN_VALUE", requires = "token_name")]
     token_value: Option<String>,
 
     /// Disable SSL verification (for self-signed certs)

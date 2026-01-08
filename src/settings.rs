@@ -53,6 +53,10 @@ impl Settings {
         if !has_password && !has_token {
              return Err("Either Password or API Token (name and value) is required".to_string());
         }
+
+        if has_password && has_token {
+            return Err("Provide either Password or API Token, not both".to_string());
+        }
         Ok(())
     }
 }
@@ -101,5 +105,18 @@ mod tests {
             no_verify_ssl: Some(false),
         };
         assert!(s.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validation_exclusive() {
+        let s = Settings {
+            host: Some("h".into()),
+            user: Some("u".into()),
+            password: Some("p".into()),
+            token_name: Some("t".into()),
+            token_value: Some("v".into()),
+            no_verify_ssl: Some(false),
+        };
+        assert!(s.validate().is_err());
     }
 }
