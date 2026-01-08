@@ -44,6 +44,16 @@ tasks:
     cmds:
       - cargo build
 
+  build-ci:
+    desc: Build using the CI profile (non-incremental)
+    cmds:
+      - cargo build --profile ci
+
+  build-release-profile:
+    desc: Build using the release profile explicitly
+    cmds:
+      - cargo build --profile release
+
   run:
     desc: Run the project (requires arguments or env vars, runs help by default)
     cmds:
@@ -58,6 +68,11 @@ tasks:
     desc: Run all tests
     cmds:
       - cargo test
+
+  test-ci:
+    desc: Run tests using the CI profile
+    cmds:
+      - cargo test --profile ci
 
   fmt:
     desc: Format code with rustfmt
