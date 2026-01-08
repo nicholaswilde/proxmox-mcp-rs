@@ -10,7 +10,8 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
 ## Features
 
 - **Protocol:** JSON-RPC 2.0 over Stdio (MCP standard).
-- **Authentication:** Proxmox User/Password (Ticket-based).
+- **Authentication:** Proxmox User/Password (Ticket-based) or API Token.
+- **Logging:** Configurable log levels, console output (stderr), and optional file logging with rotation (daily, hourly).
 - **Tools:**
   - `list_nodes`: List all nodes in the cluster.
   - `list_vms`: List all VMs and LXC containers (uses `get_all_vms`).
@@ -47,12 +48,18 @@ You can run the server directly from the command line, but it is intended to be 
 
 Arguments:
 - `--config`, `-c`: Path to a configuration file (TOML, JSON, or YAML).
-- `--host`: Proxmox Host (e.g., `192.168.1.10:8006`).
+- `--host`: Proxmox Host (e.g., `192.168.1.10`).
+- `--port`: Proxmox Port (default: `8006`).
 - `--user`: Proxmox User (e.g., `root@pam`).
 - `--password`: Proxmox Password (optional if using token).
 - `--token-name`: API Token Name (e.g., `mytoken`).
 - `--token-value`: API Token Secret.
 - `--no-verify-ssl`: Disable SSL verification (useful for self-signed certs).
+- `--log-level`: Log level (error, warn, info, debug, trace) (default: `info`).
+- `--log-file-enable`: Enable logging to a file (default: `false`).
+- `--log-dir`: Directory for log files (default: `.`).
+- `--log-filename`: Log filename prefix (default: `proxmox-mcp.log`).
+- `--log-rotate`: Log rotation strategy (daily, hourly, never) (default: `daily`).
 
 ### Configuration File
 
@@ -63,11 +70,17 @@ The server can load configuration from a file named `config.toml`, `config.yaml`
 You can also configure the server using environment variables:
 - `PROXMOX_CONFIG`: Path to a configuration file.
 - `PROXMOX_HOST`
+- `PROXMOX_PORT`
 - `PROXMOX_USER`
 - `PROXMOX_PASSWORD`
 - `PROXMOX_TOKEN_NAME`
 - `PROXMOX_TOKEN_VALUE`
 - `PROXMOX_NO_VERIFY_SSL` (set to `true` to disable verification)
+- `PROXMOX_LOG_LEVEL`
+- `PROXMOX_LOG_FILE_ENABLE` (set to `true` to enable)
+- `PROXMOX_LOG_DIR`
+- `PROXMOX_LOG_FILENAME`
+- `PROXMOX_LOG_ROTATE`
 
 ### Configuration Example (Claude Desktop)
 
@@ -79,7 +92,8 @@ Add the following to your `claude_desktop_config.json`:
     "proxmox": {
       "command": "/path/to/proxmox-mcp-rs/target/release/proxmox-mcp-rs",
       "args": [
-        "--host", "192.168.1.10:8006",
+        "--host", "192.168.1.10",
+        "--port", "8006",
         "--user", "root@pam",
         "--password", "yourpassword",
         "--no-verify-ssl"

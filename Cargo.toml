@@ -7,15 +7,16 @@ edition = "2021"
 tokio = { version = "1.28", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.11", features = ["json", "rustls-tls", "cookies"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls", "cookies"] }
 anyhow = "1.0"
-env_logger = "0.10"
 log = "0.4"
 url = "2.4"
 clap = { version = "4.3", features = ["derive", "env"] }
-# specific to handling potential self-signed certs often found in Proxmox
-native-tls = "0.2"
 config = { version = "0.15.19", features = ["toml"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
+tracing-log = "0.2"
 
 [dev-dependencies]
 tempfile = "3.24.0"

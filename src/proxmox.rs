@@ -47,12 +47,19 @@ pub struct ClusterResource {
 }
 
 impl ProxmoxClient {
-    pub fn new(host: &str, verify_ssl: bool) -> Result<Self> {
-        let url_str = if host.starts_with("http://") || host.starts_with("https://") {
-            format!("{}/api2/json/", host.trim_end_matches('/'))
+    pub fn new(host: &str, port: u16, verify_ssl: bool) -> Result<Self> {
+        let scheme = if host.starts_with("http://") { "http" } else { "https" };
+        
+        let host_cleaned = if host.starts_with("http://") {
+            &host[7..]
+        } else if host.starts_with("https://") {
+            &host[8..]
         } else {
-            format!("https://{}/api2/json/", host)
+            host
         };
+        let host_cleaned = host_cleaned.trim_end_matches('/');
+
+        let url_str = format!("{}://{}:{}/api2/json/", scheme, host_cleaned, port);
 
         let base_url = Url::parse(&url_str)
             .context("Invalid host URL")?;

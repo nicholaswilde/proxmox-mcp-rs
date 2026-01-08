@@ -5,6 +5,42 @@ mod tests {
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
     use serde_json::json;
+    use url::Url;
+
+    fn create_test_client(uri: &str) -> ProxmoxClient {
+        let url = Url::parse(uri).unwrap();
+        let host_str = format!("{}://{}", url.scheme(), url.host_str().unwrap());
+        ProxmoxClient::new(&host_str, url.port().unwrap(), true).unwrap()
+    }
+
+    #[test]
+    fn test_file_logging_setup() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let log_dir = temp_dir.path().to_str().unwrap();
+        let log_filename = "test.log";
+        
+        let file_appender = tracing_appender::rolling::never(log_dir, log_filename);
+        let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+        
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(non_blocking)
+            .with_ansi(false)
+            .finish();
+            
+        tracing::subscriber::with_default(subscriber, || {
+            tracing::info!("Test log message");
+        });
+        
+        // Ensure flushing
+        drop(_guard);
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        
+        let file_path = temp_dir.path().join(log_filename);
+        assert!(file_path.exists(), "Log file was not created");
+        
+        let content = std::fs::read_to_string(file_path).unwrap();
+        assert!(content.contains("Test log message"), "Log file missing expected content");
+    }
 
     #[tokio::test]
     async fn test_reset_vm() {
@@ -30,7 +66,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         // Skip login for this test or mock it.
         // ProxmoxClient usually checks login? No, it just sets up client.
         // BUT request() method might fail if no ticket, unless we mock the response ignoring auth headers.
@@ -69,7 +105,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "container_id": "200" });
@@ -90,7 +126,7 @@ mod tests {
             .mount(&mock_server)
             .await;
             
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "vm_id": "999" });
@@ -110,7 +146,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         let res = server.call_tool("list_nodes", &json!({})).await.unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
@@ -131,7 +167,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
 
         // Test list_vms (should return both)
@@ -156,7 +192,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -174,7 +210,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "node": "pve1", "vmid": 101, "name": "test-vm", "memory": 2048 });
@@ -191,7 +227,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "node": "pve1", "vmid": 200 });
@@ -213,7 +249,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         let args = json!({ "node": "pve1" });
@@ -240,7 +276,7 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let client = create_test_client(&mock_server.uri());
         let server = McpServer::new(client);
         
         // Update both

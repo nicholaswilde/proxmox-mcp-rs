@@ -5,11 +5,17 @@ use std::path::Path;
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Settings {
     pub host: Option<String>,
+    pub port: Option<u16>,
     pub user: Option<String>,
     pub password: Option<String>,
     pub token_name: Option<String>,
     pub token_value: Option<String>,
     pub no_verify_ssl: Option<bool>,
+    pub log_level: Option<String>,
+    pub log_file_enable: Option<bool>,
+    pub log_dir: Option<String>,
+    pub log_filename: Option<String>,
+    pub log_rotate: Option<String>,
 }
 
 impl Settings {
@@ -85,11 +91,17 @@ mod tests {
     fn test_validation() {
         let s = Settings {
             host: None,
+            port: None,
             user: Some("u".into()),
             password: Some("p".into()),
             token_name: None,
             token_value: None,
             no_verify_ssl: Some(false),
+            log_level: None,
+            log_file_enable: None,
+            log_dir: None,
+            log_filename: None,
+            log_rotate: None,
         };
         assert!(s.validate().is_err());
     }
@@ -98,11 +110,17 @@ mod tests {
     fn test_validation_token() {
         let s = Settings {
             host: Some("h".into()),
+            port: None,
             user: Some("u".into()),
             password: None,
             token_name: Some("t".into()),
             token_value: Some("v".into()),
             no_verify_ssl: Some(false),
+            log_level: None,
+            log_file_enable: None,
+            log_dir: None,
+            log_filename: None,
+            log_rotate: None,
         };
         assert!(s.validate().is_ok());
     }
@@ -111,11 +129,17 @@ mod tests {
     fn test_validation_exclusive() {
         let s = Settings {
             host: Some("h".into()),
+            port: None,
             user: Some("u".into()),
             password: Some("p".into()),
             token_name: Some("t".into()),
             token_value: Some("v".into()),
             no_verify_ssl: Some(false),
+            log_level: None,
+            log_file_enable: None,
+            log_dir: None,
+            log_filename: None,
+            log_rotate: None,
         };
         assert!(s.validate().is_err());
     }
