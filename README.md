@@ -13,14 +13,17 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
 - **Authentication:** Proxmox User/Password (Ticket-based).
 - **Tools:**
   - `list_nodes`: List all nodes in the cluster.
-  - `list_vms`: List all VMs and LXC containers.
+  - `list_vms`: List all VMs and LXC containers (uses `get_all_vms`).
   - `list_containers`: List all LXC containers.
+  - `list_templates`: List container templates on a storage.
   - `start_vm` / `start_container`: Start a VM/Container.
   - `stop_vm` / `stop_container`: Stop (Power Off) a VM/Container.
   - `shutdown_vm` / `shutdown_container`: Gracefully shutdown a VM/Container.
+  - `reset_vm` / `reset_container`: Reset (Stop and Start) a VM/Container.
   - `reboot_vm`: Reboot a VM/Container.
   - `create_vm` / `create_container`: Create a new VM or Container.
   - `delete_vm` / `delete_container`: Delete a VM or Container.
+  - `update_container_resources`: Update LXC container resources (cores, memory, swap, disk).
 
 ## Build
 
