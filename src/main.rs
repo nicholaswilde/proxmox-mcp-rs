@@ -29,7 +29,7 @@ struct Args {
     password: Option<String>,
 
     /// Disable SSL verification (for self-signed certs)
-    #[arg(long, default_value_t = false)]
+    #[arg(long, env = "PROXMOX_NO_VERIFY_SSL", default_value_t = false)]
     no_verify_ssl: bool,
 }
 
