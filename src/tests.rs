@@ -198,4 +198,27 @@ mod tests {
         let res = server.call_tool("delete_container", &args).await.unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
     }
+
+    #[tokio::test]
+    async fn test_list_templates() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/storage/local/content"))
+            // .and(query_param("content", "vztmpl")) // WireMock matching query params needs explicit matchers
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "volid": "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz", "content": "vztmpl" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = ProxmoxClient::new(&mock_server.uri(), true).unwrap();
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("list_templates", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        assert!(content.contains("ubuntu-20.04"));
+    }
 }

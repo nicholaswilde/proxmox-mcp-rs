@@ -215,4 +215,12 @@ impl ProxmoxClient {
         let res: String = self.request(Method::DELETE, &path, None).await?;
         Ok(res)
     }
+
+    pub async fn get_storage_content(&self, node: &str, storage: &str, content_type: Option<&str>) -> Result<Vec<Value>> {
+        let mut path = format!("nodes/{}/storage/{}/content", node, storage);
+        if let Some(ct) = content_type {
+            path.push_str(&format!("?content={}", ct));
+        }
+        self.request(Method::GET, &path, None).await
+    }
 }

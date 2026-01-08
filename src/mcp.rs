@@ -344,6 +344,19 @@ impl McpServer {
                     },
                     "required": ["container_id"]
                 }
+            }),
+            json!({
+                "name": "list_templates",
+                "description": "List container templates on a storage",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "storage": { "type": "string", "description": "Storage name (default: local)" },
+                        "content": { "type": "string", "description": "Content type (default: vztmpl)" }
+                    },
+                    "required": ["node"]
+                }
             })
         ]
     }
@@ -378,6 +391,14 @@ impl McpServer {
             "delete_container" => self.handle_delete(args, "lxc").await,
             "reset_vm" => self.handle_reset(args, "qemu").await,
             "reset_container" => self.handle_reset(args, "lxc").await,
+            "list_templates" => {
+                let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+                let storage = args.get("storage").and_then(|v| v.as_str()).unwrap_or("local");
+                let content = args.get("content").and_then(|v| v.as_str()).or(Some("vztmpl"));
+                
+                let templates = self.client.get_storage_content(node, storage, content).await?;
+                Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&templates)? }] }))
+            },
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
