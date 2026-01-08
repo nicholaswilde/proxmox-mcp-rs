@@ -56,6 +56,7 @@ The server can load configuration from a file named `config.toml`, `config.yaml`
 ### Environment Variables
 
 You can also configure the server using environment variables:
+- `PROXMOX_CONFIG`: Path to a configuration file.
 - `PROXMOX_HOST`
 - `PROXMOX_USER`
 - `PROXMOX_PASSWORD`

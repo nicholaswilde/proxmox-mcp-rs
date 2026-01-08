@@ -13,7 +13,7 @@ use settings::Settings;
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Config file path
-    #[arg(short, long)]
+    #[arg(short, long, env = "PROXMOX_CONFIG")]
     config: Option<String>,
 
     /// Proxmox Host (e.g., 192.168.1.10:8006)
