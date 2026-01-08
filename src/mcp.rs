@@ -262,6 +262,66 @@ impl McpServer {
                     },
                     "required": ["node", "vmid"]
                 }
+            }),
+            json!({
+                "name": "create_vm",
+                "description": "Create a new QEMU VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Target node" },
+                        "vmid": { "type": "integer", "description": "VM ID" },
+                        "name": { "type": "string", "description": "VM Name" },
+                        "memory": { "type": "integer", "description": "Memory in MB" },
+                        "cores": { "type": "integer", "description": "Number of cores" },
+                        "sockets": { "type": "integer", "description": "Number of sockets" },
+                        "net0": { "type": "string", "description": "Network config (e.g. 'virtio,bridge=vmbr0')" },
+                        "ide2": { "type": "string", "description": "CDROM/ISO (e.g. 'local:iso/debian.iso')" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "create_container",
+                "description": "Create a new LXC Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Target node" },
+                        "vmid": { "type": "integer", "description": "VM ID" },
+                        "ostemplate": { "type": "string", "description": "OS Template (e.g. 'local:vztmpl/ubuntu-20.04...')" },
+                        "hostname": { "type": "string", "description": "Hostname" },
+                        "password": { "type": "string", "description": "Root password" },
+                        "memory": { "type": "integer", "description": "Memory in MB" },
+                        "cores": { "type": "integer", "description": "Number of cores" },
+                        "rootfs": { "type": "string", "description": "Rootfs config (e.g. 'local-lvm:8')" }
+                    },
+                    "required": ["node", "vmid", "ostemplate"]
+                }
+            }),
+            json!({
+                "name": "delete_vm",
+                "description": "Delete a QEMU VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "delete_container",
+                "description": "Delete an LXC Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" }
+                    },
+                    "required": ["node", "vmid"]
+                }
             })
         ]
     }
@@ -290,8 +350,31 @@ impl McpServer {
             "shutdown_vm" => self.handle_vm_action(args, "shutdown", None).await,
             "shutdown_container" => self.handle_vm_action(args, "shutdown", Some("lxc")).await,
             "reboot_vm" => self.handle_vm_action(args, "reboot", None).await,
+            "create_vm" => self.handle_create(args, "qemu").await,
+            "create_container" => self.handle_create(args, "lxc").await,
+            "delete_vm" => self.handle_delete(args, "qemu").await,
+            "delete_container" => self.handle_delete(args, "lxc").await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_create(&self, args: &Value, resource_type: &str) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        
+        // Filter out "node" from args to send as params
+        let mut params = args.as_object().ok_or(anyhow::anyhow!("Args must be object"))?.clone();
+        params.remove("node");
+        
+        let res = self.client.create_resource(node, resource_type, &Value::Object(params)).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Create {} initiated. UPID: {}", resource_type, res) }] }))
+    }
+
+    async fn handle_delete(&self, args: &Value, resource_type: &str) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        let res = self.client.delete_resource(node, vmid, resource_type).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Delete {} initiated. UPID: {}", resource_type, res) }] }))
     }
 
     async fn handle_vm_action(&self, args: &Value, action: &str, forced_type: Option<&str>) -> Result<Value> {

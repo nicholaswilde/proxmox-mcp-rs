@@ -169,4 +169,16 @@ impl ProxmoxClient {
         let res: String = self.request(Method::POST, &path, None).await?;
         Ok(res)
     }
+
+    pub async fn create_resource(&self, node: &str, resource_type: &str, params: &Value) -> Result<String> {
+        let path = format!("nodes/{}/{}", node, resource_type);
+        let res: String = self.request(Method::POST, &path, Some(params)).await?;
+        Ok(res)
+    }
+
+    pub async fn delete_resource(&self, node: &str, vmid: i64, resource_type: &str) -> Result<String> {
+        let path = format!("nodes/{}/{}/{}", node, resource_type, vmid);
+        let res: String = self.request(Method::DELETE, &path, None).await?;
+        Ok(res)
+    }
 }
