@@ -1,0 +1,33 @@
+---
+name: proxmox-mcp-rs
+
+services:
+  proxmox-mcp-rs:
+    image: proxmox-mcp-rs:latest
+    container_name: proxmox-mcp-rs
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    stdin_open: true # Keep stdin open for MCP communication
+    tty: true        # Allocate a pseudo-TTY
+    environment:
+      # Required: Proxmox Host
+      PROXMOX_HOST: "192.168.1.10"
+      # Optional: Proxmox Port (default 8006)
+      PROXMOX_PORT: "8006"
+      # Required: Authentication (User/Password OR Token)
+      PROXMOX_USER: "root@pam"
+      PROXMOX_PASSWORD: "yourpassword"
+      # PROXMOX_TOKEN_NAME: "mytoken"
+      # PROXMOX_TOKEN_VALUE: "mytokenvalue"
+      # Optional: SSL Verification
+      PROXMOX_NO_VERIFY_SSL: "true"
+      # Optional: Logging
+      PROXMOX_LOG_LEVEL: "info"
+      PROXMOX_LOG_FILE_ENABLE: "false"
+    volumes:
+      # Mount config file if preferred over env vars
+      - ./config.toml:/app/config.toml
+      # Mount log directory if file logging is enabled
+      - ./logs:/app/logs
+    restart: unless-stopped

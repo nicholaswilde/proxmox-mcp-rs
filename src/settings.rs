@@ -11,11 +11,18 @@ pub struct Settings {
     pub token_name: Option<String>,
     pub token_value: Option<String>,
     pub no_verify_ssl: Option<bool>,
+    #[allow(dead_code)]
     pub log_level: Option<String>,
+    #[allow(dead_code)]
     pub log_file_enable: Option<bool>,
+    #[allow(dead_code)]
     pub log_dir: Option<String>,
+    #[allow(dead_code)]
     pub log_filename: Option<String>,
+    #[allow(dead_code)]
     pub log_rotate: Option<String>,
+    pub server_type: Option<String>,
+    pub http_port: Option<u16>,
 }
 
 impl Settings {

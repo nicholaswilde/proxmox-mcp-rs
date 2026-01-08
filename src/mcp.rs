@@ -31,6 +31,7 @@ pub struct JsonRpcError {
     pub data: Option<Value>,
 }
 
+#[derive(Clone)]
 pub struct McpServer {
     client: ProxmoxClient,
 }
@@ -40,7 +41,7 @@ impl McpServer {
         Self { client }
     }
 
-    pub async fn run(&mut self) -> Result<()> {
+    pub async fn run_stdio(&mut self) -> Result<()> {
         let stdin = io::stdin();
         let mut reader = stdin.lock();
         let mut line = String::new();
@@ -103,7 +104,7 @@ impl McpServer {
         Ok(())
     }
 
-    async fn handle_request(&self, req: JsonRpcRequest) -> Result<Value> {
+    pub async fn handle_request(&self, req: JsonRpcRequest) -> Result<Value> {
         match req.method.as_str() {
             "initialize" => {
                 Ok(json!({

@@ -1,8 +1,11 @@
 # Proxmox MCP Server Configuration Example
 # Copy this to 'config.toml' in the same directory as the binary
 
-# Proxmox Host (IP:Port or Domain)
-host = "192.168.1.10:8006"
+# Proxmox Host (IP or Domain)
+host = "192.168.1.10"
+
+# Proxmox Port (Default is 8006)
+port = 8006
 
 # Proxmox User (Realm is required, e.g. @pam or @pve)
 user = "root@pam"
@@ -21,3 +24,20 @@ user = "root@pam"
 # Disable SSL Verification (useful for self-signed certificates common in Proxmox)
 # Default is false (verification enabled)
 # no_verify_ssl = true
+
+# --- Logging Configuration ---
+
+# Log level: error, warn, info, debug, trace (Default: info)
+# log_level = "info"
+
+# Enable logging to a file (Default: false)
+# log_file_enable = false
+
+# Directory for log files (Default: .)
+# log_dir = "."
+
+# Log filename prefix (Default: proxmox-mcp-rs.log)
+# log_filename = "proxmox-mcp-rs.log"
+
+# Log rotation strategy: daily, hourly, never (Default: daily)
+# log_rotate = "daily"

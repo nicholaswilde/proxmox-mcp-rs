@@ -5,7 +5,11 @@ tasks:
   default:
     cmds:
       - task -l
-
+  deps:
+    desc: Install dependencies
+    cmds:
+      - cargo install cross --git https://github.com/cross-rs/cross
+      
   build:
     desc: Build the project for all supported architectures (requires cross)
     cmds:
@@ -14,42 +18,42 @@ tasks:
       - task: build-armv7
       - task: build-armv6
 
-  build-amd64:
+  build:amd64:
     desc: Build for AMD64 (x86_64)
     cmds:
       - cross build --release --target x86_64-unknown-linux-gnu
 
-  build-arm64:
+  build:arm64:
     desc: Build for ARM64 (aarch64)
     cmds:
       - cross build --release --target aarch64-unknown-linux-gnu
 
-  build-armv7:
+  build:armv7:
     desc: Build for ARMv7
     cmds:
       - cross build --release --target armv7-unknown-linux-gnueabihf
 
-  build-armv6:
+  build:armv6:
     desc: Build for ARMv6
     cmds:
       - cross build --release --target arm-unknown-linux-gnueabihf
 
-  build-local:
+  build:local:
     desc: Build the project in release mode for the current architecture
     cmds:
       - cargo build --release
 
-  build-debug:
+  build:debug:
     desc: Build the project in debug mode
     cmds:
       - cargo build
 
-  build-ci:
+  build:ci:
     desc: Build using the CI profile (non-incremental)
     cmds:
       - cargo build --profile ci
 
-  build-release-profile:
+  build:release-profile:
     desc: Build using the release profile explicitly
     cmds:
       - cargo build --profile release
@@ -69,7 +73,7 @@ tasks:
     cmds:
       - cargo test
 
-  test-ci:
+  test:ci:
     desc: Run tests using the CI profile
     cmds:
       - cargo test --profile ci
@@ -83,6 +87,21 @@ tasks:
     desc: Lint code with clippy
     cmds:
       - cargo clippy -- -D warnings
+
+  docker:build:
+    desc: Build the Docker image for multiple architectures (amd64, arm64)
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t proxmox-mcp-rs .
+
+  docker:run:
+    desc: Run the Docker image (requires env vars or config file mounted)
+    cmds:
+      - docker run --rm -it proxmox-mcp-rs --help
+
+  docker:load:
+    desc: Build and load the Docker image into the local daemon (single arch)
+    cmds:
+      - docker buildx build --load -t proxmox-mcp-rs .
 
   clean:
     desc: Clean build artifacts

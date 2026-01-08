@@ -1,6 +1,7 @@
 mod proxmox;
 mod mcp;
 mod settings;
+mod http_server;
 mod tests;
 
 use clap::Parser;
@@ -13,42 +14,42 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version = env!("PROJECT_VERSION"), about, long_about = None)]
 struct Args {
     /// Config file path
     #[arg(short, long, env = "PROXMOX_CONFIG")]
     config: Option<String>,
 
     /// Proxmox Host (e.g., 192.168.1.10)
-    #[arg(long, env = "PROXMOX_HOST")]
+    #[arg(short = 'H', long, env = "PROXMOX_HOST")]
     host: Option<String>,
 
     /// Proxmox Port (default: 8006)
-    #[arg(long, env = "PROXMOX_PORT")]
+    #[arg(short = 'p', long, env = "PROXMOX_PORT")]
     port: Option<u16>,
 
     /// Proxmox User (e.g., root@pam)
-    #[arg(long, env = "PROXMOX_USER")]
+    #[arg(short = 'u', long, env = "PROXMOX_USER")]
     user: Option<String>,
 
     /// Proxmox Password
-    #[arg(long, env = "PROXMOX_PASSWORD", conflicts_with_all = ["token_name", "token_value"])]
+    #[arg(short = 'P', long, env = "PROXMOX_PASSWORD", conflicts_with_all = ["token_name", "token_value"])]
     password: Option<String>,
 
     /// API Token Name (e.g., mytoken)
-    #[arg(long, env = "PROXMOX_TOKEN_NAME", requires = "token_value")]
+    #[arg(short = 'n', long, env = "PROXMOX_TOKEN_NAME", requires = "token_value")]
     token_name: Option<String>,
 
     /// API Token Value (UUID)
-    #[arg(long, env = "PROXMOX_TOKEN_VALUE", requires = "token_name")]
+    #[arg(short = 'v', long, env = "PROXMOX_TOKEN_VALUE", requires = "token_name")]
     token_value: Option<String>,
 
     /// Disable SSL verification (for self-signed certs)
-    #[arg(long, env = "PROXMOX_NO_VERIFY_SSL", default_value_t = false)]
+    #[arg(short = 'k', long, env = "PROXMOX_NO_VERIFY_SSL", default_value_t = false)]
     no_verify_ssl: bool,
 
     /// Log level (error, warn, info, debug, trace)
-    #[arg(long, env = "PROXMOX_LOG_LEVEL", default_value = "info")]
+    #[arg(short = 'L', long, env = "PROXMOX_LOG_LEVEL", default_value = "info")]
     log_level: String,
 
     /// Enable logging to a file
@@ -60,12 +61,20 @@ struct Args {
     log_dir: String,
 
     /// Log filename prefix
-    #[arg(long, env = "PROXMOX_LOG_FILENAME", default_value = "proxmox-mcp.log")]
+    #[arg(long, env = "PROXMOX_LOG_FILENAME", default_value = "proxmox-mcp-rs.log")]
     log_filename: String,
 
     /// Log rotation strategy (daily, hourly, never)
     #[arg(long, env = "PROXMOX_LOG_ROTATE", default_value = "daily")]
     log_rotate: String,
+
+    /// Server type (stdio or http)
+    #[arg(short = 't', long, env = "PROXMOX_SERVER_TYPE")]
+    server_type: Option<String>,
+
+    /// HTTP Port (only for http type)
+    #[arg(short = 'l', long, env = "PROXMOX_HTTP_PORT")]
+    http_port: Option<u16>,
 }
 
 #[tokio::main]
@@ -148,6 +157,12 @@ async fn main() {
     if args.no_verify_ssl {
         settings.no_verify_ssl = Some(true);
     }
+    if let Some(st) = args.server_type {
+        settings.server_type = Some(st);
+    }
+    if let Some(hp) = args.http_port {
+        settings.http_port = Some(hp);
+    }
     
     // We don't override log settings in `settings` struct because we used them directly from CLI args
     // to initialize logging BEFORE loading other settings (so we can log config errors).
@@ -165,6 +180,8 @@ async fn main() {
     let token_name = settings.token_name;
     let token_value = settings.token_value;
     let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
+    let server_type = settings.server_type.unwrap_or_else(|| "stdio".to_string());
+    let http_port = settings.http_port.unwrap_or(3000);
 
     info!("Connecting to Proxmox at {}:{}", host, port);
 
@@ -191,9 +208,20 @@ async fn main() {
 
     let mut server = McpServer::new(client);
     
-    info!("Starting MCP Server (stdio transport)...");
-    if let Err(e) = server.run().await {
-        error!("Server error: {}", e);
-        process::exit(1);
+    match server_type.as_str() {
+        "http" => {
+            info!("Starting MCP Server (HTTP transport) on port {}...", http_port);
+            if let Err(e) = http_server::run_http_server(server, http_port).await {
+                error!("HTTP Server error: {}", e);
+                process::exit(1);
+            }
+        },
+        "stdio" | _ => {
+            info!("Starting MCP Server (stdio transport)...");
+            if let Err(e) = server.run_stdio().await {
+                error!("Server error: {}", e);
+                process::exit(1);
+            }
+        }
     }
 }
