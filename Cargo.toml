@@ -21,3 +21,17 @@ tracing-log = "0.2"
 [dev-dependencies]
 tempfile = "3.24.0"
 wiremock = "0.6.5"
+
+# Profile for final production releases (smaller, faster)
+[profile.release]
+opt-level = 3           # Max optimization
+lto = true              # Link Time Optimization (smaller binary)
+codegen-units = 1       # Reduce parallel code generation for better optimization
+panic = "abort"         # Remove stack unwinding (smaller binary)
+strip = true            # Strip symbols (smaller binary)
+
+# Profile for CI/CD builds (inherits from dev)
+[profile.ci]
+inherits = "dev"
+incremental = false     # Disable incremental compilation for CI (often slower/buggy in CI cache)
+debug = 0               # No debug info needed for basic CI checks (speeds up build)
