@@ -78,18 +78,25 @@ jobs:
           os: ubuntu-latest
           rust: stable
           target: x86_64-unknown-linux-musl
+          strip: x86_64-linux-musl-strip
         - build: linux-arm
           os: ubuntu-latest
           rust: stable
           target: aarch64-unknown-linux-musl
+          strip: aarch64-linux-musl-strip
+          qemu: qemu-aarch64
         - build: linux-armv7
           os: ubuntu-latest
           rust: stable
           target: armv7-unknown-linux-musleabihf
+          strip: arm-linux-musleabihf-strip
+          qemu: qemu-arm
         - build: linux-armv6
           os: ubuntu-latest
           rust: stable
           target: arm-unknown-linux-gnueabihf
+          strip: arm-linux-gnueabihf-strip
+          qemu: qemu-arm
         - build: macos
           os: macos-latest
           rust: stable
@@ -137,9 +144,19 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
 
-    - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'linux-armv6' || matrix.build == 'macos' || matrix.build == 'macos-arm'
+    - name: Strip release binary (macos)
+      if: matrix.build == 'macos' || matrix.build == 'macos-arm'
       run: strip "${{ env.TARGET_DIR }}/release/proxmox-mcp-rs"
+
+    - name: Strip release binary (cross)
+      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'linux-armv6'
+      shell: bash
+      run: |
+        docker run --rm -v \
+          "$PWD/target:/target:Z" \
+          "ghcr.io/cross-rs/${{ matrix.target }}:main" \
+          "${{ matrix.strip }}" \
+          "/target/${{ matrix.target }}/release/proxmox-mcp-rs"
 
     - name: Build archive
       shell: bash
