@@ -47,6 +47,10 @@ jobs:
           os: ubuntu-latest
           rust: stable
           target: armv7-unknown-linux-gnueabihf
+        - build: armv6
+          os: ubuntu-latest
+          rust: stable
+          target: arm-unknown-linux-gnueabihf
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4

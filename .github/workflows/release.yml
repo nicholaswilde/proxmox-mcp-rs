@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [linux, linux-arm, linux-armv7, macos, macos-arm, win-msvc, win32-msvc]
+        build: [linux, linux-arm, linux-armv7, linux-armv6, macos, macos-arm, win-msvc, win32-msvc]
         include:
         - build: linux
           os: ubuntu-latest
@@ -72,6 +72,10 @@ jobs:
           os: ubuntu-latest
           rust: stable
           target: armv7-unknown-linux-musleabihf
+        - build: linux-armv6
+          os: ubuntu-latest
+          rust: stable
+          target: arm-unknown-linux-gnueabihf
         - build: macos
           os: macos-latest
           rust: stable
@@ -117,7 +121,7 @@ jobs:
       run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
 
     - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'macos' || matrix.build == 'macos-arm'
+      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'linux-armv6' || matrix.build == 'macos' || matrix.build == 'macos-arm'
       run: strip "${{ env.TARGET_DIR }}/release/proxmox-mcp-rs"
 
     - name: Build archive
