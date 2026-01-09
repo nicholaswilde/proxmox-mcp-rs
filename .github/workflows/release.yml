@@ -107,6 +107,9 @@ jobs:
         toolchain: ${{ matrix.rust }}
         targets: ${{ matrix.target }}
 
+    - name: Rust Cache
+      uses: swatinem/rust-cache@v2
+
     - name: Use Cross
       shell: bash
       run: |

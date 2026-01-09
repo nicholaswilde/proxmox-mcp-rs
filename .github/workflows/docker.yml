@@ -62,6 +62,8 @@ jobs:
           context: .
           load: true
           tags: ${{ env.IMAGE_NAME }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Test Docker image
         run: |
