@@ -1,33 +1,23 @@
-# Builder stage
-FROM rust:latest as builder
-
-WORKDIR /usr/src/app
-
-# Copy manifests to cache dependencies
-COPY Cargo.toml Cargo.lock ./
-
-# Create a dummy main.rs to build dependencies
-RUN mkdir src && \
-    echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copy the source code
-COPY src ./src
-
-# Touch main.rs to force rebuild of the binary with new source
-RUN touch src/main.rs && \
-    cargo build --release
-
-# Runtime stage
-FROM gcr.io/distroless/cc-debian12
-
+FROM rust:latest AS chef
+# We only pay the installation cost once,
+# it will be cached from the second build onwards
+RUN cargo install cargo-chef
 WORKDIR /app
 
-# Copy the binary from the builder
-COPY --from=builder /usr/src/app/target/release/proxmox-mcp-rs /app/proxmox-mcp-rs
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Since we use rustls, we don't need OpenSSL libs, but we might need CA certs if not present (distroless usually has them)
-# distroless/cc is good for standard Rust binaries.
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY . .
+RUN cargo build --release --bin proxmox-mcp-rs
 
+# We do not need the Rust toolchain to run the binary!
+FROM gcr.io/distroless/cc-debian12 AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/proxmox-mcp-rs /app/proxmox-mcp-rs
 ENTRYPOINT ["/app/proxmox-mcp-rs"]
