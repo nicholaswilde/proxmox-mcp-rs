@@ -211,6 +211,7 @@ jobs:
       run: |
         outdir="${{ env.TARGET_DIR }}/release"
         staging="proxmox-mcp-rs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}"
+        echo "staging is: $staging"
         mkdir -p "$staging"
         
         # Copy binary
