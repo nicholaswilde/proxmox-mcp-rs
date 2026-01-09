@@ -13,10 +13,10 @@ tasks:
   build:
     desc: Build the project for all supported architectures (requires cross)
     cmds:
-      - task: build-amd64
-      - task: build-arm64
-      - task: build-armv7
-      - task: build-armv6
+      - task: build:amd64
+      - task: build:arm64
+      - task: build:armv7
+      - task: build:armv6
 
   build:amd64:
     desc: Build for AMD64 (x86_64)
