@@ -166,6 +166,10 @@ If you prefer to run the server via Docker, use the following configuration:
 }
 ```
 
+## :handshake: Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
+
 ## :balance_scale: License
 
 ​[​Apache License 2.0](https://raw.githubusercontent.com/nicholaswilde/proxmox-mcp-rs/refs/heads/main/LICENSE)
