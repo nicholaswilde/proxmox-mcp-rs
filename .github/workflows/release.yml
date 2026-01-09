@@ -78,45 +78,45 @@ jobs:
       matrix:
         build: [linux, linux-arm, linux-armv7, linux-armv6, macos, macos-arm, win-msvc, win32-msvc]
         include:
-        # - build: linux
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: x86_64-unknown-linux-musl
-        #   strip: x86_64-linux-musl-strip
-        # - build: linux-arm
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: aarch64-unknown-linux-musl
-        #   strip: aarch64-linux-musl-strip
-        #   qemu: qemu-aarch64
-        # - build: linux-armv7
-        #   os: ubuntu-latest
-        #   rust: stable
-        #   target: armv7-unknown-linux-musleabihf
-        #   strip: arm-linux-musleabihf-strip
-        #   qemu: qemu-arm
+        - build: linux
+          os: ubuntu-latest
+          rust: stable
+          target: x86_64-unknown-linux-musl
+          strip: x86_64-linux-musl-strip
+        - build: linux-arm
+          os: ubuntu-latest
+          rust: stable
+          target: aarch64-unknown-linux-musl
+          strip: aarch64-linux-musl-strip
+          qemu: qemu-aarch64
+        - build: linux-armv7
+          os: ubuntu-latest
+          rust: stable
+          target: armv7-unknown-linux-musleabihf
+          strip: arm-linux-musleabihf-strip
+          qemu: qemu-arm
         - build: linux-armv6
           os: ubuntu-latest
           rust: stable
           target: arm-unknown-linux-gnueabihf
           strip: arm-linux-gnueabihf-strip
           qemu: qemu-arm
-        # - build: macos
-        #   os: macos-latest
-        #   rust: stable
-        #   target: x86_64-apple-darwin
-        # - build: macos-arm
-        #   os: macos-latest
-        #   rust: stable
-        #   target: aarch64-apple-darwin
-        # - build: win-msvc
-        #   os: windows-latest
-        #   rust: stable
-        #   target: x86_64-pc-windows-msvc
-        # - build: win32-msvc
-        #   os: windows-latest
-        #   rust: stable
-        #   target: i686-pc-windows-msvc
+        - build: macos
+          os: macos-latest
+          rust: stable
+          target: x86_64-apple-darwin
+        - build: macos-arm
+          os: macos-latest
+          rust: stable
+          target: aarch64-apple-darwin
+        - build: win-msvc
+          os: windows-latest
+          rust: stable
+          target: x86_64-pc-windows-msvc
+        - build: win32-msvc
+          os: windows-latest
+          rust: stable
+          target: i686-pc-windows-msvc
 
     steps:
     - name: Checkout repository
