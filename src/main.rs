@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 mod http_server;
 mod mcp;
 mod proxmox;
