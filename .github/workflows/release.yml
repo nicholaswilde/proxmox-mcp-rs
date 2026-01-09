@@ -187,7 +187,7 @@ jobs:
       run: strip "${{ env.BIN }}"
 
     - name: Strip release binary (cross)
-      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'linux-armv6'
+      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7'
       shell: bash
       run: |
         docker run --rm -v \
@@ -195,6 +195,16 @@ jobs:
           "ghcr.io/cross-rs/${{ matrix.target }}:main" \
           "${{ matrix.strip }}" \
           "/$BIN"
+
+    - name: Strip release binary (cross)
+      if: matrix.build == 'linux-armv6'
+      shell: bash
+      run: |
+        docker run --rm -v \
+          "$PWD/target:/target:Z" \
+          --entrypoint /bin/sh \
+          "ghcr.io/cross-rs/${{ matrix.target }}:main" \
+          -c "apt-get update && apt-get install -y binutils-arm-linux-gnueabihf && ${{ matrix.strip }} /$BIN"
 
     - name: Build archive
       shell: bash
