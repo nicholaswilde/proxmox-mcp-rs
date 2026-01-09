@@ -31,7 +31,7 @@ wiremock = "0.6.5"
 
 # Profile for final production releases (smaller, faster)
 [profile.release]
-opt-level = 3           # Max optimization
+opt-level = "z"         # Optimize for size
 lto = true              # Link Time Optimization (smaller binary)
 codegen-units = 1       # Reduce parallel code generation for better optimization
 panic = "abort"         # Remove stack unwinding (smaller binary)
