@@ -27,6 +27,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
   - `create_vm` / `create_container`: Create a new VM or Container.
   - `delete_vm` / `delete_container`: Delete a VM or Container.
   - `update_container_resources`: Update LXC container resources (cores, memory, swap, disk).
+  - `list_snapshots`: List snapshots for a VM or Container.
+  - `snapshot_vm`: Create a snapshot of a VM or Container.
+  - `rollback_vm`: Rollback a VM or Container to a snapshot.
+  - `delete_snapshot`: Delete a snapshot of a VM or Container.
 
 ## :hammer_and_wrench: Build
 

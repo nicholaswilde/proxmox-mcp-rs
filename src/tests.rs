@@ -270,6 +270,64 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_snapshot_lifecycle() {
+        let mock_server = MockServer::start().await;
+
+        // List Snapshots
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/snapshot"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "name": "snap1", "description": "test snap" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Create Snapshot
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/snapshot"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        // Rollback Snapshot
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/snapshot/snap1/rollback"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        // Delete Snapshot
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/snapshot/snap1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test List
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("list_snapshots", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("snap1"));
+
+        // Test Create
+        let args = json!({ "node": "pve1", "vmid": 100, "snapname": "snap1" });
+        let res = server.call_tool("snapshot_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("created"));
+
+        // Test Rollback
+        let args = json!({ "node": "pve1", "vmid": 100, "snapname": "snap1" });
+        let res = server.call_tool("rollback_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("Rollback"));
+
+        // Test Delete
+        let args = json!({ "node": "pve1", "vmid": 100, "snapname": "snap1" });
+        let res = server.call_tool("delete_snapshot", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("Delete"));
+    }
+
+    #[tokio::test]
     async fn test_delete_container() {
         let mock_server = MockServer::start().await;
         Mock::given(method("DELETE"))

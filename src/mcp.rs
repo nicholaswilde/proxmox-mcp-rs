@@ -375,6 +375,63 @@ impl McpServer {
                     },
                     "required": ["node", "vmid"]
                 }
+            }),
+            json!({
+                "name": "list_snapshots",
+                "description": "List snapshots for a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "snapshot_vm",
+                "description": "Create a snapshot of a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "snapname": { "type": "string", "description": "Snapshot name" },
+                        "description": { "type": "string", "description": "Snapshot description" },
+                        "vmstate": { "type": "boolean", "description": "Save RAM content (only for QEMU)" },
+                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid", "snapname"]
+                }
+            }),
+            json!({
+                "name": "rollback_vm",
+                "description": "Rollback a VM or Container to a snapshot",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "snapname": { "type": "string", "description": "Snapshot name" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid", "snapname"]
+                }
+            }),
+            json!({
+                "name": "delete_snapshot",
+                "description": "Delete a snapshot of a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "snapname": { "type": "string", "description": "Snapshot name" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid", "snapname"]
+                }
             })
         ]
     }
@@ -418,8 +475,53 @@ impl McpServer {
                 Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&templates)? }] }))
             },
             "update_container_resources" => self.handle_update_resources(args, "lxc").await,
+            "list_snapshots" => self.handle_snapshot_list(args).await,
+            "snapshot_vm" => self.handle_snapshot_create(args).await,
+            "rollback_vm" => self.handle_snapshot_rollback(args).await,
+            "delete_snapshot" => self.handle_snapshot_delete(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_snapshot_list(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+
+        let snapshots = self.client.get_snapshots(node, vmid, vm_type).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&snapshots)? }] }))
+    }
+
+    async fn handle_snapshot_create(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let snapname = args.get("snapname").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing snapname"))?;
+        let desc = args.get("description").and_then(|v| v.as_str());
+        let vmstate = args.get("vmstate").and_then(|v| v.as_bool()).unwrap_or(false);
+
+        let res = self.client.create_snapshot(node, vmid, vm_type, snapname, desc, vmstate).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Snapshot '{}' created. UPID: {}", snapname, res) }] }))
+    }
+
+    async fn handle_snapshot_rollback(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let snapname = args.get("snapname").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing snapname"))?;
+
+        let res = self.client.rollback_snapshot(node, vmid, vm_type, snapname).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Rollback to '{}' initiated. UPID: {}", snapname, res) }] }))
+    }
+
+    async fn handle_snapshot_delete(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let snapname = args.get("snapname").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing snapname"))?;
+
+        let res = self.client.delete_snapshot(node, vmid, vm_type, snapname).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Delete snapshot '{}' initiated. UPID: {}", snapname, res) }] }))
     }
 
     async fn handle_update_resources(&self, args: &Value, resource_type: &str) -> Result<Value> {
