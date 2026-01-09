@@ -1,17 +1,17 @@
-mod proxmox;
-mod mcp;
-mod settings;
 mod http_server;
+mod mcp;
+mod proxmox;
+mod settings;
 mod tests;
 
 use clap::Parser;
-use log::{info, error};
-use proxmox::ProxmoxClient;
+use log::{error, info};
 use mcp::McpServer;
-use std::process;
+use proxmox::ProxmoxClient;
 use settings::Settings;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
+use std::process;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
 #[derive(Parser, Debug)]
 #[command(author, version = env!("PROJECT_VERSION"), about, long_about = None)]
@@ -37,15 +37,30 @@ struct Args {
     password: Option<String>,
 
     /// API Token Name (e.g., mytoken)
-    #[arg(short = 'n', long, env = "PROXMOX_TOKEN_NAME", requires = "token_value")]
+    #[arg(
+        short = 'n',
+        long,
+        env = "PROXMOX_TOKEN_NAME",
+        requires = "token_value"
+    )]
     token_name: Option<String>,
 
     /// API Token Value (UUID)
-    #[arg(short = 'v', long, env = "PROXMOX_TOKEN_VALUE", requires = "token_name")]
+    #[arg(
+        short = 'v',
+        long,
+        env = "PROXMOX_TOKEN_VALUE",
+        requires = "token_name"
+    )]
     token_value: Option<String>,
 
     /// Disable SSL verification (for self-signed certs)
-    #[arg(short = 'k', long, env = "PROXMOX_NO_VERIFY_SSL", default_value_t = false)]
+    #[arg(
+        short = 'k',
+        long,
+        env = "PROXMOX_NO_VERIFY_SSL",
+        default_value_t = false
+    )]
     no_verify_ssl: bool,
 
     /// Log level (error, warn, info, debug, trace)
@@ -61,7 +76,11 @@ struct Args {
     log_dir: String,
 
     /// Log filename prefix
-    #[arg(long, env = "PROXMOX_LOG_FILENAME", default_value = "proxmox-mcp-rs.log")]
+    #[arg(
+        long,
+        env = "PROXMOX_LOG_FILENAME",
+        default_value = "proxmox-mcp-rs.log"
+    )]
     log_filename: String,
 
     /// Log rotation strategy (daily, hourly, never)
@@ -87,8 +106,8 @@ async fn main() {
 
     // Initialize Logging
     let _guard = {
-        let filter_layer = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new(&args.log_level));
+        let filter_layer =
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&args.log_level));
 
         let stdout_layer = tracing_subscriber::fmt::layer()
             .with_writer(std::io::stderr)
@@ -108,15 +127,17 @@ async fn main() {
                 .expect("Failed to create log file appender");
 
             let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
-            
-            Some((tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking)
-                .with_ansi(false)
-                .with_filter(filter_layer), guard))
+
+            Some((
+                tracing_subscriber::fmt::layer()
+                    .with_writer(non_blocking)
+                    .with_ansi(false)
+                    .with_filter(filter_layer),
+                guard,
+            ))
         } else {
             None
         };
-
 
         let registry = tracing_subscriber::registry().with(stdout_layer);
 
@@ -168,10 +189,10 @@ async fn main() {
     if let Some(hp) = args.http_port {
         settings.http_port = Some(hp);
     }
-    
+
     // We don't override log settings in `settings` struct because we used them directly from CLI args
     // to initialize logging BEFORE loading other settings (so we can log config errors).
-    
+
     if let Err(e) = settings.validate() {
         error!("Configuration error: {}", e);
         process::exit(1);
@@ -208,21 +229,24 @@ async fn main() {
             process::exit(1);
         }
     } else {
-         error!("No authentication method provided");
-         process::exit(1);
+        error!("No authentication method provided");
+        process::exit(1);
     }
 
     let mut server = McpServer::new(client);
-    
+
     match server_type.as_str() {
         "http" => {
-            info!("Starting MCP Server (HTTP transport) on {}:{}...", http_host, http_port);
+            info!(
+                "Starting MCP Server (HTTP transport) on {}:{}...",
+                http_host, http_port
+            );
             if let Err(e) = http_server::run_http_server(server, &http_host, http_port).await {
                 error!("HTTP Server error: {}", e);
                 process::exit(1);
             }
-        },
-        "stdio" | _ => {
+        }
+        _ => {
             info!("Starting MCP Server (stdio transport)...");
             if let Err(e) = server.run_stdio().await {
                 error!("Server error: {}", e);

@@ -3,7 +3,7 @@ use std::process::Command;
 fn main() {
     // Attempt to get the version from git describe
     let output = Command::new("git")
-        .args(&["describe", "--tags", "--always", "--dirty"])
+        .args(["describe", "--tags", "--always", "--dirty"])
         .output();
 
     let git_version = match output {
@@ -21,7 +21,7 @@ fn main() {
 
     // Set the PROJECT_VERSION environment variable for the application to use
     println!("cargo:rustc-env=PROJECT_VERSION={}", version);
-    
+
     // Ensure build.rs reruns if git HEAD changes (branch switch, commit)
     println!("cargo:rerun-if-changed=.git/HEAD");
     // Also rerun if tags change (heuristic, checking refs/tags might be better but HEAD is usually sufficient for simple cases)

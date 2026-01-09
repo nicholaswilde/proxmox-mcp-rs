@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
+use log::info;
 use reqwest::{Client, Method};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use log::info;
 use url::Url;
 
 #[derive(Clone)]
@@ -48,12 +48,16 @@ pub struct ClusterResource {
 
 impl ProxmoxClient {
     pub fn new(host: &str, port: u16, verify_ssl: bool) -> Result<Self> {
-        let scheme = if host.starts_with("http://") { "http" } else { "https" };
-        
-        let host_cleaned = if host.starts_with("http://") {
-            &host[7..]
-        } else if host.starts_with("https://") {
-            &host[8..]
+        let scheme = if host.starts_with("http://") {
+            "http"
+        } else {
+            "https"
+        };
+
+        let host_cleaned = if let Some(stripped) = host.strip_prefix("http://") {
+            stripped
+        } else if let Some(stripped) = host.strip_prefix("https://") {
+            stripped
         } else {
             host
         };
@@ -61,8 +65,7 @@ impl ProxmoxClient {
 
         let url_str = format!("{}://{}:{}/api2/json/", scheme, host_cleaned, port);
 
-        let base_url = Url::parse(&url_str)
-            .context("Invalid host URL")?;
+        let base_url = Url::parse(&url_str).context("Invalid host URL")?;
 
         let client = Client::builder()
             .danger_accept_invalid_certs(!verify_ssl)
@@ -81,14 +84,19 @@ impl ProxmoxClient {
 
     pub fn set_api_token(&mut self, user: &str, token_name: &str, token_value: &str) {
         // Format: PVEAPIToken=USER@REALM!TOKENID=UUID
-        self.api_token = Some(format!("PVEAPIToken={}!{}={}", user, token_name, token_value));
+        self.api_token = Some(format!(
+            "PVEAPIToken={}!{}={}",
+            user, token_name, token_value
+        ));
     }
 
     pub async fn login(&mut self, user: &str, password: &str) -> Result<()> {
         let url = self.base_url.join("access/ticket")?;
         let params = [("username", user), ("password", password)];
 
-        let resp = self.client.post(url)
+        let resp = self
+            .client
+            .post(url)
             .form(&params)
             .send()
             .await
@@ -100,16 +108,24 @@ impl ProxmoxClient {
             anyhow::bail!("Login failed: {} - {}", status, text);
         }
 
-        let body: TicketResponse = resp.json().await.context("Failed to parse login response")?;
-        
+        let body: TicketResponse = resp
+            .json()
+            .await
+            .context("Failed to parse login response")?;
+
         self.ticket = Some(body.data.ticket);
         self.csrf_token = Some(body.data.csrf_token);
-        
+
         info!("Successfully logged in as {}", user);
         Ok(())
     }
 
-    async fn request<T: serde::de::DeserializeOwned>(&self, method: Method, path: &str, body: Option<&Value>) -> Result<T> {
+    async fn request<T: serde::de::DeserializeOwned>(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&Value>,
+    ) -> Result<T> {
         let url = self.base_url.join(path)?;
         let mut req = self.client.request(method, url);
 
@@ -117,9 +133,9 @@ impl ProxmoxClient {
             req = req.header("Authorization", token);
         } else {
             if let Some(token) = &self.csrf_token {
-                 req = req.header("CSRFPreventionToken", token);
+                req = req.header("CSRFPreventionToken", token);
             }
-            
+
             // Manually add cookie if we have a ticket
             if let Some(ticket) = &self.ticket {
                 req = req.header("Cookie", format!("PVEAuthCookie={}", ticket));
@@ -131,11 +147,11 @@ impl ProxmoxClient {
         }
 
         let resp = req.send().await?;
-        
+
         if !resp.status().is_success() {
-             let status = resp.status();
-             let text = resp.text().await.unwrap_or_default();
-             anyhow::bail!("Request to {} failed: {} - {}", path, status, text);
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            anyhow::bail!("Request to {} failed: {} - {}", path, status, text);
         }
 
         // Proxmox wraps response in { "data": ... } usually.
@@ -154,7 +170,8 @@ impl ProxmoxClient {
 
     pub async fn get_all_vms(&self) -> Result<Vec<VmInfo>> {
         let resources = self.get_resources().await?;
-        let vms = resources.into_iter()
+        let vms = resources
+            .into_iter()
             .filter(|r| (r.res_type == "qemu" || r.res_type == "lxc") && r.vmid.is_some())
             .map(|r| VmInfo {
                 vmid: r.vmid.unwrap(),
@@ -183,40 +200,56 @@ impl ProxmoxClient {
         anyhow::bail!("VMID {} not found", vmid);
     }
 
-    pub async fn vm_action(&self, node: &str, vmid: i64, action: &str, vm_type: Option<&str>) -> Result<String> {
+    pub async fn vm_action(
+        &self,
+        node: &str,
+        vmid: i64,
+        action: &str,
+        vm_type: Option<&str>,
+    ) -> Result<String> {
         // Infer type if missing? safer to require or try both.
         // API paths: /nodes/{node}/qemu/{vmid}/status/{action} or /lxc/...
         // We can try qemu first, if fails try lxc? Or check list.
         // For efficiency, let's assume caller provides type or we find it.
-        
-        let type_path = if let Some(t) = vm_type {
-            t // "qemu" or "lxc"
-        } else {
-            // naive check: try qemu
-             "qemu" 
-        };
+
+        let type_path = vm_type.unwrap_or("qemu");
 
         let path = format!("nodes/{}/{}/{}/status/{}", node, type_path, vmid, action);
         // Actions like start, stop, shutdown, reset, suspend, resume
-        
+
         // Returns UPID usually
         let res: String = self.request(Method::POST, &path, None).await?;
         Ok(res)
     }
 
-    pub async fn create_resource(&self, node: &str, resource_type: &str, params: &Value) -> Result<String> {
+    pub async fn create_resource(
+        &self,
+        node: &str,
+        resource_type: &str,
+        params: &Value,
+    ) -> Result<String> {
         let path = format!("nodes/{}/{}", node, resource_type);
         let res: String = self.request(Method::POST, &path, Some(params)).await?;
         Ok(res)
     }
 
-    pub async fn delete_resource(&self, node: &str, vmid: i64, resource_type: &str) -> Result<String> {
+    pub async fn delete_resource(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+    ) -> Result<String> {
         let path = format!("nodes/{}/{}/{}", node, resource_type, vmid);
         let res: String = self.request(Method::DELETE, &path, None).await?;
         Ok(res)
     }
 
-    pub async fn get_storage_content(&self, node: &str, storage: &str, content_type: Option<&str>) -> Result<Vec<Value>> {
+    pub async fn get_storage_content(
+        &self,
+        node: &str,
+        storage: &str,
+        content_type: Option<&str>,
+    ) -> Result<Vec<Value>> {
         let mut path = format!("nodes/{}/storage/{}/content", node, storage);
         if let Some(ct) = content_type {
             path.push_str(&format!("?content={}", ct));
@@ -224,75 +257,154 @@ impl ProxmoxClient {
         self.request(Method::GET, &path, None).await
     }
 
-    pub async fn update_config(&self, node: &str, vmid: i64, resource_type: &str, params: &Value) -> Result<()> {
+    pub async fn update_config(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        params: &Value,
+    ) -> Result<()> {
         let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
         self.request(Method::PUT, &path, Some(params)).await
     }
 
-    pub async fn resize_disk(&self, node: &str, vmid: i64, resource_type: &str, disk: &str, size: &str) -> Result<String> {
-         let path = format!("nodes/{}/{}/{}/resize", node, resource_type, vmid);
-         let params = json!({ "disk": disk, "size": size });
-         let res: String = self.request(Method::PUT, &path, Some(&params)).await?;
-         Ok(res)
+    pub async fn resize_disk(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        disk: &str,
+        size: &str,
+    ) -> Result<String> {
+        let path = format!("nodes/{}/{}/{}/resize", node, resource_type, vmid);
+        let params = json!({ "disk": disk, "size": size });
+        let res: String = self.request(Method::PUT, &path, Some(&params)).await?;
+        Ok(res)
     }
 
     // --- Snapshot Management ---
 
-    pub async fn get_snapshots(&self, node: &str, vmid: i64, resource_type: &str) -> Result<Vec<Value>> {
+    pub async fn get_snapshots(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+    ) -> Result<Vec<Value>> {
         let path = format!("nodes/{}/{}/{}/snapshot", node, resource_type, vmid);
         self.request(Method::GET, &path, None).await
     }
 
-    pub async fn create_snapshot(&self, node: &str, vmid: i64, resource_type: &str, snapname: &str, description: Option<&str>, vmstate: bool) -> Result<String> {
+    pub async fn create_snapshot(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        snapname: &str,
+        description: Option<&str>,
+        vmstate: bool,
+    ) -> Result<String> {
         let path = format!("nodes/{}/{}/{}/snapshot", node, resource_type, vmid);
         let mut params = json!({ "snapname": snapname });
         if let Some(desc) = description {
-            params.as_object_mut().unwrap().insert("description".to_string(), json!(desc));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("description".to_string(), json!(desc));
         }
         if vmstate {
-            params.as_object_mut().unwrap().insert("vmstate".to_string(), json!(1));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("vmstate".to_string(), json!(1));
         }
-        
+
         let res: String = self.request(Method::POST, &path, Some(&params)).await?;
         Ok(res)
     }
 
-    pub async fn rollback_snapshot(&self, node: &str, vmid: i64, resource_type: &str, snapname: &str) -> Result<String> {
-        let path = format!("nodes/{}/{}/{}/snapshot/{}/rollback", node, resource_type, vmid, snapname);
+    pub async fn rollback_snapshot(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        snapname: &str,
+    ) -> Result<String> {
+        let path = format!(
+            "nodes/{}/{}/{}/snapshot/{}/rollback",
+            node, resource_type, vmid, snapname
+        );
         let res: String = self.request(Method::POST, &path, None).await?;
         Ok(res)
     }
 
-    pub async fn delete_snapshot(&self, node: &str, vmid: i64, resource_type: &str, snapname: &str) -> Result<String> {
-        let path = format!("nodes/{}/{}/{}/snapshot/{}", node, resource_type, vmid, snapname);
+    pub async fn delete_snapshot(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        snapname: &str,
+    ) -> Result<String> {
+        let path = format!(
+            "nodes/{}/{}/{}/snapshot/{}",
+            node, resource_type, vmid, snapname
+        );
         let res: String = self.request(Method::DELETE, &path, None).await?;
         Ok(res)
     }
 
     // --- Clone and Migrate ---
 
-    pub async fn clone_resource(&self, node: &str, vmid: i64, resource_type: &str, newid: i64, name: Option<&str>, target_node: Option<&str>, full: Option<bool>) -> Result<String> {
+    #[allow(clippy::too_many_arguments)]
+    pub async fn clone_resource(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        newid: i64,
+        name: Option<&str>,
+        target_node: Option<&str>,
+        full: Option<bool>,
+    ) -> Result<String> {
         let path = format!("nodes/{}/{}/{}/clone", node, resource_type, vmid);
         let mut params = json!({ "newid": newid });
         if let Some(n) = name {
-            params.as_object_mut().unwrap().insert("name".to_string(), json!(n));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("name".to_string(), json!(n));
         }
         if let Some(t) = target_node {
-            params.as_object_mut().unwrap().insert("target".to_string(), json!(t));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("target".to_string(), json!(t));
         }
         if let Some(f) = full {
-             params.as_object_mut().unwrap().insert("full".to_string(), json!(if f { 1 } else { 0 }));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("full".to_string(), json!(if f { 1 } else { 0 }));
         }
 
         let res: String = self.request(Method::POST, &path, Some(&params)).await?;
         Ok(res)
     }
 
-    pub async fn migrate_resource(&self, node: &str, vmid: i64, resource_type: &str, target_node: &str, online: bool) -> Result<String> {
+    pub async fn migrate_resource(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        target_node: &str,
+        online: bool,
+    ) -> Result<String> {
         let path = format!("nodes/{}/{}/{}/migrate", node, resource_type, vmid);
         let mut params = json!({ "target": target_node });
         if online {
-            params.as_object_mut().unwrap().insert("online".to_string(), json!(1));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("online".to_string(), json!(1));
         }
 
         let res: String = self.request(Method::POST, &path, Some(&params)).await?;
