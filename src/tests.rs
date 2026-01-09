@@ -367,6 +367,40 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_clone_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/clone"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100, "newid": 102, "name": "cloned-vm" });
+        let res = server.call_tool("clone_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("Clone initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_migrate_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/migrate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100, "target_node": "pve2" });
+        let res = server.call_tool("migrate_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("Migration initiated"));
+    }
+
+    #[tokio::test]
     async fn test_list_templates() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))

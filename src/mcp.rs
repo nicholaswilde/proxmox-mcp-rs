@@ -432,6 +432,38 @@ impl McpServer {
                     },
                     "required": ["node", "vmid", "snapname"]
                 }
+            }),
+            json!({
+                "name": "clone_vm",
+                "description": "Clone a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Source node" },
+                        "vmid": { "type": "integer", "description": "Source VM ID" },
+                        "newid": { "type": "integer", "description": "New VM ID" },
+                        "name": { "type": "string", "description": "New VM Name (optional)" },
+                        "target": { "type": "string", "description": "Target node (optional)" },
+                        "full": { "type": "boolean", "description": "Full clone (default: true)" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid", "newid"]
+                }
+            }),
+             json!({
+                "name": "migrate_vm",
+                "description": "Migrate a VM or Container to another node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Source node" },
+                        "vmid": { "type": "integer", "description": "VM ID" },
+                        "target_node": { "type": "string", "description": "Target node" },
+                        "online": { "type": "boolean", "description": "Online migration (default: false)" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid", "target_node"]
+                }
             })
         ]
     }
@@ -479,8 +511,35 @@ impl McpServer {
             "snapshot_vm" => self.handle_snapshot_create(args).await,
             "rollback_vm" => self.handle_snapshot_rollback(args).await,
             "delete_snapshot" => self.handle_snapshot_delete(args).await,
+            "clone_vm" => self.handle_clone(args).await,
+            "migrate_vm" => self.handle_migrate(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_clone(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let newid = args.get("newid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing newid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        
+        let name = args.get("name").and_then(|v| v.as_str());
+        let target = args.get("target").and_then(|v| v.as_str());
+        let full = args.get("full").and_then(|v| v.as_bool());
+
+        let res = self.client.clone_resource(node, vmid, vm_type, newid, name, target, full).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Clone initiated. UPID: {}", res) }] }))
+    }
+
+    async fn handle_migrate(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64()).ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let target_node = args.get("target_node").and_then(|v| v.as_str()).ok_or(anyhow::anyhow!("Missing target_node"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let online = args.get("online").and_then(|v| v.as_bool()).unwrap_or(false);
+
+        let res = self.client.migrate_resource(node, vmid, vm_type, target_node, online).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Migration initiated. UPID: {}", res) }] }))
     }
 
     async fn handle_snapshot_list(&self, args: &Value) -> Result<Value> {

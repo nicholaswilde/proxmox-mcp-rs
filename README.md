@@ -31,6 +31,8 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
   - `snapshot_vm`: Create a snapshot of a VM or Container.
   - `rollback_vm`: Rollback a VM or Container to a snapshot.
   - `delete_snapshot`: Delete a snapshot of a VM or Container.
+  - `clone_vm`: Clone a VM or Container.
+  - `migrate_vm`: Migrate a VM or Container to another node.
 
 ## :hammer_and_wrench: Build
 

@@ -268,4 +268,34 @@ impl ProxmoxClient {
         let res: String = self.request(Method::DELETE, &path, None).await?;
         Ok(res)
     }
+
+    // --- Clone and Migrate ---
+
+    pub async fn clone_resource(&self, node: &str, vmid: i64, resource_type: &str, newid: i64, name: Option<&str>, target_node: Option<&str>, full: Option<bool>) -> Result<String> {
+        let path = format!("nodes/{}/{}/{}/clone", node, resource_type, vmid);
+        let mut params = json!({ "newid": newid });
+        if let Some(n) = name {
+            params.as_object_mut().unwrap().insert("name".to_string(), json!(n));
+        }
+        if let Some(t) = target_node {
+            params.as_object_mut().unwrap().insert("target".to_string(), json!(t));
+        }
+        if let Some(f) = full {
+             params.as_object_mut().unwrap().insert("full".to_string(), json!(if f { 1 } else { 0 }));
+        }
+
+        let res: String = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(res)
+    }
+
+    pub async fn migrate_resource(&self, node: &str, vmid: i64, resource_type: &str, target_node: &str, online: bool) -> Result<String> {
+        let path = format!("nodes/{}/{}/{}/migrate", node, resource_type, vmid);
+        let mut params = json!({ "target": target_node });
+        if online {
+            params.as_object_mut().unwrap().insert("online".to_string(), json!(1));
+        }
+
+        let res: String = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(res)
+    }
 }
