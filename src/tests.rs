@@ -270,6 +270,28 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_container() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/lxc"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ 
+            "node": "pve1", 
+            "vmid": 102, 
+            "ostemplate": "local:vztmpl/ubuntu.tar.gz",
+            "hostname": "test-ct" 
+        });
+        let res = server.call_tool("create_container", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
     async fn test_snapshot_lifecycle() {
         let mock_server = MockServer::start().await;
 
