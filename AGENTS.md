@@ -5,7 +5,7 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 
 **Current Status:** Functional Rust implementation with core MCP tools, configuration file support, and comprehensive unit tests.
 *   **Language:** Rust.
-*   **Transport:** Stdio (JSON-RPC 2.0).
+*   **Transport:** Stdio (JSON-RPC 2.0) and HTTP (SSE/POST).
 
 ## Key Files
 *   `README.md`: User documentation and tool list.
@@ -13,13 +13,17 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 *   `src/main.rs`: Entry point and argument parsing.
 *   `src/proxmox.rs`: Proxmox API client.
 *   `src/mcp.rs`: MCP Server implementation.
+*   `src/http_server.rs`: HTTP Server implementation (SSE/POST).
 *   `src/settings.rs`: Configuration management.
 *   `src/tests.rs`: Unit tests with WireMock.
+*   `.github/workflows/ci.yml`: GitHub Actions CI workflow.
+*   `.github/CONTRIBUTING.md`: Contribution guidelines.
 
 ## Building and Running
 1.  **Build:** `cargo build --release`
-2.  **Run:** `./target/release/proxmox-mcp-rs --host <host> --user <user> --password <pw>`
-3.  **Test:** `cargo test`
+2.  **Run (Stdio):** `./target/release/proxmox-mcp-rs --host <host> --user <user> --password <pw>`
+3.  **Run (HTTP):** `./target/release/proxmox-mcp-rs --server-type http --http-host 0.0.0.0 --http-port 3000 --host <host> ...`
+4.  **Test:** `cargo test`
 
 ### TODOs
 *   Expand toolset (backups, snapshots, network management).
