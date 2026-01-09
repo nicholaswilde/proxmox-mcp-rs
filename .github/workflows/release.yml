@@ -31,10 +31,13 @@ jobs:
       - name: Check that tag version matches Cargo.toml version
         shell: bash
         run: |
-          cargo_version=$(grep "^version =" Cargo.toml | head -n1 | cut -d'"' -f2)
-          if [ "${{ steps.get_version.outputs.version }}" != "$cargo_version" ]; then
-            echo "Tag version (${{ steps.get_version.outputs.version }}) does not match Cargo.toml version ($cargo_version)"
-            exit 1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            cargo_version=$(grep "^version =" Cargo.toml | head -n1 | cut -d'"' -f2)
+            tag_version="${GITHUB_REF#refs/tags/}"
+            if [[ "$tag_version" != "$cargo_version" ]]; then
+              echo "Tag version ($tag_version) does not match Cargo.toml version ($cargo_version)"
+              exit 1
+            fi
           fi
       - name: Create GitHub release
         env:
