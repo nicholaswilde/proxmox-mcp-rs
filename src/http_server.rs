@@ -1,18 +1,21 @@
 use axum::{
     extract::{Query, State},
-    response::{sse::{Event, Sse}, IntoResponse},
+    response::{
+        sse::{Event, Sse},
+        IntoResponse,
+    },
     routing::{get, post},
     Json, Router,
 };
 use dashmap::DashMap;
 use futures::stream::Stream;
+use log::{debug, error, info};
 use serde::Deserialize;
 use std::{convert::Infallible, sync::Arc, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use uuid::Uuid;
-use log::{info, error, debug};
 
 use crate::mcp::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, McpServer};
 
@@ -42,7 +45,7 @@ pub async fn run_http_server(mcp_server: McpServer, host: &str, port: u16) -> an
 
     let addr = format!("{}:{}", host, port);
     info!("Starting HTTP MCP Server on {}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;
 
@@ -61,12 +64,15 @@ async fn sse_handler(
 
     // Send the endpoint event immediately
     let endpoint_url = format!("/message?session_id={}", session_id);
-    let _ = tx.send(Ok(Event::default().event("endpoint").data(endpoint_url))).await;
+    let _ = tx
+        .send(Ok(Event::default().event("endpoint").data(endpoint_url)))
+        .await;
 
     // Create a stream that removes the session on drop
     let stream = ReceiverStream::new(rx);
-    
-    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::new().interval(Duration::from_secs(15)))
+
+    Sse::new(stream)
+        .keep_alive(axum::response::sse::KeepAlive::new().interval(Duration::from_secs(15)))
 }
 
 async fn message_handler(
@@ -83,10 +89,13 @@ async fn message_handler(
     };
 
     let mcp = state.mcp_server.clone();
-    
+
     tokio::spawn(async move {
         let req_id = req.id.clone();
-        debug!("Received HTTP request for session {}: {:?}", session_id, req);
+        debug!(
+            "Received HTTP request for session {}: {:?}",
+            session_id, req
+        );
 
         let resp = mcp.handle_request(req).await;
 
@@ -112,7 +121,10 @@ async fn message_handler(
 
             if let Ok(data) = serde_json::to_string(&json_resp) {
                 // Send response as 'message' event
-                if let Err(e) = tx.send(Ok(Event::default().event("message").data(data))).await {
+                if let Err(e) = tx
+                    .send(Ok(Event::default().event("message").data(data)))
+                    .await
+                {
                     error!("Failed to send SSE event to session {}: {}", session_id, e);
                 }
             }

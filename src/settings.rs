@@ -1,4 +1,4 @@
-use config::{Config, ConfigError, File, Environment};
+use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 use std::path::Path;
 
@@ -34,7 +34,7 @@ impl Settings {
         // We make it optional so it doesn't fail if missing, UNLESS user specified a path.
         if let Some(path) = config_path {
             if Path::new(path).exists() {
-                 s = s.add_source(File::with_name(path));
+                s = s.add_source(File::with_name(path));
             } else {
                 // If user specifically asked for a config file and it's missing, we should probably fail?
                 // The config crate will fail if required(true) is set.
@@ -59,13 +59,25 @@ impl Settings {
         if self.user.is_none() || self.user.as_ref().unwrap().is_empty() {
             return Err("User is required".to_string());
         }
-        
-        let has_password = self.password.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
-        let has_token = self.token_name.as_ref().map(|s| !s.is_empty()).unwrap_or(false)
-            && self.token_value.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
+
+        let has_password = self
+            .password
+            .as_ref()
+            .map(|s| !s.is_empty())
+            .unwrap_or(false);
+        let has_token = self
+            .token_name
+            .as_ref()
+            .map(|s| !s.is_empty())
+            .unwrap_or(false)
+            && self
+                .token_value
+                .as_ref()
+                .map(|s| !s.is_empty())
+                .unwrap_or(false);
 
         if !has_password && !has_token {
-             return Err("Either Password or API Token (name and value) is required".to_string());
+            return Err("Either Password or API Token (name and value) is required".to_string());
         }
 
         if has_password && has_token {
@@ -84,8 +96,12 @@ mod tests {
     #[test]
     fn test_load_from_file() {
         let mut file = Builder::new().suffix(".toml").tempfile().unwrap();
-        writeln!(file, "host = '1.2.3.4'\nuser = 'testuser'\npassword = 'pw'\nno_verify_ssl = true").unwrap();
-        
+        writeln!(
+            file,
+            "host = '1.2.3.4'\nuser = 'testuser'\npassword = 'pw'\nno_verify_ssl = true"
+        )
+        .unwrap();
+
         let path = file.path().to_str().unwrap();
         let settings = Settings::new(Some(path)).unwrap();
 
