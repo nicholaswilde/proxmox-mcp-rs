@@ -67,6 +67,10 @@ jobs:
       TARGET_FLAGS: ""
       # When CARGO is set to 'cross', TARGET_DIR includes matrix.target.
       TARGET_DIR: ./target
+      # Bump this as appropriate. We pin to a version to make sure CI
+      # continues to work as cross releases in the past have broken things
+      # in subtle ways.
+      CROSS_VERSION: v0.2.5
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
     strategy:
@@ -127,26 +131,57 @@ jobs:
     - name: Rust Cache
       uses: swatinem/rust-cache@v2
 
+    # - name: Use Cross
+    #   shell: bash
+    #   run: |
+    #     cargo install cross --git https://github.com/cross-rs/cross
+    #     echo "CARGO=cross" >> $GITHUB_ENV
+    #     echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+    #     echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
     - name: Use Cross
+      if: matrix.os == 'ubuntu-latest' && matrix.target != ''
       shell: bash
       run: |
-        cargo install cross --git https://github.com/cross-rs/cross
+        # In the past, new releases of 'cross' have broken CI. So for now, we
+        # pin it. We also use their pre-compiled binary releases because cross
+        # has over 100 dependencies and takes a bit to compile.
+        dir="$RUNNER_TEMP/cross-download"
+        mkdir "$dir"
+        echo "$dir" >> $GITHUB_PATH
+        cd "$dir"
+        curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+        tar xf cross-x86_64-unknown-linux-musl.tar.gz
         echo "CARGO=cross" >> $GITHUB_ENV
+
+    - name: Set target variables
+      shell: bash
+      run: |
         echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
-
+        
     - name: Show command used for Cargo
       run: |
         echo "cargo command is: ${{ env.CARGO }}"
         echo "target flag is: ${{ env.TARGET_FLAGS }}"
         echo "target dir is: ${{ env.TARGET_DIR }}"
 
+    # - name: Build release binary
+    #   run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
+
     - name: Build release binary
-      run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
+      shell: bash
+      run: |
+        ${{ env.CARGO }} build --verbose --profile release-lto --features pcre2 ${{ env.TARGET_FLAGS }}
+        if [[ "${{ matrix.os }}" == windows-* ]]; then
+          bin="target/${{ matrix.target }}/release/proxmox-mcp-rs.exe"
+        else
+          bin="target/${{ matrix.target }}/release/proxmox-mcp-rs"
+        fi
+        echo "BIN=$bin" >> $GITHUB_ENV
 
     - name: Strip release binary (macos)
       if: matrix.build == 'macos' || matrix.build == 'macos-arm'
-      run: strip "${{ env.TARGET_DIR }}/release/proxmox-mcp-rs"
+      run: strip "${{ env.BIN }}"
 
     - name: Strip release binary (cross)
       if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'linux-armv7' || matrix.build == 'linux-armv6'
@@ -156,7 +191,8 @@ jobs:
           "$PWD/target:/target:Z" \
           "ghcr.io/cross-rs/${{ matrix.target }}:main" \
           "${{ matrix.strip }}" \
-          "/target/${{ matrix.target }}/release/proxmox-mcp-rs"
+          "/{{ env.BIN }}"
+          # "/target/${{ matrix.target }}/release/proxmox-mcp-rs"
 
     - name: Build archive
       shell: bash
