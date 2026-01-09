@@ -191,7 +191,7 @@ jobs:
           "$PWD/target:/target:Z" \
           "ghcr.io/cross-rs/${{ matrix.target }}:main" \
           "${{ matrix.strip }}" \
-          "/{{ env.BIN }}"
+          "/$BIN"
           # "/target/${{ matrix.target }}/release/proxmox-mcp-rs"
 
     - name: Build archive
