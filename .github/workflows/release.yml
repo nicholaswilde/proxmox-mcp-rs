@@ -171,7 +171,7 @@ jobs:
     - name: Build release binary
       shell: bash
       run: |
-        ${{ env.CARGO }} build --verbose --profile release-lto --features pcre2 ${{ env.TARGET_FLAGS }}
+        ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
         if [[ "${{ matrix.os }}" == windows-* ]]; then
           bin="target/${{ matrix.target }}/release/proxmox-mcp-rs.exe"
         else
