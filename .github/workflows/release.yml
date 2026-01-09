@@ -39,7 +39,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.get_version.outputs.version }} --draft --verify-tag --title ${{ steps.get_version.outputs.version }}
+          gh release create ${{ steps.get_version.outputs.version }} --draft --prerelease --verify-tag --title ${{ steps.get_version.outputs.version }}
 
   build-release:
     name: build-release
