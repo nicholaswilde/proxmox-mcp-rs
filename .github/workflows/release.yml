@@ -78,45 +78,45 @@ jobs:
       matrix:
         build: [linux, linux-arm, linux-armv7, linux-armv6, macos, macos-arm, win-msvc, win32-msvc]
         include:
-        - build: linux
-          os: ubuntu-latest
-          rust: stable
-          target: x86_64-unknown-linux-musl
-          strip: x86_64-linux-musl-strip
-        - build: linux-arm
-          os: ubuntu-latest
-          rust: stable
-          target: aarch64-unknown-linux-musl
-          strip: aarch64-linux-musl-strip
-          qemu: qemu-aarch64
-        - build: linux-armv7
-          os: ubuntu-latest
-          rust: stable
-          target: armv7-unknown-linux-musleabihf
-          strip: arm-linux-musleabihf-strip
-          qemu: qemu-arm
+        # - build: linux
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: x86_64-unknown-linux-musl
+        #   strip: x86_64-linux-musl-strip
+        # - build: linux-arm
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: aarch64-unknown-linux-musl
+        #   strip: aarch64-linux-musl-strip
+        #   qemu: qemu-aarch64
+        # - build: linux-armv7
+        #   os: ubuntu-latest
+        #   rust: stable
+        #   target: armv7-unknown-linux-musleabihf
+        #   strip: arm-linux-musleabihf-strip
+        #   qemu: qemu-arm
         - build: linux-armv6
           os: ubuntu-latest
           rust: stable
           target: arm-unknown-linux-gnueabihf
           strip: arm-linux-gnueabihf-strip
           qemu: qemu-arm
-        - build: macos
-          os: macos-latest
-          rust: stable
-          target: x86_64-apple-darwin
-        - build: macos-arm
-          os: macos-latest
-          rust: stable
-          target: aarch64-apple-darwin
-        - build: win-msvc
-          os: windows-latest
-          rust: stable
-          target: x86_64-pc-windows-msvc
-        - build: win32-msvc
-          os: windows-latest
-          rust: stable
-          target: i686-pc-windows-msvc
+        # - build: macos
+        #   os: macos-latest
+        #   rust: stable
+        #   target: x86_64-apple-darwin
+        # - build: macos-arm
+        #   os: macos-latest
+        #   rust: stable
+        #   target: aarch64-apple-darwin
+        # - build: win-msvc
+        #   os: windows-latest
+        #   rust: stable
+        #   target: x86_64-pc-windows-msvc
+        # - build: win32-msvc
+        #   os: windows-latest
+        #   rust: stable
+        #   target: i686-pc-windows-msvc
 
     steps:
     - name: Checkout repository
@@ -131,13 +131,6 @@ jobs:
     - name: Rust Cache
       uses: swatinem/rust-cache@v2
 
-    # - name: Use Cross
-    #   shell: bash
-    #   run: |
-    #     cargo install cross --git https://github.com/cross-rs/cross
-    #     echo "CARGO=cross" >> $GITHUB_ENV
-    #     echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
-    #     echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
     - name: Use Cross
       if: matrix.os == 'ubuntu-latest' && matrix.target != ''
       shell: bash
@@ -158,26 +151,36 @@ jobs:
       run: |
         echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
         echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
-        
-    - name: Show command used for Cargo
-      run: |
-        echo "cargo command is: ${{ env.CARGO }}"
-        echo "target flag is: ${{ env.TARGET_FLAGS }}"
-        echo "target dir is: ${{ env.TARGET_DIR }}"
-
-    # - name: Build release binary
-    #   run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
-
-    - name: Build release binary
-      shell: bash
-      run: |
-        ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
         if [[ "${{ matrix.os }}" == windows-* ]]; then
           bin="target/${{ matrix.target }}/release/proxmox-mcp-rs.exe"
         else
           bin="target/${{ matrix.target }}/release/proxmox-mcp-rs"
         fi
         echo "BIN=$bin" >> $GITHUB_ENV
+        
+    - name: Show command used for Cargo
+      run: |
+        echo "cargo command is: ${{ env.CARGO }}"
+        echo "target flag is: ${{ env.TARGET_FLAGS }}"
+        echo "target dir is: ${{ env.TARGET_DIR }}"
+        echo "bin is: ${{ env.BIN }}"
+
+    - name: Setup Custom Cross Image
+      if: matrix.build == 'linux-armv6'
+      run: |
+        # Create the Dockerfile on the fly
+        echo "FROM ghcr.io/cross-rs/arm-unknown-linux-gnueabihf:main" > Dockerfile.custom
+        echo "USER root" >> Dockerfile.custom
+        echo "RUN apt-get update && apt-get install -y binutils-arm-linux-gnueabihf" >> Dockerfile.custom
+        
+        # Create Cross.toml on the fly
+        echo "[target.arm-unknown-linux-gnueabihf]" > Cross.toml
+        echo "dockerfile = \"./Dockerfile.custom\"" >> Cross.toml
+        
+    - name: Build release binary
+      shell: bash
+      run: |
+        ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
 
     - name: Strip release binary (macos)
       if: matrix.build == 'macos' || matrix.build == 'macos-arm'
@@ -192,7 +195,6 @@ jobs:
           "ghcr.io/cross-rs/${{ matrix.target }}:main" \
           "${{ matrix.strip }}" \
           "/$BIN"
-          # "/target/${{ matrix.target }}/release/proxmox-mcp-rs"
 
     - name: Build archive
       shell: bash
