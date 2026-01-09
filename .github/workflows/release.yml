@@ -4,6 +4,11 @@
 name: release
 on:
   workflow_dispatch:
+    inputs:
+      fake_version:
+        description: 'Fake version for testing (e.g. 0.1.0)'
+        required: false
+        default: '0.0.0-test'
   push:
     tags:
     - "v[0-9]+.[0-9]+.[0-9]+"
@@ -19,16 +24,20 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: Get the release version from the tag
+      - name: Get the release version
         id: get_version
         shell: bash
         run: |
-          # See: https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
-          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.fake_version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
       - name: Show the version
         run: |
           echo "version is: ${{ steps.get_version.outputs.version }}"
       - name: Check that tag version matches Cargo.toml version
+        if: github.event_name != 'workflow_dispatch'
         shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
@@ -40,6 +49,7 @@ jobs:
             fi
           fi
       - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

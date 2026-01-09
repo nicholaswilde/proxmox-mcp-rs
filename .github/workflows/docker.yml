@@ -8,6 +8,11 @@ on:
       - 'v*.*.*'
   pull_request:
   workflow_dispatch:
+    inputs:
+      fake_tag:
+        description: 'Fake tag for testing (e.g. v0.1.0)'
+        required: false
+        default: 'test-tag'
 
 env:
   IMAGE_NAME: proxmox-mcp-rs
@@ -55,6 +60,12 @@ jobs:
           images: |
             # docker.io/${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
             ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ inputs.fake_tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and export to Docker
         uses: docker/build-push-action@v5
