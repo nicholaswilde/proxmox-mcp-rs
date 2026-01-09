@@ -270,6 +270,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_delete_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/nodes/pve1/qemu/100"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("delete_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
     async fn test_create_container() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
