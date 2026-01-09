@@ -72,6 +72,10 @@ struct Args {
     #[arg(short = 't', long, env = "PROXMOX_SERVER_TYPE")]
     server_type: Option<String>,
 
+    /// HTTP Host (only for http type)
+    #[arg(long, env = "PROXMOX_HTTP_HOST")]
+    http_host: Option<String>,
+
     /// HTTP Port (only for http type)
     #[arg(short = 'l', long, env = "PROXMOX_HTTP_PORT")]
     http_port: Option<u16>,
@@ -113,8 +117,6 @@ async fn main() {
             None
         };
 
-        // Initialize LogTracer to capture log::info! calls
-        tracing_log::LogTracer::init().expect("Failed to init LogTracer");
 
         let registry = tracing_subscriber::registry().with(stdout_layer);
 
@@ -160,6 +162,9 @@ async fn main() {
     if let Some(st) = args.server_type {
         settings.server_type = Some(st);
     }
+    if let Some(hh) = args.http_host {
+        settings.http_host = Some(hh);
+    }
     if let Some(hp) = args.http_port {
         settings.http_port = Some(hp);
     }
@@ -181,6 +186,7 @@ async fn main() {
     let token_value = settings.token_value;
     let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
     let server_type = settings.server_type.unwrap_or_else(|| "stdio".to_string());
+    let http_host = settings.http_host.unwrap_or_else(|| "0.0.0.0".to_string());
     let http_port = settings.http_port.unwrap_or(3000);
 
     info!("Connecting to Proxmox at {}:{}", host, port);
@@ -210,8 +216,8 @@ async fn main() {
     
     match server_type.as_str() {
         "http" => {
-            info!("Starting MCP Server (HTTP transport) on port {}...", http_port);
-            if let Err(e) = http_server::run_http_server(server, http_port).await {
+            info!("Starting MCP Server (HTTP transport) on {}:{}...", http_host, http_port);
+            if let Err(e) = http_server::run_http_server(server, &http_host, http_port).await {
                 error!("HTTP Server error: {}", e);
                 process::exit(1);
             }

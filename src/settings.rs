@@ -22,6 +22,7 @@ pub struct Settings {
     #[allow(dead_code)]
     pub log_rotate: Option<String>,
     pub server_type: Option<String>,
+    pub http_host: Option<String>,
     pub http_port: Option<u16>,
 }
 
@@ -109,6 +110,9 @@ mod tests {
             log_dir: None,
             log_filename: None,
             log_rotate: None,
+            server_type: None,
+            http_host: None,
+            http_port: None,
         };
         assert!(s.validate().is_err());
     }
@@ -128,6 +132,9 @@ mod tests {
             log_dir: None,
             log_filename: None,
             log_rotate: None,
+            server_type: None,
+            http_host: None,
+            http_port: None,
         };
         assert!(s.validate().is_ok());
     }
@@ -147,6 +154,9 @@ mod tests {
             log_dir: None,
             log_filename: None,
             log_rotate: None,
+            server_type: None,
+            http_host: None,
+            http_port: None,
         };
         assert!(s.validate().is_err());
     }

@@ -90,7 +90,12 @@ Arguments:
 - `--log-filename`: Log filename prefix (default: `proxmox-mcp-rs.log`).
 - `--log-rotate`: Log rotation strategy (daily, hourly, never) (default: `daily`).
 - `--server-type`, `-t`: Server type (`stdio` or `http`) (default: `stdio`).
+- `--http-host`: HTTP Listen Host (default: `0.0.0.0`).
 - `--http-port`, `-l`: HTTP Listen Port (default: `3000`).
+---
+- `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
+- `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
+- `PROXMOX_HTTP_PORT` (default: `3000`)
 
 ### :gear: Configuration File
 
@@ -113,6 +118,7 @@ You can also configure the server using environment variables:
 - `PROXMOX_LOG_FILENAME`
 - `PROXMOX_LOG_ROTATE`
 - `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
+- `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
 - `PROXMOX_HTTP_PORT` (default: `3000`)
 
 ### :robot: Configuration Example (Claude Desktop)

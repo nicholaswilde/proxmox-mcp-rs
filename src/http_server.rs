@@ -27,7 +27,7 @@ struct MessageParams {
     session_id: String,
 }
 
-pub async fn run_http_server(mcp_server: McpServer, port: u16) -> anyhow::Result<()> {
+pub async fn run_http_server(mcp_server: McpServer, host: &str, port: u16) -> anyhow::Result<()> {
     let state = AppState {
         mcp_server,
         sessions: Arc::new(DashMap::new()),
@@ -40,7 +40,7 @@ pub async fn run_http_server(mcp_server: McpServer, port: u16) -> anyhow::Result
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("{}:{}", host, port);
     info!("Starting HTTP MCP Server on {}", addr);
     
     let listener = tokio::net::TcpListener::bind(&addr).await?;

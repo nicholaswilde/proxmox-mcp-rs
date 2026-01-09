@@ -41,3 +41,14 @@ user = "root@pam"
 
 # Log rotation strategy: daily, hourly, never (Default: daily)
 # log_rotate = "daily"
+
+# --- Server Configuration ---
+
+# Server type: stdio or http (Default: stdio)
+# server_type = "stdio"
+
+# HTTP Listen Host (Default: 0.0.0.0)
+# http_host = "0.0.0.0"
+
+# HTTP Listen Port (Default: 3000)
+# http_port = 3000
