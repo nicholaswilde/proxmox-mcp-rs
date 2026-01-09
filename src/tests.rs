@@ -202,6 +202,57 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_stop_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/status/stop"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("stop_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_shutdown_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/status/shutdown"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("shutdown_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_reboot_vm() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/status/reboot"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+        
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("reboot_vm", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+    }
+
+    #[tokio::test]
     async fn test_create_vm() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
