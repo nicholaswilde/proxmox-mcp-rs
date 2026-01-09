@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - "[0-9]+.[0-9]+.[0-9]+"
+    - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           # See: https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
-          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       - name: Show the version
         run: |
           echo "version is: ${{ steps.get_version.outputs.version }}"
@@ -33,7 +33,7 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             cargo_version=$(grep "^version =" Cargo.toml | head -n1 | cut -d'"' -f2)
-            tag_version="${GITHUB_REF#refs/tags/}"
+            tag_version="${GITHUB_REF#refs/tags/v}"
             if [[ "$tag_version" != "$cargo_version" ]]; then
               echo "Tag version ($tag_version) does not match Cargo.toml version ($cargo_version)"
               exit 1
@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ steps.get_version.outputs.version }} --draft --prerelease --verify-tag --title ${{ steps.get_version.outputs.version }}
+          gh release create ${{ github.ref_name }} --draft --prerelease --verify-tag --title ${{ steps.get_version.outputs.version }}
 
   build-release:
     name: build-release
