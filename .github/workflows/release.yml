@@ -1,91 +1,149 @@
-name: Release
+# Based on ripgrep's release action:
+# https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml
 
+name: release
 on:
   push:
-    branches:
-      - main
     tags:
-      - "v*"
+    - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: write
 
-env:
-  CARGO_TERM_COLOR: always
-  BIN_NAME: proxmox-mcp-rs
-
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
+  create-release:
+    name: create-release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get the release version from the tag
+        id: get_version
+        shell: bash
+        run: |
+          # See: https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Show the version
+        run: |
+          echo "version is: ${{ steps.get_version.outputs.version }}"
+      - name: Check that tag version matches Cargo.toml version
+        shell: bash
+        run: |
+          cargo_version=$(grep "^version =" Cargo.toml | head -n1 | cut -d'"' -f2)
+          if [ "${{ steps.get_version.outputs.version }}" != "$cargo_version" ]; then
+            echo "Tag version (${{ steps.get_version.outputs.version }}) does not match Cargo.toml version ($cargo_version)"
+            exit 1
+          fi
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.get_version.outputs.version }} --draft --verify-tag --title ${{ steps.get_version.outputs.version }}
+
+  build-release:
+    name: build-release
+    needs: ['create-release']
     runs-on: ${{ matrix.os }}
+    env:
+      # For some builds, we use cross to test on 32-bit and big-endian
+      # systems.
+      CARGO: cargo
+      # When CARGO is set to 'cross', this is set to '--target'.
+      TARGET_FLAGS: ""
+      # When CARGO is set to 'cross', TARGET_DIR includes matrix.target.
+      TARGET_DIR: ./target
+      # Emit backtraces on panics.
+      RUST_BACKTRACE: 1
     strategy:
       fail-fast: false
       matrix:
+        build: [linux, linux-arm, macos, macos-arm, win-msvc, win32-msvc]
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            suffix: ""
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            suffix: ""
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            suffix: ".exe"
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            suffix: ""
-          - os: ubuntu-latest
-            target: armv7-unknown-linux-gnueabihf
-            suffix: ""
-          - os: ubuntu-latest
-            target: arm-unknown-linux-gnueabihf
-            suffix: ""
+        - build: linux
+          os: ubuntu-latest
+          rust: stable
+          target: x86_64-unknown-linux-musl
+        - build: linux-arm
+          os: ubuntu-latest
+          rust: stable
+          target: aarch64-unknown-linux-musl
+        - build: macos
+          os: macos-latest
+          rust: stable
+          target: x86_64-apple-darwin
+        - build: macos-arm
+          os: macos-latest
+          rust: stable
+          target: aarch64-apple-darwin
+        - build: win-msvc
+          os: windows-latest
+          rust: stable
+          target: x86_64-pc-windows-msvc
+        - build: win32-msvc
+          os: windows-latest
+          rust: stable
+          target: i686-pc-windows-msvc
 
     steps:
-      - uses: actions/checkout@v6
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Cache Cargo
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        targets: ${{ matrix.target }}
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: ${{ matrix.target }}
+    - name: Use Cross
+      shell: bash
+      run: |
+        cargo install cross --git https://github.com/cross-rs/cross
+        echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
-      - name: Install Cross
-        if: runner.os == 'Linux' && matrix.target != 'x86_64-unknown-linux-gnu'
-        run: cargo install cross --git https://github.com/cross-rs/cross
+    - name: Show command used for Cargo
+      run: |
+        echo "cargo command is: ${{ env.CARGO }}"
+        echo "target flag is: ${{ env.TARGET_FLAGS }}"
+        echo "target dir is: ${{ env.TARGET_DIR }}"
 
-      - name: Build
-        run: |
-          if [[ "${{ runner.os }}" == "Linux" && "${{ matrix.target }}" != "x86_64-unknown-linux-gnu" ]]; then
-            cross build --release --target ${{ matrix.target }}
-          else
-            cargo build --release --target ${{ matrix.target }}
-          fi
+    - name: Build release binary
+      run: ${{ env.CARGO }} build --release --verbose ${{ env.TARGET_FLAGS }}
 
-      - name: Package
-        shell: bash
-        run: |
-          cd target/${{ matrix.target }}/release
-          tar czvf ../../../${{ env.BIN_NAME }}-${{ matrix.target }}.tar.gz ${{ env.BIN_NAME }}${{ matrix.suffix }}
-          cd -
+    - name: Strip release binary (linux and macos)
+      if: matrix.build == 'linux' || matrix.build == 'linux-arm' || matrix.build == 'macos' || matrix.build == 'macos-arm'
+      run: strip "${{ env.TARGET_DIR }}/release/proxmox-mcp-rs"
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: ${{ env.BIN_NAME }}-${{ matrix.target }}.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build archive
+      shell: bash
+      run: |
+        outdir="${{ env.TARGET_DIR }}/release"
+        staging="proxmox-mcp-rs-${{ needs.create-release.outputs.version }}-${{ matrix.target }}"
+        mkdir -p "$staging"
+        
+        # Copy binary
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          cp "$outdir/proxmox-mcp-rs.exe" "$staging/"
+        else
+          cp "$outdir/proxmox-mcp-rs" "$staging/"
+        fi
+
+        # Copy other files
+        cp {README.md,LICENSE,config.toml.example} "$staging/"
+
+        # Compress
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          7z a "$staging.zip" "$staging"
+          echo "ASSET=$staging.zip" >> $GITHUB_ENV
+        else
+          tar czf "$staging.tar.gz" "$staging"
+          echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+        fi
+
+    - name: Upload release archive
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ${{ env.ASSET }}
