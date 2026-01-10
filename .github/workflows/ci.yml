@@ -1,12 +1,11 @@
+---
 name: ci
 on:
   pull_request:
   workflow_dispatch:
   push:
-    branches:
-    - main
-  schedule:
-  - cron: '00 01 * * *'
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: read
@@ -16,7 +15,7 @@ jobs:
     name: test
     env:
       CARGO: cargo
-      TARGET_FLAGS:
+      TARGET_FLAGS: ""
       TARGET_DIR: ./target
       RUST_BACKTRACE: 1
     runs-on: ${{ matrix.os }}
