@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
   workflow_call:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
 
 permissions:
   contents: read
