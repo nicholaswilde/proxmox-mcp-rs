@@ -268,12 +268,7 @@ impl ProxmoxClient {
         self.request(Method::PUT, &path, Some(params)).await
     }
 
-    pub async fn get_vm_config(
-        &self,
-        node: &str,
-        vmid: i64,
-        resource_type: &str,
-    ) -> Result<Value> {
+    pub async fn get_vm_config(&self, node: &str, vmid: i64, resource_type: &str) -> Result<Value> {
         let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
         self.request(Method::GET, &path, None).await
     }
