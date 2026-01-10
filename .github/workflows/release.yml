@@ -227,7 +227,7 @@ jobs:
         # Compress
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
           7z a "$staging.zip" "$staging"
-          shasum -a 256 "$staging.zip" > "$staging.zip.sha256"
+          certutil -hashfile "$staging.zip" SHA256 > "$staging.zip.sha256"
           echo "ASSET=$staging.zip" >> $GITHUB_ENV
         else
           tar czf "$staging.tar.gz" "$staging"
