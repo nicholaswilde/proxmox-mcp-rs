@@ -18,8 +18,12 @@ permissions:
   contents: write
 
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   create-release:
     name: create-release
+    needs: [ci]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
