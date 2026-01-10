@@ -52,3 +52,7 @@ user = "root@pam"
 
 # HTTP Listen Port (Default: 3000)
 # http_port = 3000
+
+# HTTP Auth Token (Optional, secures /sse and /message)
+# http_auth_token = "your-secret-token"
+

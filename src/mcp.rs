@@ -134,6 +134,17 @@ impl McpServer {
                     anyhow::bail!("Missing params for tools/call");
                 }
             }
+            "resources/list" => Ok(json!({
+                "resources": self.get_resource_definitions()
+            })),
+            "resources/read" => {
+                if let Some(params) = req.params {
+                    let uri = params.get("uri").and_then(|n| n.as_str()).unwrap_or("");
+                    self.handle_resource_read(uri).await
+                } else {
+                    anyhow::bail!("Missing params for resources/read");
+                }
+            }
             _ => {
                 // Ignore unknown methods or return error?
                 // For MCP, unknown methods should probably be ignored if they are notifications,
@@ -141,6 +152,19 @@ impl McpServer {
                 anyhow::bail!("Method not found: {}", req.method);
             }
         }
+    }
+
+    fn get_resource_definitions(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "uri": "proxmox://vms",
+                "name": "List of VMs",
+                "description": "A live list of all VMs and Containers",
+                "mimeType": "application/json"
+            }),
+            // Add more resources here, e.g., templates for nodes
+            // json!({ "uri": "proxmox://node/{node}/syslog", ... }) - Dynamic resources are harder to list statically
+        ]
     }
 
     fn get_tool_definitions(&self) -> Vec<Value> {
@@ -461,7 +485,323 @@ impl McpServer {
                     "required": ["node", "vmid", "target_node"]
                 }
             }),
+            json!({
+                "name": "list_backups",
+                "description": "List backups on a specific storage",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "storage": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "Filter by VM ID (optional)" }
+                    },
+                    "required": ["node", "storage"]
+                }
+            }),
+            json!({
+                "name": "create_backup",
+                "description": "Create a backup (vzdump) of a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "storage": { "type": "string", "description": "Target storage" },
+                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"], "description": "Backup mode" },
+                        "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"], "description": "Compression" },
+                        "remove": { "type": "boolean", "description": "Remove old backups (prune)?" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "restore_backup",
+                "description": "Restore a VM or Container from a backup",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "ID to restore to" },
+                        "archive": { "type": "string", "description": "Backup volume ID (volid)" },
+                        "storage": { "type": "string", "description": "Target storage" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "force": { "type": "boolean", "description": "Overwrite existing?" }
+                    },
+                    "required": ["node", "vmid", "archive", "type"]
+                }
+            }),
+            json!({
+                "name": "get_task_status",
+                "description": "Get the status of a specific task (UPID)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "upid": { "type": "string", "description": "Unique Process ID" }
+                    },
+                    "required": ["node", "upid"]
+                }
+            }),
+            json!({
+                "name": "list_tasks",
+                "description": "List recent tasks on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "limit": { "type": "integer", "description": "Max tasks to list (default: 50)" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "wait_for_task",
+                "description": "Wait for a task to finish (with timeout)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "upid": { "type": "string", "description": "Unique Process ID" },
+                        "timeout": { "type": "integer", "description": "Timeout in seconds (default: 60)" }
+                    },
+                    "required": ["node", "upid"]
+                }
+            }),
+            json!({
+                "name": "list_networks",
+                "description": "List network interfaces and bridges on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_storage",
+                "description": "List all storage on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_isos",
+                "description": "List ISO images on a specific storage",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "storage": { "type": "string", "description": "Storage name" }
+                    },
+                    "required": ["node", "storage"]
+                }
+            }),
+            json!({
+                "name": "get_cluster_status",
+                "description": "Get cluster status information",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "get_cluster_log",
+                "description": "Read cluster log",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "limit": { "type": "integer", "description": "Max lines to read" }
+                    },
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "list_firewall_rules",
+                "description": "List firewall rules",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name (optional)" },
+                        "vmid": { "type": "integer", "description": "VM ID (optional)" }
+                    },
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "add_firewall_rule",
+                "description": "Add a firewall rule",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["in", "out"], "description": "Direction" },
+                        "action": { "type": "string", "enum": ["ACCEPT", "DROP", "REJECT"] },
+                        "source": { "type": "string" },
+                        "dest": { "type": "string" },
+                        "proto": { "type": "string" },
+                        "dport": { "type": "string" },
+                        "sport": { "type": "string" },
+                        "comment": { "type": "string" },
+                        "enable": { "type": "integer", "description": "Enable rule (0 or 1)" }
+                    },
+                    "required": ["type", "action"]
+                }
+            }),
+            json!({
+                "name": "delete_firewall_rule",
+                "description": "Delete a firewall rule",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "pos": { "type": "integer", "description": "Rule position/index (optional if digest provided, but usually required)" }
+                    },
+                    "required": ["pos"]
+                }
+            }),
+            json!({
+                "name": "add_disk",
+                "description": "Add a virtual disk to a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "device": { "type": "string", "description": "Device name (e.g. 'scsi1', 'virtio0')" },
+                        "storage": { "type": "string", "description": "Storage ID (e.g. 'local-lvm')" },
+                        "size_gb": { "type": "integer", "description": "Size in GB" },
+                        "format": { "type": "string", "enum": ["raw", "qcow2", "vmdk"], "description": "Disk format (optional)" },
+                        "extra_options": { "type": "string", "description": "Extra options string (e.g. 'discard=on,ssd=1')" }
+                    },
+                    "required": ["node", "vmid", "device", "storage", "size_gb"]
+                }
+            }),
+            json!({
+                "name": "remove_disk",
+                "description": "Remove (detach/delete) a virtual disk",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "device": { "type": "string", "description": "Device name to remove (e.g. 'scsi1')" }
+                    },
+                    "required": ["node", "vmid", "device"]
+                }
+            }),
+            json!({
+                "name": "add_network",
+                "description": "Add a network interface",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "device": { "type": "string", "description": "Interface ID (e.g. 'net1')" },
+                        "bridge": { "type": "string", "description": "Bridge to attach to (e.g. 'vmbr0')" },
+                        "model": { "type": "string", "description": "Model (e.g. 'virtio', 'e1000')" },
+                        "mac": { "type": "string", "description": "MAC address (optional)" },
+                        "extra_options": { "type": "string", "description": "Extra options string" }
+                    },
+                    "required": ["node", "vmid", "device", "bridge"]
+                }
+            }),
+            json!({
+                "name": "remove_network",
+                "description": "Remove a network interface",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "device": { "type": "string", "description": "Interface ID to remove (e.g. 'net1')" }
+                    },
+                    "required": ["node", "vmid", "device"]
+                }
+            }),
+            json!({
+                "name": "get_node_stats",
+                "description": "Get RRD statistics for a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe (default: hour)" },
+                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function (default: AVERAGE)" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "get_vm_stats",
+                "description": "Get RRD statistics for a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe (default: hour)" },
+                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function (default: AVERAGE)" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "read_task_log",
+                "description": "Read the log of a specific task (UPID)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "upid": { "type": "string", "description": "Unique Process ID" }
+                    },
+                    "required": ["node", "upid"]
+                }
+            }),
+            json!({
+                "name": "get_vm_config",
+                "description": "Get the configuration of a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
         ]
+    }
+
+    async fn handle_resource_read(&self, uri: &str) -> Result<Value> {
+        match uri {
+            "proxmox://vms" => {
+                let vms = self.client.get_all_vms().await?;
+                let content = serde_json::to_string_pretty(&vms)?;
+                Ok(json!({
+                    "contents": [{
+                        "uri": uri,
+                        "mimeType": "application/json",
+                        "text": content
+                    }]
+                }))
+            }
+            _ => anyhow::bail!("Resource not found: {}", uri),
+        }
     }
 
     pub async fn call_tool(&self, name: &str, args: &Value) -> Result<Value> {
@@ -530,8 +870,431 @@ impl McpServer {
             "delete_snapshot" => self.handle_snapshot_delete(args).await,
             "clone_vm" => self.handle_clone(args).await,
             "migrate_vm" => self.handle_migrate(args).await,
+            "list_backups" => self.handle_list_backups(args).await,
+            "create_backup" => self.handle_create_backup(args).await,
+            "restore_backup" => self.handle_restore_backup(args).await,
+            "get_task_status" => self.handle_get_task_status(args).await,
+            "list_tasks" => self.handle_list_tasks(args).await,
+            "wait_for_task" => self.handle_wait_for_task(args).await,
+            "list_networks" => self.handle_list_networks(args).await,
+            "list_storage" => self.handle_list_storage(args).await,
+            "list_isos" => self.handle_list_isos(args).await,
+            "get_cluster_status" => self.handle_get_cluster_status(args).await,
+            "get_cluster_log" => self.handle_get_cluster_log(args).await,
+            "list_firewall_rules" => self.handle_list_firewall_rules(args).await,
+            "add_firewall_rule" => self.handle_add_firewall_rule(args).await,
+            "delete_firewall_rule" => self.handle_delete_firewall_rule(args).await,
+            "add_disk" => self.handle_add_disk(args).await,
+            "remove_disk" => self.handle_remove_disk(args).await,
+            "add_network" => self.handle_add_network(args).await,
+            "remove_network" => self.handle_remove_network(args).await,
+            "get_node_stats" => self.handle_get_node_stats(args).await,
+            "get_vm_stats" => self.handle_get_vm_stats(args).await,
+            "read_task_log" => self.handle_read_task_log(args).await,
+            "get_vm_config" => self.handle_get_vm_config(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_get_node_stats(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let timeframe = args.get("timeframe").and_then(|v| v.as_str());
+        let cf = args.get("cf").and_then(|v| v.as_str());
+
+        let stats = self.client.get_node_stats(node, timeframe, cf).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&stats)? }] }),
+        )
+    }
+
+    async fn handle_get_vm_stats(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let timeframe = args.get("timeframe").and_then(|v| v.as_str());
+        let cf = args.get("cf").and_then(|v| v.as_str());
+
+        let stats = self
+            .client
+            .get_resource_stats(node, vmid, vm_type, timeframe, cf)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&stats)? }] }),
+        )
+    }
+
+    async fn handle_add_disk(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let device = args
+            .get("device")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+        let size_gb = args
+            .get("size_gb")
+            .and_then(|v| v.as_u64())
+            .ok_or(anyhow::anyhow!("Missing size_gb"))?;
+
+        let format = args.get("format").and_then(|v| v.as_str());
+        let extra_options = args.get("extra_options").and_then(|v| v.as_str());
+
+        self.client
+            .add_virtual_disk(
+                node,
+                vmid,
+                vm_type,
+                device,
+                storage,
+                size_gb,
+                format,
+                extra_options,
+            )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Disk {} added to {} {}", device, vm_type, vmid) }] }),
+        )
+    }
+
+    async fn handle_remove_disk(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let device = args
+            .get("device")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device"))?;
+
+        self.client
+            .remove_virtual_disk(node, vmid, vm_type, device)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Disk {} removed from {} {}", device, vm_type, vmid) }] }),
+        )
+    }
+
+    async fn handle_add_network(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let device = args
+            .get("device")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device"))?;
+        let bridge = args
+            .get("bridge")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing bridge"))?;
+
+        let model = args.get("model").and_then(|v| v.as_str());
+        let mac = args.get("mac").and_then(|v| v.as_str());
+        let extra_options = args.get("extra_options").and_then(|v| v.as_str());
+
+        self.client
+            .add_network_interface(
+                node,
+                vmid,
+                vm_type,
+                device,
+                model,
+                bridge,
+                mac,
+                extra_options,
+            )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Network interface {} added to {} {}", device, vm_type, vmid) }] }),
+        )
+    }
+
+    async fn handle_remove_network(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let device = args
+            .get("device")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device"))?;
+
+        self.client
+            .remove_network_interface(node, vmid, vm_type, device)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Network interface {} removed from {} {}", device, vm_type, vmid) }] }),
+        )
+    }
+
+    async fn handle_list_firewall_rules(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str());
+        let vmid = args.get("vmid").and_then(|v| v.as_i64());
+
+        let rules = self.client.get_firewall_rules(node, vmid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&rules)? }] }),
+        )
+    }
+
+    async fn handle_add_firewall_rule(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str());
+        let vmid = args.get("vmid").and_then(|v| v.as_i64());
+
+        // Construct params object excluding node/vmid
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("vmid");
+
+        self.client
+            .add_firewall_rule(node, vmid, &Value::Object(params))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Firewall rule added" }] }))
+    }
+
+    async fn handle_delete_firewall_rule(&self, args: &Value) -> Result<Value> {
+        let node = args.get("node").and_then(|v| v.as_str());
+        let vmid = args.get("vmid").and_then(|v| v.as_i64());
+        let pos = args
+            .get("pos")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing rule position"))?;
+
+        self.client.delete_firewall_rule(node, vmid, pos).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Firewall rule {} deleted", pos) }] }),
+        )
+    }
+
+    async fn handle_get_cluster_status(&self, _args: &Value) -> Result<Value> {
+        let status = self.client.get_cluster_status().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
+        )
+    }
+
+    async fn handle_get_cluster_log(&self, args: &Value) -> Result<Value> {
+        let limit = args.get("limit").and_then(|v| v.as_u64());
+        let log = self.client.get_cluster_log(limit).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&log)? }] }))
+    }
+
+    async fn handle_list_storage(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+
+        let storage = self.client.get_storage_list(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&storage)? }] }),
+        )
+    }
+
+    async fn handle_list_isos(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+
+        let isos = self
+            .client
+            .get_storage_content(node, storage, Some("iso"))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&isos)? }] }))
+    }
+
+    async fn handle_list_networks(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+
+        let networks = self.client.get_network_interfaces(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&networks)? }] }),
+        )
+    }
+
+    async fn handle_get_task_status(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = args
+            .get("upid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing upid"))?;
+
+        let status = self.client.get_task_status(node, upid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
+        )
+    }
+
+    async fn handle_list_tasks(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let limit = args.get("limit").and_then(|v| v.as_u64());
+
+        let tasks = self.client.list_tasks(node, limit).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&tasks)? }] }),
+        )
+    }
+
+    async fn handle_wait_for_task(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = args
+            .get("upid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing upid"))?;
+        let timeout = args.get("timeout").and_then(|v| v.as_u64()).unwrap_or(60);
+
+        let start_time = std::time::Instant::now();
+        let timeout_duration = std::time::Duration::from_secs(timeout);
+
+        loop {
+            if start_time.elapsed() > timeout_duration {
+                anyhow::bail!("Timeout waiting for task {}", upid);
+            }
+
+            let status = self.client.get_task_status(node, upid).await?;
+            // Status object has "status": "stopped" when done.
+            // Also check "exitstatus": "OK" or "ERROR..."
+
+            if let Some(s) = status.get("status").and_then(|v| v.as_str()) {
+                if s == "stopped" {
+                    let exit_status = status
+                        .get("exitstatus")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown");
+
+                    return Ok(
+                        json!({ "content": [{ "type": "text", "text": format!("Task finished with status: {}\nFull details:\n{}", exit_status, serde_json::to_string_pretty(&status)?) }] }),
+                    );
+                }
+            }
+
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
+    }
+
+    async fn handle_list_backups(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+        let vmid = args.get("vmid").and_then(|v| v.as_i64());
+
+        let backups = self.client.get_backups(node, storage, vmid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&backups)? }] }),
+        )
+    }
+
+    async fn handle_create_backup(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        let storage = args.get("storage").and_then(|v| v.as_str());
+        let mode = args.get("mode").and_then(|v| v.as_str());
+        let compress = args.get("compress").and_then(|v| v.as_str());
+        let remove = args.get("remove").and_then(|v| v.as_bool());
+
+        let res = self
+            .client
+            .create_backup(node, vmid, storage, mode, compress, remove)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Backup initiated. UPID: {}", res) }] }),
+        )
+    }
+
+    async fn handle_restore_backup(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let archive = args
+            .get("archive")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing archive"))?;
+        let vm_type = args
+            .get("type")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing type"))?;
+
+        let storage = args.get("storage").and_then(|v| v.as_str());
+        let force = args.get("force").and_then(|v| v.as_bool());
+
+        let res = self
+            .client
+            .restore_backup(node, vmid, vm_type, archive, storage, force)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Restore initiated. UPID: {}", res) }] }),
+        )
     }
 
     async fn handle_clone(&self, args: &Value) -> Result<Value> {
@@ -844,6 +1607,45 @@ impl McpServer {
         let res = self.client.vm_action(node, vmid, action, vm_type).await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Action '{}' initiated. UPID: {}", action, res) }] }),
+        )
+    }
+
+    async fn handle_read_task_log(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = args
+            .get("upid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing upid"))?;
+
+        let log_entries = self.client.get_task_log(node, upid).await?;
+        let mut log_text = String::new();
+        for entry in log_entries {
+            if let Some(line) = entry.get("t").and_then(|v| v.as_str()) {
+                log_text.push_str(line);
+                log_text.push('\n');
+            }
+        }
+
+        Ok(json!({ "content": [{ "type": "text", "text": log_text }] }))
+    }
+
+    async fn handle_get_vm_config(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+
+        let config = self.client.get_vm_config(node, vmid, vm_type).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&config)? }] }),
         )
     }
 }

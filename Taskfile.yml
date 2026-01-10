@@ -2,6 +2,11 @@
 version: '3'
 
 tasks:
+  clippy:
+    desc: Run cargo clippy
+    cmds:
+      - cargo clippy --workspace --all-targets --all-features -- -D warnings
+
   default:
     cmds:
       - task -l
@@ -9,7 +14,7 @@ tasks:
     desc: Install dependencies
     cmds:
       - cargo install cross --git https://github.com/cross-rs/cross
-      
+
   build:
     desc: Build the project for all supported architectures (requires cross)
     cmds:
@@ -69,19 +74,30 @@ tasks:
       - cargo check
 
   test:
-    desc: Run all tests
+    desc: Run all tests (fmt, lint, and unit tests)
     cmds:
+      - task: fmt:check
+      - task: lint
       - cargo test
+      - task: clippy
 
   test:ci:
     desc: Run tests using the CI profile
     cmds:
+      - task: fmt:check
+      - task: lint
       - cargo test --profile ci
+      - task: clippy
 
   fmt:
     desc: Format code with rustfmt
     cmds:
-      - cargo fmt
+      - cargo fmt --all
+
+  fmt:check:
+    desc: Check code formatting with rustfmt
+    cmds:
+      - cargo fmt -- --check
 
   lint:
     desc: Lint code with clippy

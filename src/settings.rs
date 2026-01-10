@@ -24,6 +24,7 @@ pub struct Settings {
     pub server_type: Option<String>,
     pub http_host: Option<String>,
     pub http_port: Option<u16>,
+    pub http_auth_token: Option<String>,
 }
 
 impl Settings {
@@ -129,6 +130,7 @@ mod tests {
             server_type: None,
             http_host: None,
             http_port: None,
+            http_auth_token: None,
         };
         assert!(s.validate().is_err());
     }
@@ -151,6 +153,7 @@ mod tests {
             server_type: None,
             http_host: None,
             http_port: None,
+            http_auth_token: None,
         };
         assert!(s.validate().is_ok());
     }
@@ -173,6 +176,7 @@ mod tests {
             server_type: None,
             http_host: None,
             http_port: None,
+            http_auth_token: None,
         };
         assert!(s.validate().is_err());
     }

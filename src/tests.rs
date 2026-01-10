@@ -529,4 +529,447 @@ mod tests {
         assert!(content.contains("Resource config updated"));
         assert!(content.contains("Disk rootfs resize initiated"));
     }
+
+    #[tokio::test]
+    async fn test_backup_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_backups
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/storage/local/content"))
+            // .and(query_param("content", "backup"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "volid": "local:backup/vzdump-qemu-100-2022.vma.zst", "content": "backup", "vmid": 100 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock create_backup
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/vzdump"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock restore_backup (qemu)
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test List
+        let args = json!({ "node": "pve1", "storage": "local" });
+        let res = server.call_tool("list_backups", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("vzdump-qemu"));
+
+        // Test Create
+        let args = json!({ "node": "pve1", "vmid": 100, "mode": "snapshot", "compress": "zstd" });
+        let res = server.call_tool("create_backup", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Backup initiated"));
+
+        // Test Restore
+        let args = json!({
+            "node": "pve1",
+            "vmid": 105,
+            "archive": "local:backup/vzdump-qemu-100.vma.zst",
+            "type": "qemu",
+            "storage": "local-lvm"
+        });
+        let res = server.call_tool("restore_backup", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Restore initiated"));
+    }
+
+    #[tokio::test]
+    async fn test_task_monitoring() {
+        let mock_server = MockServer::start().await;
+
+        let upid = "UPID:pve1:00000000:00000000:00000000:test:qmstart:100:root@pam:";
+
+        // Mock running status
+        Mock::given(method("GET"))
+            .and(path(format!("/api2/json/nodes/pve1/tasks/{}/status", upid)))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "status": "stopped", "exitstatus": "OK" }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test get_task_status
+        let args = json!({ "node": "pve1", "upid": upid });
+        let res = server.call_tool("get_task_status", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("stopped"));
+
+        // Test wait_for_task (should return immediately because we mocked stopped)
+        let args = json!({ "node": "pve1", "upid": upid, "timeout": 5 });
+        let res = server.call_tool("wait_for_task", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Task finished"));
+    }
+
+    #[tokio::test]
+    async fn test_list_networks() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/network"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "iface": "vmbr0", "type": "bridge", "active": 1 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("list_networks", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("vmbr0"));
+    }
+
+    #[tokio::test]
+    async fn test_storage_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_storage
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/storage"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "storage": "local", "content": "iso,vztmpl,backup", "type": "dir", "active": 1 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock list_isos
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/storage/local/content"))
+            // .and(query_param("content", "iso"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "volid": "local:iso/debian-11.0.0-amd64-netinst.iso", "content": "iso" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test list_storage
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("list_storage", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("local"));
+
+        // Test list_isos
+        let args = json!({ "node": "pve1", "storage": "local" });
+        let res = server.call_tool("list_isos", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("debian"));
+    }
+
+    #[tokio::test]
+    async fn test_resources() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "vmid": 100, "node": "pve1", "type": "qemu", "status": "running" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test resources/list via handle_request
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "resources/list".to_string(),
+            params: None,
+            id: Some(json!(1)),
+        };
+        let res = server.handle_request(req).await.unwrap();
+        let resources = res["resources"].as_array().unwrap();
+        assert!(resources.iter().any(|r| r["uri"] == "proxmox://vms"));
+
+        // Test resources/read
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "resources/read".to_string(),
+            params: Some(json!({ "uri": "proxmox://vms" })),
+            id: Some(json!(2)),
+        };
+        let res = server.handle_request(req).await.unwrap();
+        let text = res["contents"][0]["text"].as_str().unwrap();
+        assert!(text.contains("100"));
+        assert!(text.contains("running"));
+    }
+
+    #[tokio::test]
+    async fn test_cluster_tools() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/status"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "name": "pve1", "type": "node", "status": "online" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/log"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "msg": "cluster ready" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        let res = server
+            .call_tool("get_cluster_status", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("pve1"));
+
+        let res = server
+            .call_tool("get_cluster_log", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("cluster ready"));
+    }
+
+    #[tokio::test]
+    async fn test_firewall_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_firewall_rules (Cluster)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/firewall/rules"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "pos": 0, "type": "in", "action": "ACCEPT", "comment": "Allow SSH" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock add_firewall_rule (VM)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "vmid": 100, "node": "pve1", "type": "qemu", "status": "running" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/firewall/rules"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock delete_firewall_rule (Cluster)
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/cluster/firewall/rules/0"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test list (Cluster)
+        let res = server
+            .call_tool("list_firewall_rules", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Allow SSH"));
+
+        // Test add (VM)
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "type": "in",
+            "action": "DROP",
+            "proto": "tcp",
+            "dport": "80"
+        });
+        let res = server.call_tool("add_firewall_rule", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
+
+        // Test delete (Cluster)
+        let args = json!({ "pos": 0 });
+        let res = server
+            .call_tool("delete_firewall_rule", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
+    }
+
+    #[tokio::test]
+    async fn test_hardware_config() {
+        let mock_server = MockServer::start().await;
+
+        // Mock Update Config (Generic success for all calls)
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // 1. Add Disk
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device": "scsi1",
+            "storage": "local-lvm",
+            "size_gb": 32,
+            "format": "qcow2"
+        });
+        let res = server.call_tool("add_disk", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
+
+        // 2. Remove Disk
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device": "scsi1"
+        });
+        let res = server.call_tool("remove_disk", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("removed"));
+
+        // 3. Add Network
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device": "net1",
+            "bridge": "vmbr0",
+            "model": "virtio"
+        });
+        let res = server.call_tool("add_network", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
+
+        // 4. Remove Network
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device": "net1"
+        });
+        let res = server.call_tool("remove_network", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("removed"));
+    }
+
+    #[tokio::test]
+    async fn test_rrd_stats() {
+        let mock_server = MockServer::start().await;
+
+        // Mock Node Stats
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/rrddata"))
+            // .and(query_param("timeframe", "hour"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "time": 1000, "cpu": 0.1 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock VM Stats
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/rrddata"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "time": 1000, "cpu": 0.5 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // 1. Get Node Stats
+        let args = json!({ "node": "pve1", "timeframe": "hour" });
+        let res = server.call_tool("get_node_stats", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("0.1"));
+
+        // 2. Get VM Stats
+        let args = json!({ "node": "pve1", "vmid": 100, "type": "qemu", "timeframe": "day" });
+        let res = server.call_tool("get_vm_stats", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("0.5"));
+    }
 }

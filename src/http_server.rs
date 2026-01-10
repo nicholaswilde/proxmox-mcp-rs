@@ -1,8 +1,10 @@
+use axum::http::StatusCode;
 use axum::{
-    extract::{Query, State},
+    extract::{Query, Request, State},
+    middleware::{self, Next},
     response::{
         sse::{Event, Sse},
-        IntoResponse,
+        IntoResponse, Response,
     },
     routing::{get, post},
     Json, Router,
@@ -11,7 +13,7 @@ use dashmap::DashMap;
 use futures::stream::Stream;
 use log::{debug, error, info};
 use serde::Deserialize;
-use std::{convert::Infallible, sync::Arc, time::Duration};
+use std::{collections::HashMap, convert::Infallible, sync::Arc, time::Duration};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -23,6 +25,7 @@ use crate::mcp::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, McpServer};
 struct AppState {
     mcp_server: McpServer,
     sessions: Arc<DashMap<String, mpsc::Sender<Result<Event, Infallible>>>>,
+    auth_token: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -30,15 +33,25 @@ struct MessageParams {
     session_id: String,
 }
 
-pub async fn run_http_server(mcp_server: McpServer, host: &str, port: u16) -> anyhow::Result<()> {
+pub async fn run_http_server(
+    mcp_server: McpServer,
+    host: &str,
+    port: u16,
+    auth_token: Option<String>,
+) -> anyhow::Result<()> {
     let state = AppState {
         mcp_server,
         sessions: Arc::new(DashMap::new()),
+        auth_token,
     };
 
     let app = Router::new()
         .route("/sse", get(sse_handler))
         .route("/message", post(message_handler))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .with_state(state);
@@ -133,4 +146,145 @@ async fn message_handler(
 
     // Return 202 Accepted immediately
     (axum::http::StatusCode::ACCEPTED, "Accepted").into_response()
+}
+
+async fn auth_middleware(
+    State(state): State<AppState>,
+    req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    if let Some(ref token) = state.auth_token {
+        // 1. Check Header
+        if let Some(auth_header) = req.headers().get("Authorization") {
+            if let Ok(auth_str) = auth_header.to_str() {
+                if auth_str == format!("Bearer {}", token) {
+                    return Ok(next.run(req).await);
+                }
+            }
+        }
+
+        // 2. Check Query Param
+        if let Some(query) = req.uri().query() {
+            let params: HashMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
+                .into_owned()
+                .collect();
+
+            if let Some(t) = params.get("token") {
+                if t == token {
+                    return Ok(next.run(req).await);
+                }
+            }
+        }
+
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    Ok(next.run(req).await)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use tower::ServiceExt; // for oneshot
+
+    fn create_test_app(token: Option<String>) -> Router {
+        // Create a dummy McpServer
+        // We can't easily create a real McpServer without network, but for middleware testing
+        // we just need the State to exist.
+        // We'll create a dummy ProxmoxClient (it won't be used by middleware).
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mcp_server = McpServer::new(client);
+
+        let state = AppState {
+            mcp_server,
+            sessions: Arc::new(DashMap::new()),
+            auth_token: token,
+        };
+
+        Router::new()
+            .route("/test", get(|| async { "ok" }))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                auth_middleware,
+            ))
+            .with_state(state)
+    }
+
+    #[tokio::test]
+    async fn test_auth_no_token_configured() {
+        let app = create_test_app(None);
+
+        let req = Request::builder().uri("/test").body(Body::empty()).unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_auth_token_missing() {
+        let app = create_test_app(Some("secret".to_string()));
+
+        let req = Request::builder().uri("/test").body(Body::empty()).unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_auth_token_header_valid() {
+        let app = create_test_app(Some("secret".to_string()));
+
+        let req = Request::builder()
+            .uri("/test")
+            .header("Authorization", "Bearer secret")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_auth_token_header_invalid() {
+        let app = create_test_app(Some("secret".to_string()));
+
+        let req = Request::builder()
+            .uri("/test")
+            .header("Authorization", "Bearer wrong")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_auth_token_query_valid() {
+        let app = create_test_app(Some("secret".to_string()));
+
+        let req = Request::builder()
+            .uri("/test?token=secret")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_auth_token_query_invalid() {
+        let app = create_test_app(Some("secret".to_string()));
+
+        let req = Request::builder()
+            .uri("/test?token=wrong")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
 }

@@ -268,6 +268,16 @@ impl ProxmoxClient {
         self.request(Method::PUT, &path, Some(params)).await
     }
 
+    pub async fn get_vm_config(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+    ) -> Result<Value> {
+        let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
+        self.request(Method::GET, &path, None).await
+    }
+
     pub async fn resize_disk(
         &self,
         node: &str,
@@ -280,6 +290,111 @@ impl ProxmoxClient {
         let params = json!({ "disk": disk, "size": size });
         let res: String = self.request(Method::PUT, &path, Some(&params)).await?;
         Ok(res)
+    }
+
+    // --- Hardware Configuration ---
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_virtual_disk(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device: &str, // e.g., "scsi0", "virtio0", "rootfs" (for LXC?)
+        storage: &str,
+        size_gb: u64,
+        format: Option<&str>,        // raw, qcow2, etc. (optional)
+        extra_options: Option<&str>, // e.g. "discard=on"
+    ) -> Result<()> {
+        // Construct value: "storage:size_gb"
+        // For LXC "rootfs": "storage:size_gb" (but usually created at start).
+        // For QEMU: "storage:size_gb,format=..."
+
+        let mut value = format!("{}:{}", storage, size_gb);
+
+        if let Some(fmt) = format {
+            value.push_str(&format!(",format={}", fmt));
+        }
+
+        if let Some(opts) = extra_options {
+            value.push_str(&format!(",{}", opts));
+        }
+
+        let params = json!({ device: value });
+        self.update_config(node, vmid, resource_type, &params).await
+    }
+
+    pub async fn remove_virtual_disk(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device: &str,
+    ) -> Result<()> {
+        let params = json!({ "delete": device });
+        self.update_config(node, vmid, resource_type, &params).await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_network_interface(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device: &str,        // "net0", "net1"
+        model: Option<&str>, // "virtio", "e1000" (QEMU only)
+        bridge: &str,
+        mac: Option<&str>,
+        extra_options: Option<&str>,
+    ) -> Result<()> {
+        // QEMU: net0: virtio=AABB...,bridge=vmbr0
+        // LXC: net0: name=eth0,bridge=vmbr0,...
+
+        let mut value = String::new();
+
+        if resource_type == "qemu" {
+            let m = model.unwrap_or("virtio");
+            // virtio=MAC (if mac provided) or just virtio
+            if let Some(addr) = mac {
+                value.push_str(&format!("{}={},bridge={}", m, addr, bridge));
+            } else {
+                value.push_str(&format!("{},bridge={}", m, bridge));
+            }
+        } else {
+            // LXC
+            value.push_str(&format!(
+                "name=eth{},bridge={}",
+                device.replace("net", ""),
+                bridge
+            ));
+            if let Some(addr) = mac {
+                value.push_str(&format!(",hwaddr={}", addr));
+            }
+            if let Some(m) = model {
+                // LXC doesn't really use model in the same way, usually 'type=veth' is default
+                if m != "virtio" {
+                    value.push_str(&format!(",type={}", m));
+                }
+            }
+        }
+
+        if let Some(opts) = extra_options {
+            value.push_str(&format!(",{}", opts));
+        }
+
+        let params = json!({ device: value });
+        self.update_config(node, vmid, resource_type, &params).await
+    }
+
+    pub async fn remove_network_interface(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device: &str,
+    ) -> Result<()> {
+        let params = json!({ "delete": device });
+        self.update_config(node, vmid, resource_type, &params).await
     }
 
     // --- Snapshot Management ---
@@ -409,5 +524,285 @@ impl ProxmoxClient {
 
         let res: String = self.request(Method::POST, &path, Some(&params)).await?;
         Ok(res)
+    }
+
+    // --- Backup Management ---
+
+    pub async fn get_backups(
+        &self,
+        node: &str,
+        storage: &str,
+        vmid: Option<i64>,
+    ) -> Result<Vec<Value>> {
+        let backups = self
+            .get_storage_content(node, storage, Some("backup"))
+            .await?;
+        if let Some(id) = vmid {
+            let filtered = backups
+                .into_iter()
+                .filter(|b| {
+                    // Check 'vmid' field if available
+                    if let Some(bid) = b.get("vmid").and_then(|v| v.as_i64()) {
+                        return bid == id;
+                    }
+                    // Fallback: parse from volid (e.g., backup/vzdump-qemu-100-...)
+                    if let Some(volid) = b.get("volid").and_then(|v| v.as_str()) {
+                        return volid.contains(&format!("-{}", id));
+                    }
+                    false
+                })
+                .collect();
+            Ok(filtered)
+        } else {
+            Ok(backups)
+        }
+    }
+
+    pub async fn create_backup(
+        &self,
+        node: &str,
+        vmid: i64,
+        storage: Option<&str>,
+        mode: Option<&str>,
+        compress: Option<&str>,
+        remove: Option<bool>,
+    ) -> Result<String> {
+        let path = format!("nodes/{}/vzdump", node);
+        let mut params = json!({ "vmid": vmid });
+
+        if let Some(s) = storage {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("storage".to_string(), json!(s));
+        }
+        if let Some(m) = mode {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("mode".to_string(), json!(m));
+        }
+        if let Some(c) = compress {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("compress".to_string(), json!(c));
+        }
+        if let Some(r) = remove {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("remove".to_string(), json!(if r { 1 } else { 0 }));
+        }
+
+        let res: String = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(res)
+    }
+
+    // Restore behaves differently for QEMU (qmrestore) and LXC (pct restore)
+    // usually POST /nodes/{node}/{type} with archive={volid} and vmid={vmid}
+    pub async fn restore_backup(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        archive: &str,
+        storage: Option<&str>,
+        force: Option<bool>,
+    ) -> Result<String> {
+        // resource_type should be "qemu" or "lxc"
+        let path = format!("nodes/{}/{}", node, resource_type);
+
+        let mut params = json!({
+            "vmid": vmid,
+            "archive": archive,
+            "restore": 1
+        });
+
+        // For LXC, 'restore' param is implicitly handled by having 'archive' in create call?
+        // Actually for QEMU: POST /nodes/{node}/qemu with 'archive' creates from backup.
+        // For LXC: POST /nodes/{node}/lxc with 'ostemplate' as the backup file creates from backup.
+        // But 'ostemplate' field is used for templates AND backups in LXC create.
+
+        if resource_type == "lxc" {
+            params.as_object_mut().unwrap().remove("archive");
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("ostemplate".to_string(), json!(archive));
+        }
+
+        if let Some(s) = storage {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("storage".to_string(), json!(s));
+        }
+        if let Some(f) = force {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("force".to_string(), json!(if f { 1 } else { 0 }));
+        }
+
+        let res: String = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(res)
+    }
+
+    // --- Task Monitoring ---
+
+    pub async fn get_task_status(&self, node: &str, upid: &str) -> Result<Value> {
+        let path = format!("nodes/{}/tasks/{}/status", node, upid);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn get_task_log(&self, node: &str, upid: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/tasks/{}/log", node, upid);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn list_tasks(&self, node: &str, limit: Option<u64>) -> Result<Vec<Value>> {
+        let mut path = format!("nodes/{}/tasks", node);
+        if let Some(l) = limit {
+            path.push_str(&format!("?limit={}", l));
+        }
+        self.request(Method::GET, &path, None).await
+    }
+
+    // --- Network Management ---
+
+    pub async fn get_network_interfaces(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/network", node);
+        self.request(Method::GET, &path, None).await
+    }
+
+    // --- Storage & ISO Management ---
+
+    pub async fn get_storage_list(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/storage", node);
+        self.request(Method::GET, &path, None).await
+    }
+
+    // --- Cluster Management ---
+
+    pub async fn get_cluster_status(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "cluster/status", None).await
+    }
+
+    pub async fn get_cluster_log(&self, limit: Option<u64>) -> Result<Vec<Value>> {
+        let mut path = "cluster/log".to_string();
+        if let Some(l) = limit {
+            path.push_str(&format!("?max={}", l));
+        }
+        self.request(Method::GET, &path, None).await
+    }
+
+    // --- Firewall Management ---
+
+    pub async fn get_firewall_rules(
+        &self,
+        node: Option<&str>,
+        vmid: Option<i64>,
+    ) -> Result<Vec<Value>> {
+        let path = if let (Some(n), Some(id)) = (node, vmid) {
+            // Determine type first (hacky, but we need type for path).
+            // Actually, we usually need the type to construct the path correctly:
+            // /nodes/{node}/{type}/{vmid}/firewall/rules
+            // We can try to find the VM location to get the type.
+            let (_, vm_type) = self.find_vm_location(id).await?;
+            format!("nodes/{}/{}/{}/firewall/rules", n, vm_type, id)
+        } else if let Some(n) = node {
+            format!("nodes/{}/firewall/rules", n)
+        } else {
+            "cluster/firewall/rules".to_string()
+        };
+
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn add_firewall_rule(
+        &self,
+        node: Option<&str>,
+        vmid: Option<i64>,
+        params: &Value,
+    ) -> Result<()> {
+        let path = if let (Some(n), Some(id)) = (node, vmid) {
+            let (_, vm_type) = self.find_vm_location(id).await?;
+            format!("nodes/{}/{}/{}/firewall/rules", n, vm_type, id)
+        } else if let Some(n) = node {
+            format!("nodes/{}/firewall/rules", n)
+        } else {
+            "cluster/firewall/rules".to_string()
+        };
+
+        self.request(Method::POST, &path, Some(params)).await
+    }
+
+    pub async fn delete_firewall_rule(
+        &self,
+        node: Option<&str>,
+        vmid: Option<i64>,
+        pos: i64,
+    ) -> Result<()> {
+        let path = if let (Some(n), Some(id)) = (node, vmid) {
+            let (_, vm_type) = self.find_vm_location(id).await?;
+            format!("nodes/{}/{}/{}/firewall/rules/{}", n, vm_type, id, pos)
+        } else if let Some(n) = node {
+            format!("nodes/{}/firewall/rules/{}", n, pos)
+        } else {
+            format!("cluster/firewall/rules/{}", pos)
+        };
+
+        self.request(Method::DELETE, &path, None).await
+    }
+
+    // --- Statistics (RRD) ---
+
+    pub async fn get_node_stats(
+        &self,
+        node: &str,
+        timeframe: Option<&str>,
+        cf: Option<&str>,
+    ) -> Result<Vec<Value>> {
+        let mut path = format!("nodes/{}/rrddata", node);
+        let mut query = Vec::new();
+        if let Some(tf) = timeframe {
+            query.push(format!("timeframe={}", tf));
+        }
+        if let Some(c) = cf {
+            query.push(format!("cf={}", c));
+        }
+
+        if !query.is_empty() {
+            path.push('?');
+            path.push_str(&query.join("&"));
+        }
+
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn get_resource_stats(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        timeframe: Option<&str>,
+        cf: Option<&str>,
+    ) -> Result<Vec<Value>> {
+        let mut path = format!("nodes/{}/{}/{}/rrddata", node, resource_type, vmid);
+        let mut query = Vec::new();
+        if let Some(tf) = timeframe {
+            query.push(format!("timeframe={}", tf));
+        }
+        if let Some(c) = cf {
+            query.push(format!("cf={}", c));
+        }
+
+        if !query.is_empty() {
+            path.push('?');
+            path.push_str(&query.join("&"));
+        }
+
+        self.request(Method::GET, &path, None).await
     }
 }

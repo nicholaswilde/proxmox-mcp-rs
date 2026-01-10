@@ -100,6 +100,10 @@ struct Args {
     /// HTTP Port (only for http type)
     #[arg(short = 'l', long, env = "PROXMOX_HTTP_PORT")]
     http_port: Option<u16>,
+
+    /// HTTP Auth Token (only for http type)
+    #[arg(long, env = "PROXMOX_HTTP_AUTH_TOKEN")]
+    http_auth_token: Option<String>,
 }
 
 #[tokio::main]
@@ -191,6 +195,9 @@ async fn main() {
     if let Some(hp) = args.http_port {
         settings.http_port = Some(hp);
     }
+    if let Some(token) = args.http_auth_token {
+        settings.http_auth_token = Some(token);
+    }
 
     // We don't override log settings in `settings` struct because we used them directly from CLI args
     // to initialize logging BEFORE loading other settings (so we can log config errors).
@@ -211,6 +218,7 @@ async fn main() {
     let server_type = settings.server_type.unwrap_or_else(|| "stdio".to_string());
     let http_host = settings.http_host.unwrap_or_else(|| "0.0.0.0".to_string());
     let http_port = settings.http_port.unwrap_or(3000);
+    let http_auth_token = settings.http_auth_token;
 
     info!("Connecting to Proxmox at {}:{}", host, port);
 
@@ -243,7 +251,9 @@ async fn main() {
                 "Starting MCP Server (HTTP transport) on {}:{}...",
                 http_host, http_port
             );
-            if let Err(e) = http_server::run_http_server(server, &http_host, http_port).await {
+            if let Err(e) =
+                http_server::run_http_server(server, &http_host, http_port, http_auth_token).await
+            {
                 error!("HTTP Server error: {}", e);
                 process::exit(1);
             }

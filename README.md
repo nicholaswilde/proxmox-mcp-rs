@@ -33,6 +33,27 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
   - `delete_snapshot`: Delete a snapshot of a VM or Container.
   - `clone_vm`: Clone a VM or Container.
   - `migrate_vm`: Migrate a VM or Container to another node.
+  - `list_backups`: List backups on a storage.
+  - `create_backup`: Create a backup (vzdump).
+  - `restore_backup`: Restore a VM or Container from a backup.
+  - `get_task_status`: Get the status of a specific task (UPID).
+  - `wait_for_task`: Wait for a task to finish (with timeout).
+  - `list_networks`: List network interfaces and bridges on a node.
+  - `list_storage`: List all storage on a node.
+  - `list_isos`: List ISO images on a specific storage.
+  - `get_cluster_status`: Get cluster status information.
+  - `get_cluster_log`: Read cluster log.
+  - `list_firewall_rules`: List firewall rules.
+  - `add_firewall_rule`: Add a firewall rule.
+  - `delete_firewall_rule`: Delete a firewall rule.
+  - `add_disk`: Add a virtual disk to a VM or Container.
+  - `remove_disk`: Remove (detach/delete) a virtual disk.
+  - `add_network`: Add a network interface to a VM or Container.
+  - `remove_network`: Remove a network interface.
+  - `get_node_stats`: Get RRD statistics for a node.
+  - `get_vm_stats`: Get RRD statistics for a VM or Container.
+- **Resources:**
+  - `proxmox://vms`: Live JSON list of all VMs and Containers.
 
 ## :hammer_and_wrench: Build
 
@@ -98,6 +119,7 @@ Arguments:
 - `--server-type`, `-t`: Server type (`stdio` or `http`) (default: `stdio`).
 - `--http-host`: HTTP Listen Host (default: `0.0.0.0`).
 - `--http-port`, `-l`: HTTP Listen Port (default: `3000`).
+- `--http-auth-token`: HTTP Auth Token (Bearer or query param).
 ---
 - `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
 - `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
@@ -126,6 +148,7 @@ You can also configure the server using environment variables:
 - `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
 - `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
 - `PROXMOX_HTTP_PORT` (default: `3000`)
+- `PROXMOX_HTTP_AUTH_TOKEN`
 
 ### :robot: Configuration Example (Claude Desktop)
 
