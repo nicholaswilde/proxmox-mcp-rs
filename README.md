@@ -37,7 +37,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
   - `create_backup`: Create a backup (vzdump).
   - `restore_backup`: Restore a VM or Container from a backup.
   - `get_task_status`: Get the status of a specific task (UPID).
+  - `list_tasks`: List recent tasks on a node.
+  - `read_task_log`: Read the log of a specific task (UPID).
   - `wait_for_task`: Wait for a task to finish (with timeout).
+  - `get_vm_config`: Get the configuration of a VM or Container.
   - `list_networks`: List network interfaces and bridges on a node.
   - `list_storage`: List all storage on a node.
   - `list_isos`: List ISO images on a specific storage.
