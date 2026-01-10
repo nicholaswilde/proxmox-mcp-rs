@@ -1,3 +1,4 @@
+---
 # Based on ripgrep's release action:
 # https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml
 
@@ -239,8 +240,7 @@ jobs:
 
     - name: Upload release archive
       uses: softprops/action-gh-release@v2
-      # if: startsWith(github.ref, 'refs/tags/')
-      # if: github.ref_type == 'tag'
+      if: github.ref_type == 'tag'
       with:
         files: |
           ${{ env.ASSET }}
