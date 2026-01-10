@@ -69,6 +69,21 @@ cargo build --release
 
 The binary will be available at `target/release/proxmox-mcp-rs`.
 
+## :books: Documentation & Completions
+
+### Generating Assets
+You can generate man pages and shell completions (Bash, Zsh, Fish) using the included generator:
+
+```bash
+cargo run --example gen_manual
+```
+
+The assets will be created in the `assets/` directory:
+- `assets/man/`: Man pages.
+- `assets/completions/`: Shell completion scripts.
+
+These assets are also bundled with every [GitHub Release](https://github.com/nicholaswilde/proxmox-mcp-rs/releases).
+
 ## :rocket: Usage
 
 You can run the server directly from the command line, or using Docker.
