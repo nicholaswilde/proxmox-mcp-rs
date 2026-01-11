@@ -1,8 +1,12 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 
 #[derive(Parser, Debug)]
 #[command(author, version = env!("PROJECT_VERSION"), about, long_about = None)]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+
     /// Config file path
     #[arg(short, long, env = "PROXMOX_CONFIG")]
     pub config: Option<String>,
@@ -89,4 +93,14 @@ pub struct Args {
     /// HTTP Auth Token (only for http type)
     #[arg(long, env = "PROXMOX_HTTP_AUTH_TOKEN")]
     pub http_auth_token: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum Commands {
+    /// Generate shell completion scripts
+    Completions {
+        /// The shell to generate the script for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }

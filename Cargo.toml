@@ -1,6 +1,6 @@
 [package]
 name = "proxmox-mcp-rs"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
@@ -24,12 +24,14 @@ futures = "0.3"
 tokio-stream = "0.1"
 uuid = { version = "1.0", features = ["v4"] }
 dashmap = "6.1" # For managing active SSE sessions
+clap_complete = "4.5"
+toml = "0.9.11"
+serde_yaml = "0.9.34"
 
 [dev-dependencies]
 tempfile = "3.24.0"
 wiremock = "0.6.5"
 clap_mangen = "0.2"
-clap_complete = "4.5"
 
 # Profile for final production releases (smaller, faster)
 [profile.release]
