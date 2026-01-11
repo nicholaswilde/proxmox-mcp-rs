@@ -1,190 +1,179 @@
+#![allow(clippy::module_inception)]
+
+mod http_server;
+mod mcp;
+mod proxmox;
+mod settings;
+mod tests;
+
 use clap::Parser;
-use serde::Deserialize;
-use serde_json::json;
-use std::error::Error;
-use std::fs;
-use std::path::Path;
-
-// 1. The Config File Structure (Works for JSON, TOML, and YAML)
-#[derive(Deserialize, Debug)]
-struct ConfigFile {
-    api_key: Option<String>,
-    postal_code: Option<String>,
-    species: Option<String>,
-    miles: Option<u32>,
-}
-
-// 2. The CLI Arguments
-#[derive(Parser, Debug)]
-#[command(author, version, about)]
-struct Cli {
-    /// The zip code to search in (Optional on CLI if set in config)
-    postal_code: Option<String>,
-
-    /// Search radius in miles
-    #[arg(short, long)]
-    miles: Option<u32>,
-
-    /// Species to search for
-    #[arg(short, long)]
-    species: Option<String>,
-
-    /// API Key
-    #[arg(long, env = "RESCUE_GROUPS_API_KEY", hide_env_values = true)]
-    api_key: Option<String>,
-
-    /// Path to config file (supports .toml, .yaml, .json)
-    #[arg(long, default_value = "config.toml")]
-    config: String,
-}
-
-// 3. Merged Settings
-struct Settings {
-    api_key: String,
-    postal_code: String,
-    miles: u32,
-    species: String,
-}
-
-// Helper to merge CLI, Env, and File
-fn merge_configuration(cli: Cli) -> Result<Settings, Box<dyn Error>> {
-    let config_path = Path::new(&cli.config);
-    
-    // A. Load config based on extension
-    let file_config: Option<ConfigFile> = if config_path.exists() {
-        let content = fs::read_to_string(config_path)?;
-        let ext = config_path.extension()
-            .and_then(|e| e.to_str())
-            .map(|e| e.to_lowercase())
-            .unwrap_or_default(); // FIX: Changed from unwrap_or_else(|| "".to_string())
-
-        match ext.as_str() {
-            "toml" => Some(toml::from_str(&content)?),
-            "json" => Some(serde_json::from_str(&content)?),
-            "yaml" | "yml" => Some(serde_yaml::from_str(&content)?),
-            _ => return Err(format!("Unsupported config format: .{}", ext).into()),
-        }
-    } else {
-        // Only error if the user explicitly provided a custom path that doesn't exist.
-        // If it's the default "config.toml" and it's missing, just ignore it.
-        if cli.config != "config.toml" {
-             return Err(format!("Config file not found: {}", cli.config).into());
-        }
-        None
-    };
-
-    // B. Priority: CLI -> Config File -> Default
-    let miles = cli.miles
-        .or(file_config.as_ref().and_then(|c| c.miles))
-        .unwrap_or(50);
-
-    let species = cli.species
-        .or(file_config.as_ref().and_then(|c| c.species.clone()))
-        .unwrap_or_else(|| "dogs".to_string());
-
-    let api_key = cli.api_key
-        .or(file_config.as_ref().and_then(|c| c.api_key.clone()))
-        .ok_or("API Key is missing! Provide it via --api-key, RESCUE_GROUPS_API_KEY, or config file")?;
-
-    let postal_code = cli.postal_code
-        .or(file_config.as_ref().and_then(|c| c.postal_code.clone()))
-        .ok_or("Postal Code is missing! Provide it via argument or config file")?;
-
-    Ok(Settings {
-        api_key,
-        postal_code,
-        miles,
-        species,
-    })
-}
-
-async fn fetch_pets(settings: &Settings) -> Result<String, Box<dyn Error>> {
-    let client = reqwest::Client::new();
-    
-    let url = format!(
-        "https://api.rescuegroups.org/v5/public/animals/search/available/{}/haspic",
-        settings.species
-    );
-
-    let body = json!({
-        "data": {
-            "filterRadius": {
-                "miles": settings.miles,
-                "postalcode": settings.postal_code
-            }
-        }
-    });
-
-    let response = client
-        .post(&url)
-        .header("Authorization", &settings.api_key)
-        .header("Content-Type", "application/vnd.api+json")
-        .json(&body)
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        return Err(format!("API Request Failed: Status {}", response.status()).into());
-    }
-
-    let data: serde_json::Value = response.json().await?;
-    
-    let animals = data.get("data")
-        .and_then(|d| d.as_array())
-        .ok_or("No 'data' field found in API response")?;
-
-    if animals.is_empty() {
-        return Ok(format!("No adoptable {} found within {} miles of {}.", settings.species, settings.miles, settings.postal_code));
-    }
-
-    let formatted_results: Vec<String> = animals.iter().map(|animal| {
-        let attrs = &animal["attributes"];
-        
-        let name = attrs["name"].as_str().unwrap_or("Unknown Name");
-        let breed = attrs["breedString"].as_str().unwrap_or("Unknown Breed");
-        let sex = attrs["sex"].as_str().unwrap_or("Unknown Sex");
-        let dist = attrs["distance"].as_u64().unwrap_or(0);
-        let profile_url = attrs["url"].as_str().unwrap_or("#");
-
-        let image_markdown = attrs["orgsAnimalsPictures"]
-            .as_array()
-            .and_then(|pics| pics.first())
-            .and_then(|p| p["urlSecureFullsize"].as_str())
-            .map(|img_url| format!("![{}]({})", name, img_url))
-            .unwrap_or_else(|| "(No Image Available)".to_string());
-
-        format!(
-            "### [{name}]({url})\n\
-             **Breed:** {breed} ({sex})\n\
-             **Distance:** {dist} miles away\n\n\
-             {img}\n", 
-            name = name,
-            url = profile_url,
-            breed = breed,
-            sex = sex,
-            dist = dist,
-            img = image_markdown
-        )
-    }).collect();
-
-    Ok(formatted_results.join("\n---\n"))
-}
+use log::{error, info};
+use mcp::McpServer;
+use proxmox::ProxmoxClient;
+use proxmox_mcp_rs::cli::Args;
+use settings::Settings;
+use std::process;
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() {
-    let cli = Cli::parse();
+    let args = Args::parse();
 
-    match merge_configuration(cli) {
-        Ok(settings) => {
-            println!("Searching for {} near {}...", settings.species, settings.postal_code);
-            match fetch_pets(&settings).await {
-                Ok(output) => println!("{}", output),
-                Err(e) => eprintln!("Error: {}", e),
+    // Initialize Logging
+    let _guard = {
+        let filter_layer =
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&args.log_level));
+
+        let stdout_layer = tracing_subscriber::fmt::layer()
+            .with_writer(std::io::stderr)
+            .with_filter(filter_layer.clone());
+
+        let file_layer = if args.log_file_enable {
+            let rotation = match args.log_rotate.to_lowercase().as_str() {
+                "hourly" => Rotation::HOURLY,
+                "never" => Rotation::NEVER,
+                _ => Rotation::DAILY,
+            };
+
+            let file_appender = RollingFileAppender::builder()
+                .rotation(rotation)
+                .filename_prefix(&args.log_filename)
+                .build(&args.log_dir)
+                .expect("Failed to create log file appender");
+
+            let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
+
+            Some((
+                tracing_subscriber::fmt::layer()
+                    .with_writer(non_blocking)
+                    .with_ansi(false)
+                    .with_filter(filter_layer),
+                guard,
+            ))
+        } else {
+            None
+        };
+
+        let registry = tracing_subscriber::registry().with(stdout_layer);
+
+        if let Some((layer, guard)) = file_layer {
+            registry.with(layer).init();
+            Some(guard)
+        } else {
+            registry.init();
+            None
+        }
+    };
+
+    let mut settings = match Settings::new(args.config.as_deref()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to load configuration: {}", e);
+            process::exit(1);
+        }
+    };
+
+    // Override settings with CLI arguments if provided
+    if let Some(host) = args.host {
+        settings.host = Some(host);
+    }
+    if let Some(port) = args.port {
+        settings.port = Some(port);
+    }
+    if let Some(user) = args.user {
+        settings.user = Some(user);
+    }
+    if let Some(password) = args.password {
+        settings.password = Some(password);
+    }
+    if let Some(token_name) = args.token_name {
+        settings.token_name = Some(token_name);
+    }
+    if let Some(token_value) = args.token_value {
+        settings.token_value = Some(token_value);
+    }
+    if args.no_verify_ssl {
+        settings.no_verify_ssl = Some(true);
+    }
+    if let Some(st) = args.server_type {
+        settings.server_type = Some(st);
+    }
+    if let Some(hh) = args.http_host {
+        settings.http_host = Some(hh);
+    }
+    if let Some(hp) = args.http_port {
+        settings.http_port = Some(hp);
+    }
+    if let Some(token) = args.http_auth_token {
+        settings.http_auth_token = Some(token);
+    }
+
+    // We don't override log settings in `settings` struct because we used them directly from CLI args
+    // to initialize logging BEFORE loading other settings (so we can log config errors).
+
+    if let Err(e) = settings.validate() {
+        error!("Configuration error: {}", e);
+        process::exit(1);
+    }
+
+    // Safe to unwrap because validate() checks these
+    let host = settings.host.unwrap();
+    let port = settings.port.unwrap_or(8006);
+    let user = settings.user.unwrap();
+    let password = settings.password;
+    let token_name = settings.token_name;
+    let token_value = settings.token_value;
+    let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
+    let server_type = settings.server_type.unwrap_or_else(|| "stdio".to_string());
+    let http_host = settings.http_host.unwrap_or_else(|| "0.0.0.0".to_string());
+    let http_port = settings.http_port.unwrap_or(3000);
+    let http_auth_token = settings.http_auth_token;
+
+    info!("Connecting to Proxmox at {}:{}", host, port);
+
+    let mut client = match ProxmoxClient::new(&host, port, !no_verify_ssl) {
+        Ok(c) => c,
+        Err(e) => {
+            error!("Failed to create client: {}", e);
+            process::exit(1);
+        }
+    };
+
+    if let (Some(t_name), Some(t_value)) = (token_name, token_value) {
+        info!("Using API Token authentication");
+        client.set_api_token(&user, &t_name, &t_value);
+    } else if let Some(pass) = password {
+        if let Err(e) = client.login(&user, &pass).await {
+            error!("Authentication failed: {}", e);
+            process::exit(1);
+        }
+    } else {
+        error!("No authentication method provided");
+        process::exit(1);
+    }
+
+    let mut server = McpServer::new(client);
+
+    match server_type.as_str() {
+        "http" => {
+            info!(
+                "Starting MCP Server (HTTP transport) on {}:{}...",
+                http_host, http_port
+            );
+            if let Err(e) =
+                http_server::run_http_server(server, &http_host, http_port, http_auth_token).await
+            {
+                error!("HTTP Server error: {}", e);
+                process::exit(1);
             }
         }
-        Err(e) => {
-            eprintln!("Configuration Error: {}", e);
-            std::process::exit(1);
+        _ => {
+            info!("Starting MCP Server (stdio transport)...");
+            if let Err(e) = server.run_stdio().await {
+                error!("Server error: {}", e);
+                process::exit(1);
+            }
         }
     }
 }
