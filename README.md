@@ -6,7 +6,7 @@
 > [!WARNING]
 > This project is currently in active development (v0.x.x) and is **not production-ready**. Features may change, and breaking changes may occur without notice.
 
-A Rust implementation of a Proxmox MCP (Model Context Protocol) server. This server connects to a Proxmox VE instance and exposes tools to manage nodes, VMs, and containers via the Model Context Protocol.
+A Rust implementation of a Proxmox [MCP (Model Context Protocol) server](https://modelcontextprotocol.io/docs/getting-started/intro). This server connects to a Proxmox VE instance and exposes tools to manage nodes, VMs, and containers via the Model Context Protocol.
 
 It is designed to be a faster, single-binary alternative to the Python-based [proxmox-mcp-plus](https://github.com/nicholaswilde/proxmox-mcp-plus).
 
