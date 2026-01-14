@@ -73,7 +73,7 @@ jobs:
       - name: Generate Assets
         run: cargo run --example gen_manual
       - name: Upload Assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: assets
           path: assets/
