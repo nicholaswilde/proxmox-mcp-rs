@@ -972,4 +972,95 @@ mod tests {
         let res = server.call_tool("get_vm_stats", &args).await.unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("0.5"));
     }
+
+    #[tokio::test]
+    async fn test_download_url() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/storage/local/download-url"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        let args = json!({
+            "node": "pve1",
+            "storage": "local",
+            "url": "http://example.com/debian.iso",
+            "filename": "debian.iso",
+            "content": "iso"
+        });
+
+        let res = server.call_tool("download_url", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+
+        assert!(content.contains("Download initiated"));
+        assert!(content.contains("UPID:pve1"));
+    }
+
+    #[tokio::test]
+    async fn test_user_management() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_users
+        Mock::given(method("GET"))
+            .and(path("/api2/json/access/users"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "userid": "test@pve", "enable": 1 }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock create_user
+        Mock::given(method("POST"))
+            .and(path("/api2/json/access/users"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock delete_user
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/access/users/test@pve"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test List
+        let res = server.call_tool("list_users", &json!({})).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("test@pve"));
+
+        // Test Create
+        let args = json!({
+            "userid": "newuser@pve",
+            "password": "password123",
+            "email": "new@example.com",
+            "groups": ["admin"]
+        });
+        let res = server.call_tool("create_user", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
+
+        // Test Delete
+        let args = json!({ "userid": "test@pve" });
+        let res = server.call_tool("delete_user", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
+    }
 }

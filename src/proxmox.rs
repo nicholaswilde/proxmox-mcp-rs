@@ -678,6 +678,41 @@ impl ProxmoxClient {
         self.request(Method::GET, &path, None).await
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub async fn download_url(
+        &self,
+        node: &str,
+        storage: &str,
+        url: &str,
+        filename: &str,
+        content: &str,
+        checksum: Option<&str>,
+        checksum_algorithm: Option<&str>,
+    ) -> Result<String> {
+        let path = format!("nodes/{}/storage/{}/download-url", node, storage);
+        let mut params = json!({
+            "url": url,
+            "filename": filename,
+            "content": content,
+        });
+
+        if let Some(cs) = checksum {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("checksum".to_string(), json!(cs));
+        }
+        if let Some(algo) = checksum_algorithm {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("checksum-algorithm".to_string(), json!(algo));
+        }
+
+        let res: String = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(res)
+    }
+
     // --- Cluster Management ---
 
     pub async fn get_cluster_status(&self) -> Result<Vec<Value>> {
@@ -799,5 +834,81 @@ impl ProxmoxClient {
         }
 
         self.request(Method::GET, &path, None).await
+    }
+
+    // --- User Management ---
+
+    pub async fn get_users(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "access/users", None).await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn create_user(
+        &self,
+        userid: &str,
+        password: &str,
+        email: Option<&str>,
+        firstname: Option<&str>,
+        lastname: Option<&str>,
+        expire: Option<i64>,
+        enable: Option<bool>,
+        comment: Option<&str>,
+        groups: Option<Vec<String>>,
+    ) -> Result<()> {
+        let mut params = json!({
+            "userid": userid,
+            "password": password,
+        });
+
+        if let Some(v) = email {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("email".to_string(), json!(v));
+        }
+        if let Some(v) = firstname {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("firstname".to_string(), json!(v));
+        }
+        if let Some(v) = lastname {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("lastname".to_string(), json!(v));
+        }
+        if let Some(v) = expire {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("expire".to_string(), json!(v));
+        }
+        if let Some(v) = enable {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("enable".to_string(), json!(if v { 1 } else { 0 }));
+        }
+        if let Some(v) = comment {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("comment".to_string(), json!(v));
+        }
+        if let Some(v) = groups {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("groups".to_string(), json!(v.join(",")));
+        }
+
+        self.request(Method::POST, "access/users", Some(&params))
+            .await
+    }
+
+    pub async fn delete_user(&self, userid: &str) -> Result<()> {
+        let path = format!("access/users/{}", userid);
+        self.request(Method::DELETE, &path, None).await
     }
 }

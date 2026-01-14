@@ -784,6 +784,62 @@ impl McpServer {
                     "required": ["node", "vmid"]
                 }
             }),
+            json!({
+                "name": "download_url",
+                "description": "Download an ISO or Container template from a URL to storage",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "storage": { "type": "string" },
+                        "url": { "type": "string", "description": "The URL to download from" },
+                        "filename": { "type": "string", "description": "Target filename" },
+                        "content": { "type": "string", "enum": ["iso", "vztmpl"], "description": "Content type" },
+                        "checksum": { "type": "string", "description": "Optional checksum" },
+                        "checksum_algorithm": { "type": "string", "enum": ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"], "description": "Optional checksum algorithm" }
+                    },
+                    "required": ["node", "storage", "url", "filename", "content"]
+                }
+            }),
+            json!({
+                "name": "list_users",
+                "description": "List all users in the cluster",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_user",
+                "description": "Create a new user",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "userid": { "type": "string", "description": "User ID (e.g. user@pve)" },
+                        "password": { "type": "string", "description": "Initial password" },
+                        "email": { "type": "string", "description": "E-mail address" },
+                        "firstname": { "type": "string", "description": "First name" },
+                        "lastname": { "type": "string", "description": "Last name" },
+                        "expire": { "type": "integer", "description": "Account expiration date (seconds since epoch)" },
+                        "enable": { "type": "boolean", "description": "Enable the account (default: true)" },
+                        "comment": { "type": "string", "description": "Comment/Note" },
+                        "groups": { "type": "array", "items": { "type": "string" }, "description": "List of groups" }
+                    },
+                    "required": ["userid", "password"]
+                }
+            }),
+            json!({
+                "name": "delete_user",
+                "description": "Delete a user",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "userid": { "type": "string", "description": "User ID to delete" }
+                    },
+                    "required": ["userid"]
+                }
+            }),
         ]
     }
 
@@ -892,8 +948,105 @@ impl McpServer {
             "get_vm_stats" => self.handle_get_vm_stats(args).await,
             "read_task_log" => self.handle_read_task_log(args).await,
             "get_vm_config" => self.handle_get_vm_config(args).await,
+            "download_url" => self.handle_download_url(args).await,
+            "list_users" => self.handle_list_users().await,
+            "create_user" => self.handle_create_user(args).await,
+            "delete_user" => self.handle_delete_user(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_list_users(&self) -> Result<Value> {
+        let users = self.client.get_users().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&users)? }] }),
+        )
+    }
+
+    async fn handle_create_user(&self, args: &Value) -> Result<Value> {
+        let userid = args
+            .get("userid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing userid"))?;
+        let password = args
+            .get("password")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing password"))?;
+
+        let email = args.get("email").and_then(|v| v.as_str());
+        let firstname = args.get("firstname").and_then(|v| v.as_str());
+        let lastname = args.get("lastname").and_then(|v| v.as_str());
+        let comment = args.get("comment").and_then(|v| v.as_str());
+        let expire = args.get("expire").and_then(|v| v.as_i64());
+        let enable = args.get("enable").and_then(|v| v.as_bool());
+
+        let groups = args.get("groups").and_then(|v| {
+            v.as_array().map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(String::from))
+                    .collect()
+            })
+        });
+
+        self.client
+            .create_user(
+                userid, password, email, firstname, lastname, expire, enable, comment, groups,
+            )
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("User {} created", userid) }] }))
+    }
+
+    async fn handle_delete_user(&self, args: &Value) -> Result<Value> {
+        let userid = args
+            .get("userid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing userid"))?;
+
+        self.client.delete_user(userid).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("User {} deleted", userid) }] }))
+    }
+
+    async fn handle_download_url(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+        let url = args
+            .get("url")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing url"))?;
+        let filename = args
+            .get("filename")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing filename"))?;
+        let content = args
+            .get("content")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing content"))?;
+
+        let checksum = args.get("checksum").and_then(|v| v.as_str());
+        let checksum_algorithm = args.get("checksum_algorithm").and_then(|v| v.as_str());
+
+        let upid = self
+            .client
+            .download_url(
+                node,
+                storage,
+                url,
+                filename,
+                content,
+                checksum,
+                checksum_algorithm,
+            )
+            .await?;
+
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Download initiated. UPID: {}", upid) }] }),
+        )
     }
 
     async fn handle_get_node_stats(&self, args: &Value) -> Result<Value> {

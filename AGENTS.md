@@ -41,8 +41,7 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 ## Development Conventions
 *   **Language:** Rust
 *   **Style:** Standard Rust formatting (`cargo fmt`) and linting (`cargo clippy`) are expected.
-*   **Post-Implementation:** Always run `cargo fmt` and `cargo clippy -- -D warnings` after adding new functions to ensure code quality and adherence to standards.
-*   **CI Checks:** You can also run `task test:ci` to run all formatting, linting, and tests at once.
+*   **Post-Implementation:** Always run `task test:ci` after an update to run all formatting, linting, and tests at once, and fix any issues found.
 *   **Documentation:** All Proxmox functions and tools must be documented in the `README.md`.
 *   **Testing:** Every Proxmox function and MCP tool must have corresponding unit tests in `src/tests.rs` (or relevant module).
 *   **Versioning:** When asked to create a new git tag, always update the version in `Cargo.toml` to match the new tag version.

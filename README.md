@@ -8,7 +8,7 @@
 
 A Rust implementation of a Proxmox [MCP (Model Context Protocol) server](https://modelcontextprotocol.io/docs/getting-started/intro). This server connects to a Proxmox VE instance and exposes tools to manage nodes, VMs, and containers via the Model Context Protocol.
 
-It is designed to be a faster, single-binary alternative to the Python-based [proxmox-mcp-plus](https://github.com/nicholaswilde/proxmox-mcp-plus).
+It is designed to be a faster, single-binary alternative to the Python-based [ProxmoxMCP-Plus](https://github.com/RekklesNA/ProxmoxMCP-Plus).
 
 ## :sparkles: Features
 
@@ -42,6 +42,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [pr
   - `read_task_log`: Read the log of a specific task (UPID).
   - `wait_for_task`: Wait for a task to finish (with timeout).
   - `get_vm_config`: Get the configuration of a VM or Container.
+  - `download_url`: Download an ISO or Container template from a URL to storage.
+  - `list_users`: List all users in the cluster.
+  - `create_user`: Create a new user.
+  - `delete_user`: Delete a user.
   - `list_networks`: List network interfaces and bridges on a node.
   - `list_storage`: List all storage on a node.
   - `list_isos`: List ISO images on a specific storage.
