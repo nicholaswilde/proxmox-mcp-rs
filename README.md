@@ -50,6 +50,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.
   - `update_storage`: Update a storage definition.
+  - `vm_agent_ping`: Ping the QEMU Guest Agent inside a VM.
+  - `vm_exec`: Execute a command inside a VM via QEMU Agent (Async, returns PID).
+  - `vm_exec_status`: Get status/output of a command executed via QEMU Agent.
+  - `vm_read_file`: Read a file from inside a VM via QEMU Agent.
+  - `vm_write_file`: Write to a file inside a VM via QEMU Agent.
   - `list_networks`: List network interfaces and bridges on a node.
   - `list_storage`: List all storage on a node.
   - `list_isos`: List ISO images on a specific storage.

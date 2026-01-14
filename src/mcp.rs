@@ -897,6 +897,73 @@ impl McpServer {
                     "required": ["storage"]
                 }
             }),
+            json!({
+                "name": "vm_agent_ping",
+                "description": "Ping the QEMU Guest Agent inside a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "vm_exec",
+                "description": "Execute a command inside a VM via QEMU Agent (Async, returns PID)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "command": { "type": "string", "description": "Command to run (e.g. 'ls -l /')" },
+                        "input_data": { "type": "string", "description": "Input data to pass to stdin" }
+                    },
+                    "required": ["node", "vmid", "command"]
+                }
+            }),
+            json!({
+                "name": "vm_exec_status",
+                "description": "Get status/output of a command executed via QEMU Agent",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "pid": { "type": "integer", "description": "PID from vm_exec" }
+                    },
+                    "required": ["node", "vmid", "pid"]
+                }
+            }),
+            json!({
+                "name": "vm_read_file",
+                "description": "Read a file from inside a VM via QEMU Agent",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "file": { "type": "string", "description": "Path to file" }
+                    },
+                    "required": ["node", "vmid", "file"]
+                }
+            }),
+            json!({
+                "name": "vm_write_file",
+                "description": "Write to a file inside a VM via QEMU Agent",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "file": { "type": "string", "description": "Path to file" },
+                        "content": { "type": "string", "description": "Content to write" },
+                        "encode": { "type": "boolean", "description": "Base64 encode content? (default: false)" }
+                    },
+                    "required": ["node", "vmid", "file", "content"]
+                }
+            }),
         ]
     }
 
@@ -1013,8 +1080,118 @@ impl McpServer {
             "add_storage" => self.handle_add_storage(args).await,
             "delete_storage" => self.handle_delete_storage(args).await,
             "update_storage" => self.handle_update_storage(args).await,
+            "vm_agent_ping" => self.handle_vm_agent_ping(args).await,
+            "vm_exec" => self.handle_vm_exec(args).await,
+            "vm_exec_status" => self.handle_vm_exec_status(args).await,
+            "vm_read_file" => self.handle_vm_read_file(args).await,
+            "vm_write_file" => self.handle_vm_write_file(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_vm_agent_ping(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        self.client.agent_ping(node, vmid).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Pong" }] }))
+    }
+
+    async fn handle_vm_exec(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let command_str = args
+            .get("command")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing command"))?;
+        let input_data = args.get("input_data").and_then(|v| v.as_str());
+
+        // Naive splitting. Ideally we'd use shell-words parsing.
+        let command: Vec<String> = command_str
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+
+        let res = self
+            .client
+            .agent_exec(node, vmid, &command, input_data)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+    }
+
+    async fn handle_vm_exec_status(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let pid = args
+            .get("pid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing pid"))?;
+
+        let res = self.client.agent_exec_status(node, vmid, pid).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+    }
+
+    async fn handle_vm_read_file(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let file = args
+            .get("file")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing file"))?;
+
+        let res = self.client.agent_file_read(node, vmid, file).await?;
+        // Result usually has "content" (read bytes) or "bytes" (count).
+        // content is text if possible?
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+    }
+
+    async fn handle_vm_write_file(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let file = args
+            .get("file")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing file"))?;
+        let content = args
+            .get("content")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing content"))?;
+        let encode = args.get("encode").and_then(|v| v.as_bool());
+
+        self.client
+            .agent_file_write(node, vmid, file, content, encode)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "File written" }] }))
     }
 
     async fn handle_list_cluster_storage(&self) -> Result<Value> {

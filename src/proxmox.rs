@@ -392,6 +392,73 @@ impl ProxmoxClient {
         self.update_config(node, vmid, resource_type, &params).await
     }
 
+    // --- QEMU Guest Agent ---
+
+    pub async fn agent_ping(&self, node: &str, vmid: i64) -> Result<()> {
+        let path = format!("nodes/{}/qemu/{}/agent/ping", node, vmid);
+        let _: Value = self.request(Method::POST, &path, None).await?;
+        Ok(())
+    }
+
+    pub async fn agent_exec(
+        &self,
+        node: &str,
+        vmid: i64,
+        command: &[String],
+        input_data: Option<&str>,
+    ) -> Result<Value> {
+        // agent/exec returns a PID. We usually need to wait for it or return the PID.
+        // For MCP, simple exec is often preferred. But PVE agent exec is async inside the guest.
+        // Returns { "pid": <int> }.
+        // We might want a separate tool to wait? Or just return the PID.
+        // Let's return the result structure from PVE.
+
+        let path = format!("nodes/{}/qemu/{}/agent/exec", node, vmid);
+        let mut params = json!({ "command": command });
+        if let Some(data) = input_data {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("input-data".to_string(), json!(data));
+        }
+
+        self.request(Method::POST, &path, Some(&params)).await
+    }
+
+    pub async fn agent_exec_status(&self, node: &str, vmid: i64, pid: i64) -> Result<Value> {
+        let path = format!("nodes/{}/qemu/{}/agent/exec-status?pid={}", node, vmid, pid);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn agent_file_read(&self, node: &str, vmid: i64, file: &str) -> Result<Value> {
+        let path = format!("nodes/{}/qemu/{}/agent/file-read?file={}", node, vmid, file);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn agent_file_write(
+        &self,
+        node: &str,
+        vmid: i64,
+        file: &str,
+        content: &str,
+        encode: Option<bool>,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/qemu/{}/agent/file-write", node, vmid);
+        let mut params = json!({
+            "file": file,
+            "content": content
+        });
+        if let Some(enc) = encode {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("encode".to_string(), json!(if enc { 1 } else { 0 }));
+        }
+
+        let _: Value = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(())
+    }
+
     // --- Snapshot Management ---
 
     pub async fn get_snapshots(

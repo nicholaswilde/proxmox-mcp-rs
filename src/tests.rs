@@ -1146,4 +1146,90 @@ mod tests {
             .unwrap()
             .contains("deleted"));
     }
+
+    #[tokio::test]
+    async fn test_qemu_agent_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock Ping
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/agent/ping"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": {} })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock Exec
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/agent/exec"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": { "pid": 1234 } })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // Mock Exec Status
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/agent/exec-status"))
+            // .and(query_param("pid", "1234"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(json!({ "data": { "exited": 1, "out-data": "hello" } })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // Mock File Read
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/agent/file-read"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(json!({ "data": { "content": "file content" } })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // Mock File Write
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/agent/file-write"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": {} })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test Ping
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("vm_agent_ping", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("Pong"));
+
+        // Test Exec
+        let args = json!({ "node": "pve1", "vmid": 100, "command": "echo hello" });
+        let res = server.call_tool("vm_exec", &args).await.unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("1234"));
+
+        // Test Exec Status
+        let args = json!({ "node": "pve1", "vmid": 100, "pid": 1234 });
+        let res = server.call_tool("vm_exec_status", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("hello"));
+
+        // Test Read File
+        let args = json!({ "node": "pve1", "vmid": 100, "file": "/tmp/test" });
+        let res = server.call_tool("vm_read_file", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("file content"));
+
+        // Test Write File
+        let args = json!({ "node": "pve1", "vmid": 100, "file": "/tmp/test", "content": "foo" });
+        let res = server.call_tool("vm_write_file", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("File written"));
+    }
 }
