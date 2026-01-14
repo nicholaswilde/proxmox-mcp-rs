@@ -1063,4 +1063,87 @@ mod tests {
             .unwrap()
             .contains("deleted"));
     }
+
+    #[tokio::test]
+    async fn test_cluster_storage_management() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_cluster_storage
+        Mock::given(method("GET"))
+            .and(path("/api2/json/storage"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "storage": "local", "type": "dir" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock add_storage
+        Mock::given(method("POST"))
+            .and(path("/api2/json/storage"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock delete_storage
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/storage/teststorage"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock update_storage
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/storage/teststorage"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client);
+
+        // Test List
+        let res = server
+            .call_tool("list_cluster_storage", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("local"));
+
+        // Test Add
+        let args = json!({
+            "storage": "teststorage",
+            "type": "nfs",
+            "server": "1.2.3.4",
+            "export": "/srv/nfs",
+            "content": "iso,backup"
+        });
+        let res = server.call_tool("add_storage", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
+
+        // Test Update
+        let args = json!({
+            "storage": "teststorage",
+            "enable": false
+        });
+        let res = server.call_tool("update_storage", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
+
+        // Test Delete
+        let args = json!({ "storage": "teststorage" });
+        let res = server.call_tool("delete_storage", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
+    }
 }

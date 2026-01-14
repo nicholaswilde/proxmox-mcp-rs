@@ -678,6 +678,70 @@ impl ProxmoxClient {
         self.request(Method::GET, &path, None).await
     }
 
+    pub async fn get_cluster_storage(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "storage", None).await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_storage(
+        &self,
+        storage: &str,
+        storage_type: &str,
+        content: Option<&str>,
+        nodes: Option<Vec<String>>,
+        enable: Option<bool>,
+        extra_params: Option<&serde_json::Map<String, Value>>,
+    ) -> Result<()> {
+        let mut params = json!({
+            "storage": storage,
+            "type": storage_type,
+        });
+
+        if let Some(c) = content {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("content".to_string(), json!(c));
+        }
+
+        if let Some(n) = nodes {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("nodes".to_string(), json!(n.join(",")));
+        }
+
+        if let Some(e) = enable {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("disable".to_string(), json!(if e { 0 } else { 1 }));
+        }
+
+        if let Some(extra) = extra_params {
+            for (k, v) in extra {
+                params.as_object_mut().unwrap().insert(k.clone(), v.clone());
+            }
+        }
+
+        self.request(Method::POST, "storage", Some(&params)).await
+    }
+
+    pub async fn delete_storage(&self, storage: &str) -> Result<()> {
+        let path = format!("storage/{}", storage);
+        self.request(Method::DELETE, &path, None).await
+    }
+
+    pub async fn update_storage(
+        &self,
+        storage: &str,
+        params: &serde_json::Map<String, Value>,
+    ) -> Result<()> {
+        let path = format!("storage/{}", storage);
+        self.request(Method::PUT, &path, Some(&Value::Object(params.clone())))
+            .await
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub async fn download_url(
         &self,

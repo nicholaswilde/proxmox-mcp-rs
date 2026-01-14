@@ -840,6 +840,63 @@ impl McpServer {
                     "required": ["userid"]
                 }
             }),
+            json!({
+                "name": "list_cluster_storage",
+                "description": "List all storage definitions in the cluster configuration",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "add_storage",
+                "description": "Add a new storage definition",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "storage": { "type": "string", "description": "Storage ID" },
+                        "type": { "type": "string", "enum": ["dir", "nfs", "cifs", "lvm", "lvmthin", "zfs", "iscsi", "rbd", "cephfs"], "description": "Storage type" },
+                        "content": { "type": "string", "description": "Allowed content types (comma separated, e.g. 'iso,backup')" },
+                        "nodes": { "type": "array", "items": { "type": "string" }, "description": "Restrict to specific nodes" },
+                        "enable": { "type": "boolean", "description": "Enable storage (default: true)" },
+                        "path": { "type": "string", "description": "File system path (for dir, nfs, etc.)" },
+                        "server": { "type": "string", "description": "Server IP/Hostname (for nfs, cifs, iscsi, etc.)" },
+                        "share": { "type": "string", "description": "Share name (for cifs)" },
+                        "export": { "type": "string", "description": "Export path (for nfs)" },
+                        "username": { "type": "string", "description": "Username (for cifs)" },
+                        "password": { "type": "string", "description": "Password (for cifs)" },
+                        "pool": { "type": "string", "description": "Pool name (for zfs, rbd)" },
+                        "vgname": { "type": "string", "description": "Volume Group name (for lvm)" }
+                    },
+                    "required": ["storage", "type"]
+                }
+            }),
+            json!({
+                "name": "delete_storage",
+                "description": "Delete a storage definition",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "storage": { "type": "string", "description": "Storage ID" }
+                    },
+                    "required": ["storage"]
+                }
+            }),
+            json!({
+                "name": "update_storage",
+                "description": "Update a storage definition",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "storage": { "type": "string", "description": "Storage ID" },
+                        "content": { "type": "string", "description": "Allowed content types" },
+                        "nodes": { "type": "string", "description": "Comma separated list of nodes" },
+                        "enable": { "type": "boolean", "description": "Enable/Disable" }
+                    },
+                    "required": ["storage"]
+                }
+            }),
         ]
     }
 
@@ -952,8 +1009,108 @@ impl McpServer {
             "list_users" => self.handle_list_users().await,
             "create_user" => self.handle_create_user(args).await,
             "delete_user" => self.handle_delete_user(args).await,
+            "list_cluster_storage" => self.handle_list_cluster_storage().await,
+            "add_storage" => self.handle_add_storage(args).await,
+            "delete_storage" => self.handle_delete_storage(args).await,
+            "update_storage" => self.handle_update_storage(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_list_cluster_storage(&self) -> Result<Value> {
+        let storage = self.client.get_cluster_storage().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&storage)? }] }),
+        )
+    }
+
+    async fn handle_add_storage(&self, args: &Value) -> Result<Value> {
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage ID"))?;
+        let storage_type = args
+            .get("type")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage type"))?;
+
+        let content = args.get("content").and_then(|v| v.as_str());
+        let nodes = args.get("nodes").and_then(|v| {
+            v.as_array().map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(String::from))
+                    .collect()
+            })
+        });
+        let enable = args.get("enable").and_then(|v| v.as_bool());
+
+        // Collect extra params
+        let mut extra = serde_json::Map::new();
+        let common_fields = [
+            "path", "server", "share", "export", "username", "password", "pool", "vgname",
+        ];
+
+        for field in common_fields {
+            if let Some(val) = args.get(field) {
+                extra.insert(field.to_string(), val.clone());
+            }
+        }
+
+        self.client
+            .add_storage(
+                storage,
+                storage_type,
+                content,
+                nodes,
+                enable,
+                if extra.is_empty() { None } else { Some(&extra) },
+            )
+            .await?;
+
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Storage {} added", storage) }] }))
+    }
+
+    async fn handle_delete_storage(&self, args: &Value) -> Result<Value> {
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage ID"))?;
+
+        self.client.delete_storage(storage).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Storage {} deleted", storage) }] }),
+        )
+    }
+
+    async fn handle_update_storage(&self, args: &Value) -> Result<Value> {
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage ID"))?;
+
+        let mut params = serde_json::Map::new();
+
+        if let Some(c) = args.get("content") {
+            params.insert("content".to_string(), c.clone());
+        }
+        if let Some(n) = args.get("nodes") {
+            params.insert("nodes".to_string(), n.clone());
+        }
+        if let Some(e) = args.get("enable") {
+            params.insert(
+                "disable".to_string(),
+                json!(if e.as_bool().unwrap_or(true) { 0 } else { 1 }),
+            );
+        }
+
+        if params.is_empty() {
+            return Ok(json!({ "content": [{ "type": "text", "text": "No changes requested" }] }));
+        }
+
+        self.client.update_storage(storage, &params).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Storage {} updated", storage) }] }),
+        )
     }
 
     async fn handle_list_users(&self) -> Result<Value> {
