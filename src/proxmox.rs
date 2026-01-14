@@ -724,12 +724,14 @@ impl ProxmoxClient {
             }
         }
 
-        self.request(Method::POST, "storage", Some(&params)).await
+        let _: Value = self.request(Method::POST, "storage", Some(&params)).await?;
+        Ok(())
     }
 
     pub async fn delete_storage(&self, storage: &str) -> Result<()> {
         let path = format!("storage/{}", storage);
-        self.request(Method::DELETE, &path, None).await
+        let _: Value = self.request(Method::DELETE, &path, None).await?;
+        Ok(())
     }
 
     pub async fn update_storage(
@@ -738,8 +740,10 @@ impl ProxmoxClient {
         params: &serde_json::Map<String, Value>,
     ) -> Result<()> {
         let path = format!("storage/{}", storage);
-        self.request(Method::PUT, &path, Some(&Value::Object(params.clone())))
-            .await
+        let _: Value = self
+            .request(Method::PUT, &path, Some(&Value::Object(params.clone())))
+            .await?;
+        Ok(())
     }
 
     #[allow(clippy::too_many_arguments)]
