@@ -46,6 +46,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_users`: List all users in the cluster.
   - `create_user`: Create a new user.
   - `delete_user`: Delete a user.
+  - `list_pools`: List all resource pools.
+  - `create_pool`: Create a new resource pool.
+  - `get_pool_details`: Get detailed information about a resource pool.
+  - `update_pool`: Update a resource pool (add/remove members or change comment).
+  - `delete_pool`: Delete a resource pool.
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.

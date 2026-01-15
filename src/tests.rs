@@ -1288,4 +1288,92 @@ mod tests {
         // Should contain list_vms now
         assert!(tools.iter().any(|t| t["name"] == "list_vms"));
     }
+
+    #[tokio::test]
+    async fn test_pool_management() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_pools
+        Mock::given(method("GET"))
+            .and(path("/api2/json/pools"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "poolid": "testpool", "comment": "test comment" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock create_pool
+        Mock::given(method("POST"))
+            .and(path("/api2/json/pools"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock get_pool_details
+        Mock::given(method("GET"))
+            .and(path("/api2/json/pools/testpool"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "poolid": "testpool", "comment": "test comment", "members": [] }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock update_pool
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/pools/testpool"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock delete_pool
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/pools/testpool"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test List
+        let res = server.call_tool("list_pools", &json!({})).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("testpool"));
+
+        // Test Create
+        let args = json!({ "poolid": "newpool", "comment": "new" });
+        let res = server.call_tool("create_pool", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
+
+        // Test Details
+        let args = json!({ "poolid": "testpool" });
+        let res = server.call_tool("get_pool_details", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("members"));
+
+        // Test Update
+        let args = json!({ "poolid": "testpool", "comment": "updated" });
+        let res = server.call_tool("update_pool", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
+
+        // Test Delete
+        let args = json!({ "poolid": "testpool" });
+        let res = server.call_tool("delete_pool", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
+    }
 }

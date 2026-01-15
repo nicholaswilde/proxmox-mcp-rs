@@ -1037,6 +1037,64 @@ impl McpServer {
                     "required": ["node", "vmid", "file", "content"]
                 }
             }),
+            json!({
+                "name": "list_pools",
+                "description": "List all resource pools",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_pool",
+                "description": "Create a new resource pool",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "poolid": { "type": "string", "description": "The Pool ID" },
+                        "comment": { "type": "string", "description": "Optional comment" }
+                    },
+                    "required": ["poolid"]
+                }
+            }),
+            json!({
+                "name": "get_pool_details",
+                "description": "Get detailed information about a resource pool",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "poolid": { "type": "string", "description": "The Pool ID" }
+                    },
+                    "required": ["poolid"]
+                }
+            }),
+            json!({
+                "name": "update_pool",
+                "description": "Update a resource pool (add/remove members or change comment)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "poolid": { "type": "string", "description": "The Pool ID" },
+                        "comment": { "type": "string", "description": "New comment" },
+                        "vms": { "type": "string", "description": "List of VMs to add/remove (comma separated IDs)" },
+                        "storage": { "type": "string", "description": "List of Storage IDs to add/remove" },
+                        "delete": { "type": "integer", "enum": [0, 1], "description": "Remove specified items instead of adding" }
+                    },
+                    "required": ["poolid"]
+                }
+            }),
+            json!({
+                "name": "delete_pool",
+                "description": "Delete a resource pool",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "poolid": { "type": "string", "description": "The Pool ID" }
+                    },
+                    "required": ["poolid"]
+                }
+            }),
         ]
     }
 
@@ -1164,6 +1222,11 @@ impl McpServer {
             "vm_exec_status" => self.handle_vm_exec_status(args).await,
             "vm_read_file" => self.handle_vm_read_file(args).await,
             "vm_write_file" => self.handle_vm_write_file(args).await,
+            "list_pools" => self.handle_list_pools().await,
+            "create_pool" => self.handle_create_pool(args).await,
+            "get_pool_details" => self.handle_get_pool_details(args).await,
+            "update_pool" => self.handle_update_pool(args).await,
+            "delete_pool" => self.handle_delete_pool(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
@@ -2213,5 +2276,59 @@ impl McpServer {
         Ok(
             json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&config)? }] }),
         )
+    }
+
+    async fn handle_list_pools(&self) -> Result<Value> {
+        let pools = self.client.get_pools().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&pools)? }] }),
+        )
+    }
+
+    async fn handle_create_pool(&self, args: &Value) -> Result<Value> {
+        let poolid = args
+            .get("poolid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing poolid"))?;
+        let comment = args.get("comment").and_then(|v| v.as_str());
+        self.client.create_pool(poolid, comment).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Pool {} created", poolid) }] }))
+    }
+
+    async fn handle_get_pool_details(&self, args: &Value) -> Result<Value> {
+        let poolid = args
+            .get("poolid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing poolid"))?;
+        let details = self.client.get_pool_details(poolid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&details)? }] }),
+        )
+    }
+
+    async fn handle_update_pool(&self, args: &Value) -> Result<Value> {
+        let poolid = args
+            .get("poolid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing poolid"))?;
+        // Construct params excluding poolid
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("poolid");
+        self.client
+            .update_pool(poolid, &Value::Object(params))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Pool {} updated", poolid) }] }))
+    }
+
+    async fn handle_delete_pool(&self, args: &Value) -> Result<Value> {
+        let poolid = args
+            .get("poolid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing poolid"))?;
+        self.client.delete_pool(poolid).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Pool {} deleted", poolid) }] }))
     }
 }
