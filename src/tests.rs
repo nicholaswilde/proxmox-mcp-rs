@@ -1545,4 +1545,78 @@ mod tests {
             .unwrap()
             .contains("updated"));
     }
+
+    #[tokio::test]
+    async fn test_apt_and_services() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_apt_updates
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/apt/update"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "Package": "pve-manager", "Version": "7.0.1" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock run_apt_update
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/apt/update"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // Mock list_services
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/services"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "service": "pvestatd", "state": "running" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock manage_service (restart)
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/services/pvestatd/restart"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test APT List
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("list_apt_updates", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("pve-manager"));
+
+        // Test APT Run
+        let res = server.call_tool("run_apt_update", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("UPID:pve1"));
+
+        // Test Services List
+        let res = server.call_tool("list_services", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("pvestatd"));
+
+        // Test Service Manage
+        let args = json!({ "node": "pve1", "service": "pvestatd", "action": "restart" });
+        let res = server.call_tool("manage_service", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("restart initiated"));
+    }
 }

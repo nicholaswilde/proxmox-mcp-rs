@@ -1227,6 +1227,63 @@ impl McpServer {
                     "required": ["path", "roles"]
                 }
             }),
+            json!({
+                "name": "list_apt_updates",
+                "description": "List available APT updates on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "run_apt_update",
+                "description": "Run apt-get update on a node (Async, returns UPID)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "get_apt_versions",
+                "description": "Get versions of installed Proxmox packages",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_services",
+                "description": "List system services on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "manage_service",
+                "description": "Manage a system service (Start, Stop, Restart, Reload)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "service": { "type": "string", "description": "Service name (e.g. pvestatd)" },
+                        "action": { "type": "string", "enum": ["start", "stop", "restart", "reload"] }
+                    },
+                    "required": ["node", "service", "action"]
+                }
+            }),
         ]
     }
 
@@ -1370,6 +1427,11 @@ impl McpServer {
             "delete_role" => self.handle_delete_role(args).await,
             "list_acls" => self.handle_list_acls().await,
             "update_acl" => self.handle_update_acl(args).await,
+            "list_apt_updates" => self.handle_list_apt_updates(args).await,
+            "run_apt_update" => self.handle_run_apt_update(args).await,
+            "get_apt_versions" => self.handle_get_apt_versions(args).await,
+            "list_services" => self.handle_list_services(args).await,
+            "manage_service" => self.handle_manage_service(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
@@ -2600,6 +2662,70 @@ impl McpServer {
         self.client.update_acl(path, &Value::Object(params)).await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("ACL for path {} updated", path) }] }),
+        )
+    }
+
+    async fn handle_list_apt_updates(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let updates = self.client.get_apt_updates(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&updates)? }] }),
+        )
+    }
+
+    async fn handle_run_apt_update(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = self.client.run_apt_update(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("APT update initiated. UPID: {}", upid) }] }),
+        )
+    }
+
+    async fn handle_get_apt_versions(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let versions = self.client.get_apt_versions(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&versions)? }] }),
+        )
+    }
+
+    async fn handle_list_services(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let services = self.client.get_services(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&services)? }] }),
+        )
+    }
+
+    async fn handle_manage_service(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let service = args
+            .get("service")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing service"))?;
+        let action = args
+            .get("action")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing action"))?;
+
+        let upid = self.client.manage_service(node, service, action).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Service {} {} initiated. UPID: {}", service, action, upid) }] }),
         )
     }
 }

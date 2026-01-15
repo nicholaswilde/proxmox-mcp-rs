@@ -62,6 +62,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `delete_role`: Delete a role.
   - `list_acls`: List all Access Control List (ACL) entries.
   - `update_acl`: Update Access Control List (Add/Remove permissions).
+  - `list_apt_updates`: List available APT updates on a node.
+  - `run_apt_update`: Run apt-get update on a node.
+  - `get_apt_versions`: Get versions of installed Proxmox packages.
+  - `list_services`: List system services on a node.
+  - `manage_service`: Manage a system service (Start, Stop, Restart, Reload).
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.

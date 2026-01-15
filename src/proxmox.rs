@@ -1169,4 +1169,33 @@ impl ProxmoxClient {
             .await?;
         Ok(())
     }
+
+    // --- APT Management ---
+
+    pub async fn get_apt_updates(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/apt/update", node);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn run_apt_update(&self, node: &str) -> Result<String> {
+        let path = format!("nodes/{}/apt/update", node);
+        self.request(Method::POST, &path, None).await
+    }
+
+    pub async fn get_apt_versions(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/apt/versions", node);
+        self.request(Method::GET, &path, None).await
+    }
+
+    // --- Service Management ---
+
+    pub async fn get_services(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/services", node);
+        self.request(Method::GET, &path, None).await
+    }
+
+    pub async fn manage_service(&self, node: &str, service: &str, action: &str) -> Result<String> {
+        let path = format!("nodes/{}/services/{}/{}", node, service, action);
+        self.request(Method::POST, &path, None).await
+    }
 }
