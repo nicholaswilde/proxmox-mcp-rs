@@ -1120,4 +1120,53 @@ impl ProxmoxClient {
         let _: Value = self.request(Method::DELETE, &path, None).await?;
         Ok(())
     }
+
+    // --- Roles & ACL Management ---
+
+    pub async fn get_roles(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "access/roles", None).await
+    }
+
+    pub async fn create_role(&self, roleid: &str, privileges: &str) -> Result<()> {
+        let params = json!({ "roleid": roleid, "privs": privileges });
+        let _: Value = self
+            .request(Method::POST, "access/roles", Some(&params))
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_role(&self, roleid: &str, privileges: &str, append: bool) -> Result<()> {
+        let path = format!("access/roles/{}", roleid);
+        let mut params = json!({ "privs": privileges });
+        if append {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("append".to_string(), json!(1));
+        }
+        let _: Value = self.request(Method::PUT, &path, Some(&params)).await?;
+        Ok(())
+    }
+
+    pub async fn delete_role(&self, roleid: &str) -> Result<()> {
+        let path = format!("access/roles/{}", roleid);
+        let _: Value = self.request(Method::DELETE, &path, None).await?;
+        Ok(())
+    }
+
+    pub async fn get_acls(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "access/acl", None).await
+    }
+
+    pub async fn update_acl(&self, path: &str, params: &Value) -> Result<()> {
+        let mut full_params = params
+            .as_object()
+            .ok_or(anyhow::anyhow!("Params must be object"))?
+            .clone();
+        full_params.insert("path".to_string(), json!(path));
+        let _: Value = self
+            .request(Method::PUT, "access/acl", Some(&Value::Object(full_params)))
+            .await?;
+        Ok(())
+    }
 }

@@ -1156,6 +1156,77 @@ impl McpServer {
                     "required": ["sid"]
                 }
             }),
+            json!({
+                "name": "list_roles",
+                "description": "List all defined roles and their privileges",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_role",
+                "description": "Create a new role with specific privileges",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "roleid": { "type": "string", "description": "The Role ID" },
+                        "privs": { "type": "string", "description": "Comma separated list of privileges" }
+                    },
+                    "required": ["roleid", "privs"]
+                }
+            }),
+            json!({
+                "name": "update_role",
+                "description": "Update role privileges",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "roleid": { "type": "string", "description": "The Role ID" },
+                        "privs": { "type": "string", "description": "Comma separated list of privileges" },
+                        "append": { "type": "boolean", "description": "Append privileges instead of replacing (default: false)" }
+                    },
+                    "required": ["roleid", "privs"]
+                }
+            }),
+            json!({
+                "name": "delete_role",
+                "description": "Delete a role",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "roleid": { "type": "string", "description": "The Role ID" }
+                    },
+                    "required": ["roleid"]
+                }
+            }),
+            json!({
+                "name": "list_acls",
+                "description": "List all Access Control List (ACL) entries",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "update_acl",
+                "description": "Update Access Control List (Add/Remove permissions)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": { "type": "string", "description": "The path (e.g. /vms/100, /storage/local)" },
+                        "users": { "type": "string", "description": "Comma separated list of users" },
+                        "groups": { "type": "string", "description": "Comma separated list of groups" },
+                        "tokens": { "type": "string", "description": "Comma separated list of API tokens" },
+                        "roles": { "type": "string", "description": "Comma separated list of roles" },
+                        "delete": { "type": "integer", "enum": [0, 1], "description": "Remove specified permissions instead of adding" },
+                        "propagate": { "type": "integer", "enum": [0, 1], "description": "Propagate to sub-paths" }
+                    },
+                    "required": ["path", "roles"]
+                }
+            }),
         ]
     }
 
@@ -1293,6 +1364,12 @@ impl McpServer {
             "add_ha_resource" => self.handle_add_ha_resource(args).await,
             "update_ha_resource" => self.handle_update_ha_resource(args).await,
             "remove_ha_resource" => self.handle_remove_ha_resource(args).await,
+            "list_roles" => self.handle_list_roles().await,
+            "create_role" => self.handle_create_role(args).await,
+            "update_role" => self.handle_update_role(args).await,
+            "delete_role" => self.handle_delete_role(args).await,
+            "list_acls" => self.handle_list_acls().await,
+            "update_acl" => self.handle_update_acl(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
@@ -2456,6 +2533,73 @@ impl McpServer {
         self.client.delete_ha_resource(sid).await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Resource {} removed from HA", sid) }] }),
+        )
+    }
+
+    async fn handle_list_roles(&self) -> Result<Value> {
+        let roles = self.client.get_roles().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&roles)? }] }),
+        )
+    }
+
+    async fn handle_create_role(&self, args: &Value) -> Result<Value> {
+        let roleid = args
+            .get("roleid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing roleid"))?;
+        let privs = args
+            .get("privs")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing privs"))?;
+        self.client.create_role(roleid, privs).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Role {} created", roleid) }] }))
+    }
+
+    async fn handle_update_role(&self, args: &Value) -> Result<Value> {
+        let roleid = args
+            .get("roleid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing roleid"))?;
+        let privs = args
+            .get("privs")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing privs"))?;
+        let append = args
+            .get("append")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        self.client.update_role(roleid, privs, append).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Role {} updated", roleid) }] }))
+    }
+
+    async fn handle_delete_role(&self, args: &Value) -> Result<Value> {
+        let roleid = args
+            .get("roleid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing roleid"))?;
+        self.client.delete_role(roleid).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Role {} deleted", roleid) }] }))
+    }
+
+    async fn handle_list_acls(&self) -> Result<Value> {
+        let acls = self.client.get_acls().await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&acls)? }] }))
+    }
+
+    async fn handle_update_acl(&self, args: &Value) -> Result<Value> {
+        let path = args
+            .get("path")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing path"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("path");
+        self.client.update_acl(path, &Value::Object(params)).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("ACL for path {} updated", path) }] }),
         )
     }
 }

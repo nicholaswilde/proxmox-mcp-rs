@@ -56,6 +56,12 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `add_ha_resource`: Add a VM or Container to HA management.
   - `update_ha_resource`: Update HA resource configuration or state.
   - `remove_ha_resource`: Remove a resource from HA management.
+  - `list_roles`: List all defined roles and their privileges.
+  - `create_role`: Create a new role with specific privileges.
+  - `update_role`: Update role privileges.
+  - `delete_role`: Delete a role.
+  - `list_acls`: List all Access Control List (ACL) entries.
+  - `update_acl`: Update Access Control List (Add/Remove permissions).
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.

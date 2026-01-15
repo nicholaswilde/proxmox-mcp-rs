@@ -1471,4 +1471,78 @@ mod tests {
             .unwrap()
             .contains("removed"));
     }
+
+    #[tokio::test]
+    async fn test_roles_and_acls() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_roles
+        Mock::given(method("GET"))
+            .and(path("/api2/json/access/roles"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "roleid": "Admin", "privs": "VM.Config.HW,VM.Config.Disk" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock create_role
+        Mock::given(method("POST"))
+            .and(path("/api2/json/access/roles"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock list_acls
+        Mock::given(method("GET"))
+            .and(path("/api2/json/access/acl"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "path": "/", "user": "root@pam", "role": "Administrator" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock update_acl
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/access/acl"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test List Roles
+        let res = server.call_tool("list_roles", &json!({})).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Admin"));
+
+        // Test Create Role
+        let args = json!({ "roleid": "NewRole", "privs": "VM.Audit" });
+        let res = server.call_tool("create_role", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
+
+        // Test List ACLs
+        let res = server.call_tool("list_acls", &json!({})).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("root@pam"));
+
+        // Test Update ACL
+        let args = json!({ "path": "/vms/100", "users": "test@pve", "roles": "PVEVMAdmin" });
+        let res = server.call_tool("update_acl", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
+    }
 }
