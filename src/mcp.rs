@@ -971,6 +971,20 @@ impl McpServer {
                 }
             }),
             json!({
+                "name": "get_console_url",
+                "description": "Get the URL for the Proxmox web console (NoVNC, xterm.js, or Spice)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "console": { "type": "string", "enum": ["novnc", "xtermjs", "spice"], "description": "Console type (default: novnc)" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
                 "name": "vm_agent_ping",
                 "description": "Ping the QEMU Guest Agent inside a VM",
                 "inputSchema": {
@@ -1466,6 +1480,23 @@ impl McpServer {
             "add_storage" => self.handle_add_storage(args).await,
             "delete_storage" => self.handle_delete_storage(args).await,
             "update_storage" => self.handle_update_storage(args).await,
+            "get_console_url" => {
+                let node = args
+                    .get("node")
+                    .and_then(|v| v.as_str())
+                    .ok_or(anyhow::anyhow!("Missing node"))?;
+                let vmid = args
+                    .get("vmid")
+                    .and_then(|v| v.as_i64())
+                    .ok_or(anyhow::anyhow!("Missing vmid"))?;
+                let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+                let console_type = args.get("console").and_then(|v| v.as_str());
+
+                let url = self
+                    .client
+                    .get_console_url(node, vmid, vm_type, console_type)?;
+                Ok(json!({ "content": [{ "type": "text", "text": url }] }))
+            }
             "vm_agent_ping" => self.handle_vm_agent_ping(args).await,
             "vm_exec" => self.handle_vm_exec(args).await,
             "vm_exec_status" => self.handle_vm_exec_status(args).await,
@@ -1476,6 +1507,10 @@ impl McpServer {
             "get_pool_details" => self.handle_get_pool_details(args).await,
             "update_pool" => self.handle_update_pool(args).await,
             "delete_pool" => self.handle_delete_pool(args).await,
+            "list_replication_jobs" => self.handle_list_replication_jobs().await,
+            "create_replication_job" => self.handle_create_replication_job(args).await,
+            "update_replication_job" => self.handle_update_replication_job(args).await,
+            "delete_replication_job" => self.handle_delete_replication_job(args).await,
             "list_ha_resources" => self.handle_list_ha_resources().await,
             "list_ha_groups" => self.handle_list_ha_groups().await,
             "add_ha_resource" => self.handle_add_ha_resource(args).await,
@@ -2095,33 +2130,15 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing upid"))?;
         let timeout = args.get("timeout").and_then(|v| v.as_u64()).unwrap_or(60);
 
-        let start_time = std::time::Instant::now();
-        let timeout_duration = std::time::Duration::from_secs(timeout);
+        let status = self.client.wait_for_task(node, upid, timeout).await?;
+        let exit_status = status
+            .get("exitstatus")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
 
-        loop {
-            if start_time.elapsed() > timeout_duration {
-                anyhow::bail!("Timeout waiting for task {}", upid);
-            }
-
-            let status = self.client.get_task_status(node, upid).await?;
-            // Status object has "status": "stopped" when done.
-            // Also check "exitstatus": "OK" or "ERROR..."
-
-            if let Some(s) = status.get("status").and_then(|v| v.as_str()) {
-                if s == "stopped" {
-                    let exit_status = status
-                        .get("exitstatus")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("unknown");
-
-                    return Ok(
-                        json!({ "content": [{ "type": "text", "text": format!("Task finished with status: {}\nFull details:\n{}", exit_status, serde_json::to_string_pretty(&status)?) }] }),
-                    );
-                }
-            }
-
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-        }
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Task finished with status: {}\nFull details:\n{}", exit_status, serde_json::to_string_pretty(&status)?) }] }),
+        )
     }
 
     async fn handle_list_backups(&self, args: &Value) -> Result<Value> {
@@ -2599,6 +2616,62 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing poolid"))?;
         self.client.delete_pool(poolid).await?;
         Ok(json!({ "content": [{ "type": "text", "text": format!("Pool {} deleted", poolid) }] }))
+    }
+
+    async fn handle_list_replication_jobs(&self) -> Result<Value> {
+        let jobs = self.client.get_replication_jobs().await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&jobs)? }] }))
+    }
+
+    async fn handle_create_replication_job(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let target = args
+            .get("target")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing target"))?;
+        let schedule = args.get("schedule").and_then(|v| v.as_str());
+        let rate = args.get("rate").and_then(|v| v.as_f64());
+        let comment = args.get("comment").and_then(|v| v.as_str());
+        let enable = args.get("enable").and_then(|v| v.as_bool());
+
+        self.client
+            .create_replication_job(id, target, schedule, rate, comment, enable)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Replication job {} created", id) }] }),
+        )
+    }
+
+    async fn handle_update_replication_job(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .update_replication_job(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Replication job {} updated", id) }] }),
+        )
+    }
+
+    async fn handle_delete_replication_job(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        self.client.delete_replication_job(id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Replication job {} deleted", id) }] }),
+        )
     }
 
     async fn handle_list_ha_resources(&self) -> Result<Value> {

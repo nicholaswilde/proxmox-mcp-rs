@@ -71,6 +71,27 @@ impl ProxmoxClient {
         self.request(Method::GET, &path, None).await
     }
 
+    pub async fn wait_for_task(&self, node: &str, upid: &str, timeout_secs: u64) -> Result<Value> {
+        let start_time = std::time::Instant::now();
+        let timeout_duration = std::time::Duration::from_secs(timeout_secs);
+
+        loop {
+            if start_time.elapsed() > timeout_duration {
+                anyhow::bail!("Timeout waiting for task {}", upid);
+            }
+
+            let status = self.get_task_status(node, upid).await?;
+
+            if let Some(s) = status.get("status").and_then(|v| v.as_str()) {
+                if s == "stopped" {
+                    return Ok(status);
+                }
+            }
+
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
+    }
+
     pub async fn get_task_log(&self, node: &str, upid: &str) -> Result<Vec<Value>> {
         let path = format!("nodes/{}/tasks/{}/log", node, upid);
         self.request(Method::GET, &path, None).await

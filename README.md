@@ -42,6 +42,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `read_task_log`: Read the log of a specific task (UPID).
   - `wait_for_task`: Wait for a task to finish (with timeout).
   - `get_vm_config`: Get the configuration of a VM or Container.
+  - `get_console_url`: Get the URL for the Proxmox web console (NoVNC, xterm.js, or Spice).
   - `download_url`: Download an ISO or Container template from a URL to storage.
   - `list_users`: List all users in the cluster.
   - `create_user`: Create a new user.
@@ -51,6 +52,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_pool_details`: Get detailed information about a resource pool.
   - `update_pool`: Update a resource pool (add/remove members or change comment).
   - `delete_pool`: Delete a resource pool.
+  - `list_replication_jobs`: List all configured replication jobs.
+  - `create_replication_job`: Create a new replication job.
+  - `update_replication_job`: Update a replication job configuration.
+  - `delete_replication_job`: Delete a replication job.
   - `list_ha_resources`: List all High Availability (HA) resources.
   - `list_ha_groups`: List all High Availability (HA) groups.
   - `add_ha_resource`: Add a VM or Container to HA management.

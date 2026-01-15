@@ -10,6 +10,7 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 *   **Backup & Restore:** Full vzdump support (create, list, restore).
 *   **Storage & Network:** List storage domains, ISOs, and network interfaces.
 *   **Cluster Management:** Cluster status, logs, and firewall rules.
+*   **Console Access:** Get URLs for NoVNC, xterm.js, or Spice consoles.
 *   **Monitoring:** Async task tracking (UPID) and resource reading (MCP Resources).
 *   **Language:** Rust.
 *   **Transport:** Stdio (JSON-RPC 2.0) and HTTP (SSE/POST) with optional authentication.
@@ -18,7 +19,7 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 *   `README.md`: User documentation and tool list.
 *   `Cargo.toml`: Project dependencies.
 *   `src/main.rs`: Entry point and argument parsing.
-*   `src/proxmox.rs`: Proxmox API client.
+*   `src/proxmox/`: Proxmox API client modules.
 *   `src/mcp.rs`: MCP Server implementation.
 *   `src/http_server.rs`: HTTP Server implementation (SSE/POST).
 *   `src/settings.rs`: Configuration management.
@@ -33,9 +34,8 @@ This project aims to be a **Rust implementation of a Proxmox MCP (Model Context 
 4.  **Test:** `cargo test`
 
 ### TODOs
-*   Refine async task handling for long-running Proxmox operations.
-*   Implement Console/Serial Terminal Access.
 *   Enhance error reporting for MCP clients.
+*   Implement full VM configuration modification (currently limited to specific fields).
 
 
 ## Development Conventions

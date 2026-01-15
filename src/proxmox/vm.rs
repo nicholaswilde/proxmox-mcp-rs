@@ -40,6 +40,28 @@ impl ProxmoxClient {
         anyhow::bail!("VMID {} not found", vmid);
     }
 
+    pub fn get_console_url(
+        &self,
+        node: &str,
+        vmid: i64,
+        vm_type: &str,
+        console_type: Option<&str>,
+    ) -> Result<String> {
+        let mut url = self.base_url.clone();
+        url.set_path("/");
+
+        let c_val = if vm_type == "lxc" { "lxc" } else { "kvm" };
+        let c_type = console_type.unwrap_or("novnc");
+
+        url.query_pairs_mut()
+            .append_pair("console", c_val)
+            .append_pair(c_type, "1")
+            .append_pair("vmid", &vmid.to_string())
+            .append_pair("node", node);
+
+        Ok(url.to_string())
+    }
+
     pub async fn vm_action(
         &self,
         node: &str,

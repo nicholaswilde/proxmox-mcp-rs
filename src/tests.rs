@@ -1681,4 +1681,31 @@ mod tests {
             .unwrap()
             .contains("Tags removed"));
     }
+
+    #[tokio::test]
+    async fn test_console_url() {
+        // We don't really need a mock server running for this, but create_test_client uses it.
+        // We can just use a dummy URL.
+        let client = ProxmoxClient::new("https://pve.example.com", 8006, true).unwrap();
+        let server = McpServer::new(client, false);
+
+        // Test QEMU NoVNC (default)
+        let args = json!({ "node": "pve1", "vmid": 100 });
+        let res = server.call_tool("get_console_url", &args).await.unwrap();
+        let url = res["content"][0]["text"].as_str().unwrap();
+
+        assert!(url.contains("https://pve.example.com:8006/"));
+        assert!(url.contains("console=kvm"));
+        assert!(url.contains("novnc=1"));
+        assert!(url.contains("vmid=100"));
+        assert!(url.contains("node=pve1"));
+
+        // Test LXC xterm.js
+        let args = json!({ "node": "pve1", "vmid": 200, "type": "lxc", "console": "xtermjs" });
+        let res = server.call_tool("get_console_url", &args).await.unwrap();
+        let url = res["content"][0]["text"].as_str().unwrap();
+
+        assert!(url.contains("console=lxc"));
+        assert!(url.contains("xtermjs=1"));
+    }
 }
