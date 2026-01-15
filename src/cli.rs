@@ -93,6 +93,10 @@ pub struct Args {
     /// HTTP Auth Token (only for http type)
     #[arg(long, env = "PROXMOX_HTTP_AUTH_TOKEN")]
     pub http_auth_token: Option<String>,
+
+    /// Enable Lazy Loading mode (starts with minimal tools)
+    #[arg(long, env = "PROXMOX_LAZY_MODE", default_value_t = false)]
+    pub lazy_mode: bool,
 }
 
 #[derive(Subcommand, Debug)]

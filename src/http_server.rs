@@ -141,6 +141,25 @@ async fn message_handler(
                     error!("Failed to send SSE event to session {}: {}", session_id, e);
                 }
             }
+
+            // Check for notifications
+            if mcp.check_notification() {
+                let notification = serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "method": "notifications/tools/list_changed"
+                });
+                if let Ok(data) = serde_json::to_string(&notification) {
+                    if let Err(e) = tx
+                        .send(Ok(Event::default().event("message").data(data)))
+                        .await
+                    {
+                        error!(
+                            "Failed to send notification to session {}: {}",
+                            session_id, e
+                        );
+                    }
+                }
+            }
         }
     });
 
@@ -197,7 +216,7 @@ mod tests {
         // we just need the State to exist.
         // We'll create a dummy ProxmoxClient (it won't be used by middleware).
         let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
-        let mcp_server = McpServer::new(client);
+        let mcp_server = McpServer::new(client, false);
 
         let state = AppState {
             mcp_server,

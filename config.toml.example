@@ -56,3 +56,7 @@ user = "root@pam"
 # HTTP Auth Token (Optional, secures /sse and /message)
 # http_auth_token = "your-secret-token"
 
+# Lazy Mode (Default: false)
+# Start with a minimal set of tools to save tokens. Use `load_all_tools` to load the full catalog.
+# lazy_mode = false
+

@@ -25,6 +25,7 @@ pub struct Settings {
     pub http_host: Option<String>,
     pub http_port: Option<u16>,
     pub http_auth_token: Option<String>,
+    pub lazy_mode: Option<bool>,
 }
 
 impl Settings {
@@ -131,6 +132,7 @@ mod tests {
             http_host: None,
             http_port: None,
             http_auth_token: None,
+            lazy_mode: None,
         };
         assert!(s.validate().is_err());
     }
@@ -154,6 +156,7 @@ mod tests {
             http_host: None,
             http_port: None,
             http_auth_token: None,
+            lazy_mode: None,
         };
         assert!(s.validate().is_ok());
     }
@@ -177,6 +180,7 @@ mod tests {
             http_host: None,
             http_port: None,
             http_auth_token: None,
+            lazy_mode: None,
         };
         assert!(s.validate().is_err());
     }

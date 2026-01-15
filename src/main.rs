@@ -108,6 +108,9 @@ async fn main() {
     if let Some(token) = args.http_auth_token {
         settings.http_auth_token = Some(token);
     }
+    if args.lazy_mode {
+        settings.lazy_mode = Some(true);
+    }
 
     // We don't override log settings in `settings` struct because we used them directly from CLI args
     // to initialize logging BEFORE loading other settings (so we can log config errors).
@@ -129,6 +132,7 @@ async fn main() {
     let http_host = settings.http_host.unwrap_or_else(|| "0.0.0.0".to_string());
     let http_port = settings.http_port.unwrap_or(3000);
     let http_auth_token = settings.http_auth_token;
+    let lazy_mode = settings.lazy_mode.unwrap_or(false);
 
     info!("Connecting to Proxmox at {}:{}", host, port);
 
@@ -153,7 +157,7 @@ async fn main() {
         process::exit(1);
     }
 
-    let mut server = McpServer::new(client);
+    let mut server = McpServer::new(client, lazy_mode);
 
     match server_type.as_str() {
         "http" => {

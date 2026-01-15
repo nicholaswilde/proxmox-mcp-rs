@@ -75,7 +75,7 @@ mod tests {
         // BUT request() method might fail if no ticket, unless we mock the response ignoring auth headers.
         // Our mock server ignores headers by default unless matched.
 
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "vm_id": "100" });
         let res = server.call_tool("reset_vm", &args).await.unwrap();
@@ -109,7 +109,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "container_id": "200" });
         let res = server.call_tool("reset_container", &args).await.unwrap();
@@ -130,7 +130,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "vm_id": "999" });
         let res = server.call_tool("reset_vm", &args).await;
@@ -150,7 +150,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
         let res = server.call_tool("list_nodes", &json!({})).await.unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
         assert!(content.contains("pve1"));
@@ -171,7 +171,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test list_vms (should return both)
         let res_vms = server.call_tool("list_vms", &json!({})).await.unwrap();
@@ -199,7 +199,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         // Default type is qemu
@@ -220,7 +220,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("stop_vm", &args).await.unwrap();
@@ -240,7 +240,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("shutdown_vm", &args).await.unwrap();
@@ -260,7 +260,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("reboot_vm", &args).await.unwrap();
@@ -280,7 +280,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 101, "name": "test-vm", "memory": 2048 });
         let res = server.call_tool("create_vm", &args).await.unwrap();
@@ -300,7 +300,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("delete_vm", &args).await.unwrap();
@@ -320,7 +320,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({
             "node": "pve1",
@@ -372,7 +372,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test List
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -417,7 +417,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 200 });
         let res = server.call_tool("delete_container", &args).await.unwrap();
@@ -437,7 +437,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100, "newid": 102, "name": "cloned-vm" });
         let res = server.call_tool("clone_vm", &args).await.unwrap();
@@ -457,7 +457,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1", "vmid": 100, "target_node": "pve2" });
         let res = server.call_tool("migrate_vm", &args).await.unwrap();
@@ -482,7 +482,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1" });
         let res = server.call_tool("list_templates", &args).await.unwrap();
@@ -509,7 +509,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Update both
         let args = json!({
@@ -561,7 +561,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test List
         let args = json!({ "node": "pve1", "storage": "local" });
@@ -610,7 +610,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test get_task_status
         let args = json!({ "node": "pve1", "upid": upid });
@@ -644,7 +644,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({ "node": "pve1" });
         let res = server.call_tool("list_networks", &args).await.unwrap();
@@ -682,7 +682,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test list_storage
         let args = json!({ "node": "pve1" });
@@ -716,7 +716,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test resources/list via handle_request
         let req = crate::mcp::JsonRpcRequest {
@@ -767,7 +767,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let res = server
             .call_tool("get_cluster_status", &json!({}))
@@ -825,7 +825,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test list (Cluster)
         let res = server
@@ -876,7 +876,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // 1. Add Disk
         let args = json!({
@@ -960,7 +960,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // 1. Get Node Stats
         let args = json!({ "node": "pve1", "timeframe": "hour" });
@@ -986,7 +986,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         let args = json!({
             "node": "pve1",
@@ -1033,7 +1033,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test List
         let res = server.call_tool("list_users", &json!({})).await.unwrap();
@@ -1101,7 +1101,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test List
         let res = server
@@ -1196,7 +1196,7 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client);
+        let server = McpServer::new(client, false);
 
         // Test Ping
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -1231,5 +1231,61 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("File written"));
+    }
+
+    #[tokio::test]
+    async fn test_lazy_loading() {
+        let mock_server = MockServer::start().await;
+        // Mock cluster/resources for full list check later
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": []
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, true); // lazy_mode = true
+
+        // 1. Check initial tool list
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "tools/list".to_string(),
+            params: None,
+            id: Some(json!(1)),
+        };
+        let res = server.handle_request(req).await.unwrap();
+        let tools = res["tools"].as_array().unwrap();
+
+        // Should contain load_all_tools
+        assert!(tools.iter().any(|t| t["name"] == "load_all_tools"));
+        // Should NOT contain list_vms
+        assert!(!tools.iter().any(|t| t["name"] == "list_vms"));
+        // Should contain list_nodes (as meta tool)
+        assert!(tools.iter().any(|t| t["name"] == "list_nodes"));
+
+        // 2. Load all tools
+        let res_load = server
+            .call_tool("load_all_tools", &json!({}))
+            .await
+            .unwrap();
+        assert!(res_load["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("loaded"));
+
+        // 3. Check tool list again
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "tools/list".to_string(),
+            params: None,
+            id: Some(json!(2)),
+        };
+        let res = server.handle_request(req).await.unwrap();
+        let tools = res["tools"].as_array().unwrap();
+
+        // Should contain list_vms now
+        assert!(tools.iter().any(|t| t["name"] == "list_vms"));
     }
 }

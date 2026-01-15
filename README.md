@@ -152,10 +152,12 @@ Arguments:
 - `--http-host`: HTTP Listen Host (default: `0.0.0.0`).
 - `--http-port`, `-l`: HTTP Listen Port (default: `3000`).
 - `--http-auth-token`: HTTP Auth Token (Bearer or query param).
+- `--lazy-mode`: Enable Lazy Loading mode. Starts with a minimal set of tools to save context tokens. Use the `load_all_tools` tool to load the full catalog.
 ---
 - `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
 - `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
 - `PROXMOX_HTTP_PORT` (default: `3000`)
+- `PROXMOX_LAZY_MODE` (default: `false`)
 
 ### :gear: Configuration File
 

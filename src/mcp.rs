@@ -4,6 +4,7 @@ use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
+use std::sync::{Arc, Mutex};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JsonRpcRequest {
@@ -31,14 +32,38 @@ pub struct JsonRpcError {
     pub data: Option<Value>,
 }
 
+struct McpState {
+    lazy_mode: bool,
+    tools_loaded: bool,
+    should_notify: bool,
+}
+
 #[derive(Clone)]
 pub struct McpServer {
     client: ProxmoxClient,
+    state: Arc<Mutex<McpState>>,
 }
 
 impl McpServer {
-    pub fn new(client: ProxmoxClient) -> Self {
-        Self { client }
+    pub fn new(client: ProxmoxClient, lazy_mode: bool) -> Self {
+        Self {
+            client,
+            state: Arc::new(Mutex::new(McpState {
+                lazy_mode,
+                tools_loaded: !lazy_mode,
+                should_notify: false,
+            })),
+        }
+    }
+
+    pub fn check_notification(&self) -> bool {
+        let mut state = self.state.lock().unwrap();
+        if state.should_notify {
+            state.should_notify = false;
+            true
+        } else {
+            false
+        }
     }
 
     pub async fn run_stdio(&mut self) -> Result<()> {
@@ -88,6 +113,17 @@ impl McpServer {
                         let out = serde_json::to_string(&json_resp)?;
                         println!("{}", out);
                         io::stdout().flush()?;
+
+                        // Check for notification (e.g. tool list changed)
+                        if self.check_notification() {
+                            let notification = json!({
+                                "jsonrpc": "2.0",
+                                "method": "notifications/tools/list_changed"
+                            });
+                            let out = serde_json::to_string(&notification)?;
+                            println!("{}", out);
+                            io::stdout().flush()?;
+                        }
                     } else {
                         // Notification, no response expected
                         if let Err(e) = resp {
@@ -113,7 +149,9 @@ impl McpServer {
                     "version": "0.1.0"
                 },
                 "capabilities": {
-                    "tools": {},
+                    "tools": {
+                        "listChanged": true
+                    },
                     "resources": {}
                 }
             })),
@@ -168,6 +206,41 @@ impl McpServer {
     }
 
     fn get_tool_definitions(&self) -> Vec<Value> {
+        {
+            let state = self.state.lock().unwrap();
+            if state.lazy_mode && !state.tools_loaded {
+                return vec![
+                    json!({
+                        "name": "load_all_tools",
+                        "description": "Load all Proxmox tools (VMs, containers, storage, etc.). Use this to access full functionality.",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
+                    }),
+                    json!({
+                        "name": "get_cluster_status",
+                        "description": "Get cluster status information",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
+                    }),
+                    json!({
+                        "name": "list_nodes",
+                        "description": "List all nodes in the Proxmox cluster",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
+                    }),
+                ];
+            }
+        }
+
         vec![
             json!({
                 "name": "list_nodes",
@@ -986,6 +1059,12 @@ impl McpServer {
 
     pub async fn call_tool(&self, name: &str, args: &Value) -> Result<Value> {
         match name {
+            "load_all_tools" => {
+                let mut state = self.state.lock().unwrap();
+                state.tools_loaded = true;
+                state.should_notify = true;
+                Ok(json!({ "content": [{ "type": "text", "text": "All tools loaded." }] }))
+            }
             "list_nodes" => {
                 let nodes = self.client.get_nodes().await?;
                 Ok(
