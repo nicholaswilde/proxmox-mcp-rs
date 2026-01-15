@@ -1284,6 +1284,66 @@ impl McpServer {
                     "required": ["node", "service", "action"]
                 }
             }),
+            json!({
+                "name": "set_vm_cloudinit",
+                "description": "Configure Cloud-Init settings for a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "ciuser": { "type": "string", "description": "Cloud-Init User" },
+                        "cipassword": { "type": "string", "description": "Cloud-Init Password" },
+                        "sshkeys": { "type": "string", "description": "SSH public keys (URL-encoded)" },
+                        "ipconfig0": { "type": "string", "description": "IP Config (e.g. ip=dhcp or ip=192.168.1.10/24,gw=...)" },
+                        "nameserver": { "type": "string", "description": "DNS Server" },
+                        "searchdomain": { "type": "string", "description": "DNS Search Domain" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "add_tag",
+                "description": "Add tags to a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "tags": { "type": "string", "description": "Comma separated list of tags to add" }
+                    },
+                    "required": ["node", "vmid", "tags"]
+                }
+            }),
+            json!({
+                "name": "remove_tag",
+                "description": "Remove tags from a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "tags": { "type": "string", "description": "Comma separated list of tags to remove" }
+                    },
+                    "required": ["node", "vmid", "tags"]
+                }
+            }),
+            json!({
+                "name": "set_tags",
+                "description": "Set (overwrite) tags for a VM or Container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"] },
+                        "tags": { "type": "string", "description": "Comma separated list of tags" }
+                    },
+                    "required": ["node", "vmid", "tags"]
+                }
+            }),
         ]
     }
 
@@ -1432,6 +1492,10 @@ impl McpServer {
             "get_apt_versions" => self.handle_get_apt_versions(args).await,
             "list_services" => self.handle_list_services(args).await,
             "manage_service" => self.handle_manage_service(args).await,
+            "set_vm_cloudinit" => self.handle_set_vm_cloudinit(args).await,
+            "add_tag" => self.handle_add_tag(args).await,
+            "remove_tag" => self.handle_remove_tag(args).await,
+            "set_tags" => self.handle_set_tags(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
@@ -2727,5 +2791,85 @@ impl McpServer {
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Service {} {} initiated. UPID: {}", service, action, upid) }] }),
         )
+    }
+
+    async fn handle_set_vm_cloudinit(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("vmid");
+
+        self.client
+            .set_vm_cloudinit(node, vmid, &Value::Object(params))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Cloud-Init config updated" }] }))
+    }
+
+    async fn handle_add_tag(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let tags = args
+            .get("tags")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing tags"))?;
+
+        self.client.add_tag(node, vmid, vm_type, tags).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Tags added" }] }))
+    }
+
+    async fn handle_remove_tag(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let tags = args
+            .get("tags")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing tags"))?;
+
+        self.client.remove_tag(node, vmid, vm_type, tags).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Tags removed" }] }))
+    }
+
+    async fn handle_set_tags(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str()).unwrap_or("qemu");
+        let tags = args
+            .get("tags")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing tags"))?;
+
+        self.client.set_tags(node, vmid, vm_type, tags).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Tags set" }] }))
     }
 }

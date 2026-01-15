@@ -1619,4 +1619,66 @@ mod tests {
             .unwrap()
             .contains("restart initiated"));
     }
+
+    #[tokio::test]
+    async fn test_cloudinit_and_tags() {
+        let mock_server = MockServer::start().await;
+
+        // Mock get_vm_config (needed for add/remove tag logic)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "tags": "prod,linux" }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock update_config (Cloud-Init and Tags)
+        // We use a broader match here because multiple tools use this endpoint
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test Cloud-Init
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "ciuser": "admin",
+            "ipconfig0": "ip=dhcp"
+        });
+        let res = server.call_tool("set_vm_cloudinit", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
+
+        // Test Set Tags
+        let args = json!({ "node": "pve1", "vmid": 100, "tags": "dev,test" });
+        let res = server.call_tool("set_tags", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Tags set"));
+
+        // Test Add Tag (Logic test mostly)
+        let args = json!({ "node": "pve1", "vmid": 100, "tags": "newtag" });
+        let res = server.call_tool("add_tag", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Tags added"));
+
+        // Test Remove Tag
+        let args = json!({ "node": "pve1", "vmid": 100, "tags": "prod" });
+        let res = server.call_tool("remove_tag", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Tags removed"));
+    }
 }

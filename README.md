@@ -67,6 +67,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_apt_versions`: Get versions of installed Proxmox packages.
   - `list_services`: List system services on a node.
   - `manage_service`: Manage a system service (Start, Stop, Restart, Reload).
+  - `set_vm_cloudinit`: Configure Cloud-Init settings for a VM (user, password, IP, SSH keys).
+  - `add_tag`: Add tags to a VM or Container.
+  - `remove_tag`: Remove tags from a VM or Container.
+  - `set_tags`: Set (overwrite) tags for a VM or Container.
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.

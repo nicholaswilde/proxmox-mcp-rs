@@ -1198,4 +1198,85 @@ impl ProxmoxClient {
         let path = format!("nodes/{}/services/{}/{}", node, service, action);
         self.request(Method::POST, &path, None).await
     }
+
+    // --- Cloud-Init & Configuration ---
+
+    pub async fn set_vm_cloudinit(&self, node: &str, vmid: i64, params: &Value) -> Result<()> {
+        let path = format!("nodes/{}/qemu/{}/config", node, vmid);
+        self.request(Method::PUT, &path, Some(params)).await
+    }
+
+    // --- Resource Tagging ---
+
+    pub async fn add_tag(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        tags: &str,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
+        // We need to fetch current tags first to append, because 'tags' param overwrites.
+        // Alternatively, use the 'tags' field with comma-separation.
+        // Proxmox API: PUT /nodes/{node}/{type}/{vmid}/config
+        // Param: tags=<string> (comma separated list)
+        // If we want to ADD, we must read first.
+
+        let config = self.get_vm_config(node, vmid, resource_type).await?;
+        let current_tags = config.get("tags").and_then(|v| v.as_str()).unwrap_or("");
+
+        let new_tags = if current_tags.is_empty() {
+            tags.to_string()
+        } else {
+            // Split, add new ones, join.
+            let mut tag_list: Vec<&str> = current_tags.split(&[',', ';', ' '][..]).collect();
+            for t in tags.split(&[',', ';', ' '][..]) {
+                if !tag_list.contains(&t) {
+                    tag_list.push(t);
+                }
+            }
+            tag_list.join(",")
+        };
+
+        let params = json!({ "tags": new_tags });
+        self.request(Method::PUT, &path, Some(&params)).await
+    }
+
+    pub async fn remove_tag(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        tags: &str,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
+        let config = self.get_vm_config(node, vmid, resource_type).await?;
+        let current_tags = config.get("tags").and_then(|v| v.as_str()).unwrap_or("");
+
+        if current_tags.is_empty() {
+            return Ok(());
+        }
+
+        let tags_to_remove: Vec<&str> = tags.split(&[',', ';', ' '][..]).collect();
+        let new_tag_list: Vec<&str> = current_tags
+            .split(&[',', ';', ' '][..])
+            .filter(|t| !tags_to_remove.contains(t))
+            .collect();
+
+        let new_tags = new_tag_list.join(",");
+        let params = json!({ "tags": new_tags });
+        self.request(Method::PUT, &path, Some(&params)).await
+    }
+
+    pub async fn set_tags(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        tags: &str,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
+        let params = json!({ "tags": tags });
+        self.request(Method::PUT, &path, Some(&params)).await
+    }
 }
