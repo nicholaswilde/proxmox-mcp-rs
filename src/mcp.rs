@@ -1095,6 +1095,67 @@ impl McpServer {
                     "required": ["poolid"]
                 }
             }),
+            json!({
+                "name": "list_ha_resources",
+                "description": "List all High Availability (HA) resources",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "list_ha_groups",
+                "description": "List all High Availability (HA) groups",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "add_ha_resource",
+                "description": "Add a VM or Container to HA management",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "sid": { "type": "string", "description": "Service ID (e.g. vm:100 or ct:200)" },
+                        "comment": { "type": "string" },
+                        "group": { "type": "string", "description": "HA group name" },
+                        "max_relocate": { "type": "integer" },
+                        "max_restart": { "type": "integer" },
+                        "state": { "type": "string", "enum": ["started", "stopped", "enabled", "disabled", "ignored"], "description": "Desired state" }
+                    },
+                    "required": ["sid"]
+                }
+            }),
+            json!({
+                "name": "update_ha_resource",
+                "description": "Update HA resource configuration or state",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "sid": { "type": "string", "description": "Service ID" },
+                        "comment": { "type": "string" },
+                        "group": { "type": "string" },
+                        "max_relocate": { "type": "integer" },
+                        "max_restart": { "type": "integer" },
+                        "state": { "type": "string", "enum": ["started", "stopped", "enabled", "disabled", "ignored"] }
+                    },
+                    "required": ["sid"]
+                }
+            }),
+            json!({
+                "name": "remove_ha_resource",
+                "description": "Remove a resource from HA management",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "sid": { "type": "string", "description": "Service ID" }
+                    },
+                    "required": ["sid"]
+                }
+            }),
         ]
     }
 
@@ -1227,6 +1288,11 @@ impl McpServer {
             "get_pool_details" => self.handle_get_pool_details(args).await,
             "update_pool" => self.handle_update_pool(args).await,
             "delete_pool" => self.handle_delete_pool(args).await,
+            "list_ha_resources" => self.handle_list_ha_resources().await,
+            "list_ha_groups" => self.handle_list_ha_groups().await,
+            "add_ha_resource" => self.handle_add_ha_resource(args).await,
+            "update_ha_resource" => self.handle_update_ha_resource(args).await,
+            "remove_ha_resource" => self.handle_remove_ha_resource(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
     }
@@ -2330,5 +2396,66 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing poolid"))?;
         self.client.delete_pool(poolid).await?;
         Ok(json!({ "content": [{ "type": "text", "text": format!("Pool {} deleted", poolid) }] }))
+    }
+
+    async fn handle_list_ha_resources(&self) -> Result<Value> {
+        let resources = self.client.get_ha_resources().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&resources)? }] }),
+        )
+    }
+
+    async fn handle_list_ha_groups(&self) -> Result<Value> {
+        let groups = self.client.get_ha_groups().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&groups)? }] }),
+        )
+    }
+
+    async fn handle_add_ha_resource(&self, args: &Value) -> Result<Value> {
+        let sid = args
+            .get("sid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing sid"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("sid");
+        self.client
+            .add_ha_resource(sid, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Resource {} added to HA", sid) }] }),
+        )
+    }
+
+    async fn handle_update_ha_resource(&self, args: &Value) -> Result<Value> {
+        let sid = args
+            .get("sid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing sid"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("sid");
+        self.client
+            .update_ha_resource(sid, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("HA resource {} updated", sid) }] }),
+        )
+    }
+
+    async fn handle_remove_ha_resource(&self, args: &Value) -> Result<Value> {
+        let sid = args
+            .get("sid")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing sid"))?;
+        self.client.delete_ha_resource(sid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Resource {} removed from HA", sid) }] }),
+        )
     }
 }

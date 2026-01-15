@@ -1376,4 +1376,99 @@ mod tests {
             .unwrap()
             .contains("deleted"));
     }
+
+    #[tokio::test]
+    async fn test_ha_management() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_ha_resources
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/ha/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "sid": "vm:100", "state": "started" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock list_ha_groups
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/ha/groups"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "group": "testgroup" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock add_ha_resource
+        Mock::given(method("POST"))
+            .and(path("/api2/json/cluster/ha/resources"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock update_ha_resource
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/cluster/ha/resources/vm:100"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock delete_ha_resource
+        Mock::given(method("DELETE"))
+            .and(path("/api2/json/cluster/ha/resources/vm:100"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test List Resources
+        let res = server
+            .call_tool("list_ha_resources", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("vm:100"));
+
+        // Test List Groups
+        let res = server
+            .call_tool("list_ha_groups", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("testgroup"));
+
+        // Test Add
+        let args = json!({ "sid": "vm:101", "state": "started" });
+        let res = server.call_tool("add_ha_resource", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
+
+        // Test Update
+        let args = json!({ "sid": "vm:100", "state": "stopped" });
+        let res = server.call_tool("update_ha_resource", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
+
+        // Test Remove
+        let args = json!({ "sid": "vm:100" });
+        let res = server.call_tool("remove_ha_resource", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("removed"));
+    }
 }

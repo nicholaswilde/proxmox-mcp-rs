@@ -51,6 +51,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_pool_details`: Get detailed information about a resource pool.
   - `update_pool`: Update a resource pool (add/remove members or change comment).
   - `delete_pool`: Delete a resource pool.
+  - `list_ha_resources`: List all High Availability (HA) resources.
+  - `list_ha_groups`: List all High Availability (HA) groups.
+  - `add_ha_resource`: Add a VM or Container to HA management.
+  - `update_ha_resource`: Update HA resource configuration or state.
+  - `remove_ha_resource`: Remove a resource from HA management.
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
   - `delete_storage`: Delete a storage definition.

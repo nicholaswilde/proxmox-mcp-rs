@@ -1081,4 +1081,43 @@ impl ProxmoxClient {
         let _: Value = self.request(Method::DELETE, &path, None).await?;
         Ok(())
     }
+
+    // --- HA Management ---
+
+    pub async fn get_ha_resources(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "cluster/ha/resources", None)
+            .await
+    }
+
+    pub async fn get_ha_groups(&self) -> Result<Vec<Value>> {
+        self.request(Method::GET, "cluster/ha/groups", None).await
+    }
+
+    pub async fn add_ha_resource(&self, sid: &str, params: &Value) -> Result<()> {
+        let mut full_params = params
+            .as_object()
+            .ok_or(anyhow::anyhow!("Params must be object"))?
+            .clone();
+        full_params.insert("sid".to_string(), json!(sid));
+        let _: Value = self
+            .request(
+                Method::POST,
+                "cluster/ha/resources",
+                Some(&Value::Object(full_params)),
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_ha_resource(&self, sid: &str, params: &Value) -> Result<()> {
+        let path = format!("cluster/ha/resources/{}", sid);
+        let _: Value = self.request(Method::PUT, &path, Some(params)).await?;
+        Ok(())
+    }
+
+    pub async fn delete_ha_resource(&self, sid: &str) -> Result<()> {
+        let path = format!("cluster/ha/resources/{}", sid);
+        let _: Value = self.request(Method::DELETE, &path, None).await?;
+        Ok(())
+    }
 }
