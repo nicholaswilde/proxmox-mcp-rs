@@ -8,6 +8,7 @@ pub enum ProxmoxError {
     #[error("Authentication failed: {0}")]
     Auth(String),
 
+    #[allow(dead_code)]
     #[error("Internal error: {0}")]
     Internal(String),
 
@@ -20,11 +21,16 @@ pub enum ProxmoxError {
     #[error("Invalid URL: {0}")]
     Url(#[from] url::ParseError),
 
+    #[allow(dead_code)]
     #[error("Task failed: UPID {0}")]
     Task(String),
 
+    #[allow(dead_code)]
     #[error("Resource not found: {0}")]
     NotFound(String),
+
+    #[error("Operation timed out: {0}")]
+    Timeout(String),
 }
 
 pub type Result<T> = std::result::Result<T, ProxmoxError>;

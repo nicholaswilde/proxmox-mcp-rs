@@ -101,9 +101,10 @@ impl McpServer {
                             Err(e) => {
                                 let (code, message, data) = if let Some(pve_err) = e.downcast_ref::<crate::proxmox::ProxmoxError>() {
                                     match pve_err {
-                                        crate::proxmox::ProxmoxError::Auth(_) => (-32001, pve_err.to_string(), None),
-                                        crate::proxmox::ProxmoxError::NotFound(_) => (-32004, pve_err.to_string(), None),
-                                        crate::proxmox::ProxmoxError::Api(status, msg) => {
+                                        crate::proxmox::error::ProxmoxError::Auth(_) => (-32001, pve_err.to_string(), None),
+                                        crate::proxmox::error::ProxmoxError::NotFound(_) => (-32004, pve_err.to_string(), None),
+                                        crate::proxmox::error::ProxmoxError::Timeout(_) => (-32002, pve_err.to_string(), None),
+                                        crate::proxmox::error::ProxmoxError::Api(status, msg) => {
                                             let code = match status.as_u16() {
                                                 401 | 403 => -32001,
                                                 404 => -32004,

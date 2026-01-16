@@ -77,7 +77,11 @@ impl ProxmoxClient {
 
         loop {
             if start_time.elapsed() > timeout_duration {
-                anyhow::bail!("Timeout waiting for task {}", upid);
+                return Err(crate::proxmox::error::ProxmoxError::Timeout(format!(
+                    "Timeout waiting for task {}",
+                    upid
+                ))
+                .into());
             }
 
             let status = self.get_task_status(node, upid).await?;
