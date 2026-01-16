@@ -1272,7 +1272,7 @@ dependencies = [
 
 [[package]]
 name = "proxmox-mcp-rs"
-version = "0.3.11"
+version = "0.3.13"
 dependencies = [
  "anyhow",
  "axum",
