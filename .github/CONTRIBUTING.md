@@ -30,6 +30,20 @@ We welcome feature requests! Please open an issue and describe:
 6. **Commit your changes**: Use clear and descriptive commit messages (Conventional Commits preferred).
 7. **Submit a Pull Request**: Provide a clear description of your changes and reference any related issues.
 
+### Working with Conductor
+
+This project uses **Gemini Conductor** to manage development workflow in a structured way. All new features and bug fixes should be implemented as **Tracks**.
+
+1.  **Start a Track**: To start working on a planned track, use the Gemini CLI command:
+    ```
+    /conductor:implement
+    ```
+    This will guide you through selecting and implementing tasks from the `plan.md` file.
+
+2.  **Follow the Workflow**: Conductor enforces the project's workflow, including test-driven development, code coverage checks, and phase-based commits. Please follow the prompts provided by the agent.
+
+3.  **Do Not Manually Edit Plans**: Avoid manually editing `conductor/tracks/<track_id>/plan.md` unless instructed. The Conductor agent manages task status and commit linking automatically.
+
 ## Development Setup
 
 ### Prerequisites

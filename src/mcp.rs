@@ -453,6 +453,21 @@ impl McpServer {
                 }
             }),
             json!({
+                "name": "update_vm_resources",
+                "description": "Update VM hardware configuration (cores, memory, sockets)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The VM ID" },
+                        "cores": { "type": "integer", "description": "New core count" },
+                        "memory": { "type": "integer", "description": "New memory (MB)" },
+                        "sockets": { "type": "integer", "description": "New socket count" }
+                    },
+                    "required": ["node", "vmid"]
+                }
+            }),
+            json!({
                 "name": "update_container_resources",
                 "description": "Update LXC container resources (cores, memory, swap, disk)",
                 "inputSchema": {
@@ -1443,6 +1458,7 @@ impl McpServer {
                     json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&templates)? }] }),
                 )
             }
+            "update_vm_resources" => self.handle_update_resources(args, "qemu").await,
             "update_container_resources" => self.handle_update_resources(args, "lxc").await,
             "list_snapshots" => self.handle_snapshot_list(args).await,
             "snapshot_vm" => self.handle_snapshot_create(args).await,
@@ -2398,6 +2414,9 @@ impl McpServer {
         }
         if let Some(m) = args.get("memory") {
             config_params.insert("memory".to_string(), m.clone());
+        }
+        if let Some(s) = args.get("sockets") {
+            config_params.insert("sockets".to_string(), s.clone());
         }
         if let Some(s) = args.get("swap") {
             config_params.insert("swap".to_string(), s.clone());

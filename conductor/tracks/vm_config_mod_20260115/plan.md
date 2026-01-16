@@ -1,8 +1,11 @@
 # Implementation Plan - Implement VM Configuration Modification Tools
 
 ## Phase 1: Resource Management (CPU/Memory)
-- [ ] Task: Create `update_vm_resources` tool structure and definition in `src/mcp.rs`.
-- [ ] Task: Implement `update_vm_config` function in `src/proxmox/vm.rs` to handle memory and core updates via Proxmox API.
+- [x] Task: Create `update_vm_resources` tool structure and definition in `src/mcp.rs`.
+    - Added `update_vm_resources` to `get_tool_definitions`.
+    - Updated `call_tool` to handle `update_vm_resources`.
+    - Updated `handle_update_resources` to support `sockets`.
+- [~] Task: Implement `update_vm_config` function in `src/proxmox/vm.rs` to handle memory and core updates via Proxmox API.
     - [ ] Sub-task: Write unit tests with `wiremock` for successful and failed updates.
     - [ ] Sub-task: Implement the API call logic.
 - [ ] Task: Integrate `update_vm_resources` tool with the backend logic.

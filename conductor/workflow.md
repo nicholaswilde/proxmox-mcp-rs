@@ -101,28 +101,58 @@ Before marking any task complete, verify:
 
 ## Development Commands
 
-**AI AGENT INSTRUCTION: This section should be adapted to the project's specific language, framework, and build tools.**
-
 ### Setup
 ```bash
-# Example: Commands to set up the development environment (e.g., install dependencies, configure database)
-# e.g., for a Node.js project: npm install
-# e.g., for a Go project: go mod tidy
+# Ensure Rust and task are installed
+# https://rustup.rs/
+# https://taskfile.dev/
 ```
 
 ### Daily Development
 ```bash
-# Example: Commands for common daily tasks (e.g., start dev server, run tests, lint, format)
-# e.g., for a Node.js project: npm run dev, npm test, npm run lint
-# e.g., for a Go project: go run main.go, go test ./..., go fmt ./...
+task check      # Check for compilation errors
+task test       # Run unit tests
+task fmt        # Format code using rustfmt
+task lint       # Run lints using clippy
+task build:debug # Build the project in debug mode
 ```
 
 ### Before Committing
 ```bash
-# Example: Commands to run all pre-commit checks (e.g., format, lint, type check, run tests)
-# e.g., for a Node.js project: npm run check
-# e.g., for a Go project: make check (if a Makefile exists)
+task test:ci    # Run all formatting, linting, and tests at once
 ```
+
+## Special Procedures
+
+### Live Testing Workflow
+When asked to test new functions since the last tag against a *live, connected* Proxmox server:
+
+1.  **Identify Changes:** Run `git diff <last_tag> HEAD -- src/mcp.rs` to see which new tools were added.
+2.  **Verify Config:** Ensure a `config.toml` exists or environment variables are set to connect to a real Proxmox instance.
+3.  **Build:** Run `cargo build --release`.
+4.  **Script Interaction:** Create a Python script (`test_mcp_live.py`) to spawn the binary and send JSON-RPC requests to the stdio transport.
+    *   *Template Script:*
+        ```python
+        import subprocess, json, sys
+        def rpc(method, params=None, id=1): return {"jsonrpc": "2.0", "method": method, "params": params, "id": id}
+        cmd = ["./target/release/proxmox-mcp-rs"]
+        p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=sys.stderr, text=True, bufsize=0)
+        
+        # 1. Init
+        p.stdin.write(json.dumps(rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}})) + "\n")
+        print(p.stdout.readline()) # Read Init Response
+
+        # 2. Call Tool (Example)
+        # p.stdin.write(json.dumps(rpc("tools/call", {"name": "new_tool_name", "arguments": {...}})) + "\n")
+        # print(p.stdout.readline())
+        
+        p.terminate()
+        ```
+5.  **Execute:** Run the script and verify the JSON-RPC responses indicate success.
+6.  **Cleanup:** Remove the test script.
+
+### Release Summary Guidelines
+*   When asked for a GitHub release summary from the previous git tag to the current one, only summarize the MCP server functionality. Chore and documentation updates should be excluded.
 
 ## Testing Requirements
 
