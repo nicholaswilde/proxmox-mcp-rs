@@ -1,3 +1,4 @@
+use crate::proxmox::error::{ProxmoxError, Result as PveResult};
 use anyhow::{Context, Result};
 use log::info;
 use reqwest::{Client, Method};
@@ -104,7 +105,7 @@ impl ProxmoxClient {
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            anyhow::bail!("Login failed: {} - {}", status, text);
+            return Err(ProxmoxError::Auth(format!("{} - {}", status, text)).into());
         }
 
         let body: TicketResponse = resp
@@ -124,8 +125,8 @@ impl ProxmoxClient {
         method: Method,
         path: &str,
         body: Option<&Value>,
-    ) -> Result<T> {
-        let url = self.base_url.join(path)?;
+    ) -> PveResult<T> {
+        let url = self.base_url.join(path).map_err(ProxmoxError::Url)?;
         let mut req = self.client.request(method, url);
 
         if let Some(token) = &self.api_token {
@@ -143,19 +144,19 @@ impl ProxmoxClient {
             req = req.json(b);
         }
 
-        let resp = req.send().await?;
+        let resp = req.send().await.map_err(ProxmoxError::Request)?;
 
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            anyhow::bail!("Request to {} failed: {} - {}", path, status, text);
+            return Err(ProxmoxError::Api(status, text));
         }
 
-        let v: Value = resp.json().await?;
+        let v: Value = resp.json().await.map_err(ProxmoxError::Request)?;
         if let Some(data) = v.get("data") {
-            serde_json::from_value(data.clone()).context("Failed to deserialize data field")
+            serde_json::from_value(data.clone()).map_err(ProxmoxError::Json)
         } else {
-            serde_json::from_value(v).context("Failed to deserialize response")
+            serde_json::from_value(v).map_err(ProxmoxError::Json)
         }
     }
 }

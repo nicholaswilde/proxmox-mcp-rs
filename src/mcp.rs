@@ -98,15 +98,35 @@ impl McpServer {
                                 result: Some(result),
                                 error: None,
                             },
-                            Err(e) => JsonRpcResponse {
-                                jsonrpc: "2.0".to_string(),
-                                id: Some(req_id),
-                                result: None,
-                                error: Some(JsonRpcError {
-                                    code: -32603, // Internal error
-                                    message: e.to_string(),
-                                    data: None,
-                                }),
+                            Err(e) => {
+                                let (code, message, data) = if let Some(pve_err) = e.downcast_ref::<crate::proxmox::ProxmoxError>() {
+                                    match pve_err {
+                                        crate::proxmox::ProxmoxError::Auth(_) => (-32001, pve_err.to_string(), None),
+                                        crate::proxmox::ProxmoxError::NotFound(_) => (-32004, pve_err.to_string(), None),
+                                        crate::proxmox::ProxmoxError::Api(status, msg) => {
+                                            let code = match status.as_u16() {
+                                                401 | 403 => -32001,
+                                                404 => -32004,
+                                                _ => -32603,
+                                            };
+                                            (code, format!("API Error {}: {}", status, msg), Some(json!({ "status": status.as_u16(), "details": msg })))
+                                        }
+                                        _ => (-32603, pve_err.to_string(), None),
+                                    }
+                                } else {
+                                    (-32603, e.to_string(), None)
+                                };
+
+                                JsonRpcResponse {
+                                    jsonrpc: "2.0".to_string(),
+                                    id: Some(req_id),
+                                    result: None,
+                                    error: Some(JsonRpcError {
+                                        code,
+                                        message,
+                                        data,
+                                    }),
+                                }
                             },
                         };
 

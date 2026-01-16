@@ -25,17 +25,17 @@ impl ProxmoxClient {
                 .unwrap()
                 .insert("input-data".to_string(), json!(data));
         }
-        self.request(Method::POST, &path, Some(&params)).await
+        Ok(self.request(Method::POST, &path, Some(&params)).await?)
     }
 
     pub async fn agent_exec_status(&self, node: &str, vmid: i64, pid: i64) -> Result<Value> {
         let path = format!("nodes/{}/qemu/{}/agent/exec-status?pid={}", node, vmid, pid);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn agent_file_read(&self, node: &str, vmid: i64, file: &str) -> Result<Value> {
         let path = format!("nodes/{}/qemu/{}/agent/file-read?file={}", node, vmid, file);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn agent_file_write(

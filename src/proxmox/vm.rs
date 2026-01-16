@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 impl ProxmoxClient {
     pub async fn get_nodes(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "nodes", None).await
+        Ok(self.request(Method::GET, "nodes", None).await?)
     }
 
     pub async fn get_all_vms(&self) -> Result<Vec<VmInfo>> {
@@ -25,7 +25,7 @@ impl ProxmoxClient {
     }
 
     pub async fn get_resources(&self) -> Result<Vec<ClusterResource>> {
-        self.request(Method::GET, "cluster/resources", None).await
+        Ok(self.request(Method::GET, "cluster/resources", None).await?)
     }
 
     pub async fn find_vm_location(&self, vmid: i64) -> Result<(String, String)> {
@@ -105,12 +105,12 @@ impl ProxmoxClient {
         params: &Value,
     ) -> Result<()> {
         let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
-        self.request(Method::PUT, &path, Some(params)).await
+        Ok(self.request(Method::PUT, &path, Some(params)).await?)
     }
 
     pub async fn get_vm_config(&self, node: &str, vmid: i64, resource_type: &str) -> Result<Value> {
         let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn resize_disk(
@@ -218,7 +218,7 @@ impl ProxmoxClient {
 
     pub async fn set_vm_cloudinit(&self, node: &str, vmid: i64, params: &Value) -> Result<()> {
         let path = format!("nodes/{}/qemu/{}/config", node, vmid);
-        self.request(Method::PUT, &path, Some(params)).await
+        Ok(self.request(Method::PUT, &path, Some(params)).await?)
     }
 
     // --- Resource Tagging ---
@@ -247,7 +247,7 @@ impl ProxmoxClient {
         };
 
         let params = json!({ "tags": new_tags });
-        self.request(Method::PUT, &path, Some(&params)).await
+        Ok(self.request(Method::PUT, &path, Some(&params)).await?)
     }
 
     pub async fn remove_tag(
@@ -273,7 +273,7 @@ impl ProxmoxClient {
 
         let new_tags = new_tag_list.join(",");
         let params = json!({ "tags": new_tags });
-        self.request(Method::PUT, &path, Some(&params)).await
+        Ok(self.request(Method::PUT, &path, Some(&params)).await?)
     }
 
     pub async fn set_tags(
@@ -285,7 +285,7 @@ impl ProxmoxClient {
     ) -> Result<()> {
         let path = format!("nodes/{}/{}/{}/config", node, resource_type, vmid);
         let params = json!({ "tags": tags });
-        self.request(Method::PUT, &path, Some(&params)).await
+        Ok(self.request(Method::PUT, &path, Some(&params)).await?)
     }
 
     #[allow(clippy::too_many_arguments)]

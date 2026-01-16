@@ -6,11 +6,11 @@ use serde_json::{json, Value};
 impl ProxmoxClient {
     pub async fn get_storage_list(&self, node: &str) -> Result<Vec<Value>> {
         let path = format!("nodes/{}/storage", node);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn get_cluster_storage(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "storage", None).await
+        Ok(self.request(Method::GET, "storage", None).await?)
     }
 
     pub async fn get_storage_content(
@@ -23,7 +23,7 @@ impl ProxmoxClient {
         if let Some(ct) = content_type {
             path.push_str(&format!("?content={}", ct));
         }
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     #[allow(clippy::too_many_arguments)]

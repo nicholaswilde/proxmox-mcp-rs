@@ -4,8 +4,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement VM Configuration Modification Tools**
+- [x] **Track: Implement VM Configuration Modification Tools**
   *Link: [./tracks/vm_config_mod_20260115/](./tracks/vm_config_mod_20260115/)*
 
-- [ ] **Track: Enhance error reporting for MCP clients**
+- [x] **Track: Enhance error reporting for MCP clients**
   *Link: [./tracks/error_reporting/](./tracks/error_reporting/)*

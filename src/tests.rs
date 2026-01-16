@@ -531,6 +531,47 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_update_vm_resources() {
+        let mock_server = MockServer::start().await;
+
+        // Mock Config Update
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock Disk Resize
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/resize"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Update both
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "cores": 4,
+            "memory": 4096,
+            "sockets": 2,
+            "disk_gb": 10
+        });
+
+        let res = server
+            .call_tool("update_vm_resources", &args)
+            .await
+            .unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+
+        assert!(content.contains("Resource config updated"));
+        assert!(content.contains("Disk rootfs resize initiated"));
+    }
+
+    #[tokio::test]
     async fn test_backup_tools() {
         let mock_server = MockServer::start().await;
 
@@ -1707,5 +1748,63 @@ mod tests {
 
         assert!(url.contains("console=lxc"));
         assert!(url.contains("xtermjs=1"));
+    }
+
+    #[tokio::test]
+    async fn test_api_error_handling() {
+        let mock_server = MockServer::start().await;
+
+        // Mock 401 Unauthorized
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes"))
+            .respond_with(ResponseTemplate::new(401).set_body_string("Unauthorized"))
+            .mount(&mock_server)
+            .await;
+
+        // Mock 404 Not Found (using a different endpoint for variety)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(404).set_body_string("Not Found"))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test 401
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "tools/call".to_string(),
+            params: Some(json!({ "name": "list_nodes", "arguments": {} })),
+            id: Some(json!(1)),
+        };
+        // We capture stdout in run_stdio, but handle_request returns Result<Value>.
+        // Wait, handle_request returns Err on failure. run_stdio wraps it.
+        // We can check the error returned by handle_request.
+        let res = server.handle_request(req).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        // The error is anyhow::Error wrapping ProxmoxError.
+        let pve_err = err.downcast_ref::<crate::proxmox::ProxmoxError>().unwrap();
+        match pve_err {
+            crate::proxmox::ProxmoxError::Api(status, _) => assert_eq!(status.as_u16(), 401),
+            _ => panic!("Expected Api error"),
+        }
+
+        // Test 404
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "tools/call".to_string(),
+            params: Some(json!({ "name": "list_vms", "arguments": {} })),
+            id: Some(json!(2)),
+        };
+        let res = server.handle_request(req).await;
+        assert!(res.is_err());
+        let err = res.err().unwrap();
+        let pve_err = err.downcast_ref::<crate::proxmox::ProxmoxError>().unwrap();
+        match pve_err {
+            crate::proxmox::ProxmoxError::Api(status, _) => assert_eq!(status.as_u16(), 404),
+            _ => panic!("Expected Api error"),
+        }
     }
 }

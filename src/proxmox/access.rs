@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 impl ProxmoxClient {
     pub async fn get_users(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "access/users", None).await
+        Ok(self.request(Method::GET, "access/users", None).await?)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -69,19 +69,22 @@ impl ProxmoxClient {
                 .insert("groups".to_string(), json!(v.join(",")));
         }
 
-        self.request(Method::POST, "access/users", Some(&params))
-            .await
+        let _: Value = self
+            .request(Method::POST, "access/users", Some(&params))
+            .await?;
+        Ok(())
     }
 
     pub async fn delete_user(&self, userid: &str) -> Result<()> {
         let path = format!("access/users/{}", userid);
-        self.request(Method::DELETE, &path, None).await
+        let _: Value = self.request(Method::DELETE, &path, None).await?;
+        Ok(())
     }
 
     // --- Roles & ACL Management ---
 
     pub async fn get_roles(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "access/roles", None).await
+        Ok(self.request(Method::GET, "access/roles", None).await?)
     }
 
     pub async fn create_role(&self, roleid: &str, privileges: &str) -> Result<()> {
@@ -112,7 +115,7 @@ impl ProxmoxClient {
     }
 
     pub async fn get_acls(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "access/acl", None).await
+        Ok(self.request(Method::GET, "access/acl", None).await?)
     }
 
     pub async fn update_acl(&self, path: &str, params: &Value) -> Result<()> {

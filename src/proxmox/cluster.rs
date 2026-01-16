@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 impl ProxmoxClient {
     pub async fn get_cluster_status(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "cluster/status", None).await
+        Ok(self.request(Method::GET, "cluster/status", None).await?)
     }
 
     pub async fn get_cluster_log(&self, limit: Option<u64>) -> Result<Vec<Value>> {
@@ -13,7 +13,7 @@ impl ProxmoxClient {
         if let Some(l) = limit {
             path.push_str(&format!("?max={}", l));
         }
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn get_firewall_rules(
@@ -29,7 +29,7 @@ impl ProxmoxClient {
         } else {
             "cluster/firewall/rules".to_string()
         };
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn add_firewall_rule(
@@ -46,7 +46,7 @@ impl ProxmoxClient {
         } else {
             "cluster/firewall/rules".to_string()
         };
-        self.request(Method::POST, &path, Some(params)).await
+        Ok(self.request(Method::POST, &path, Some(params)).await?)
     }
 
     pub async fn delete_firewall_rule(
@@ -63,12 +63,12 @@ impl ProxmoxClient {
         } else {
             format!("cluster/firewall/rules/{}", pos)
         };
-        self.request(Method::DELETE, &path, None).await
+        Ok(self.request(Method::DELETE, &path, None).await?)
     }
 
     pub async fn get_task_status(&self, node: &str, upid: &str) -> Result<Value> {
         let path = format!("nodes/{}/tasks/{}/status", node, upid);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn wait_for_task(&self, node: &str, upid: &str, timeout_secs: u64) -> Result<Value> {
@@ -94,7 +94,7 @@ impl ProxmoxClient {
 
     pub async fn get_task_log(&self, node: &str, upid: &str) -> Result<Vec<Value>> {
         let path = format!("nodes/{}/tasks/{}/log", node, upid);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn list_tasks(&self, node: &str, limit: Option<u64>) -> Result<Vec<Value>> {
@@ -102,18 +102,19 @@ impl ProxmoxClient {
         if let Some(l) = limit {
             path.push_str(&format!("?limit={}", l));
         }
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     // --- HA Management ---
 
     pub async fn get_ha_resources(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "cluster/ha/resources", None)
-            .await
+        Ok(self
+            .request(Method::GET, "cluster/ha/resources", None)
+            .await?)
     }
 
     pub async fn get_ha_groups(&self) -> Result<Vec<Value>> {
-        self.request(Method::GET, "cluster/ha/groups", None).await
+        Ok(self.request(Method::GET, "cluster/ha/groups", None).await?)
     }
 
     pub async fn add_ha_resource(&self, sid: &str, params: &Value) -> Result<()> {

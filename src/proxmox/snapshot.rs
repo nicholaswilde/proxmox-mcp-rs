@@ -11,7 +11,7 @@ impl ProxmoxClient {
         resource_type: &str,
     ) -> Result<Vec<Value>> {
         let path = format!("nodes/{}/{}/{}/snapshot", node, resource_type, vmid);
-        self.request(Method::GET, &path, None).await
+        Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn create_snapshot(
