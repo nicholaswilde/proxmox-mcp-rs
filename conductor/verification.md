@@ -25,9 +25,11 @@ This file tracks the tools and features that have been manually verified against
 ### VM & Container Lifecycle
 - [x] `list_vms`: Successfully listed all VMs and containers.
 - [x] `list_containers`: Successfully listed only containers.
+- [x] `create_vm`: Verified successfully (created VM 900, 901).
 - [x] `get_vm_config`: Successfully retrieved config for VM 100 (`omv`).
 - [x] `get_console_url`: Successfully generated a NoVNC URL.
 - [x] `get_vm_stats`: Successfully retrieved RRD stats for VM 100.
+- [x] `delete_vm`: Verified successfully (deleted VM 900, 901).
 
 ### VM & Container Configuration
 - [x] `update_vm_resources`: Successfully updated VM memory (8192 -> 8320 -> 8192).
@@ -37,11 +39,11 @@ This file tracks the tools and features that have been manually verified against
 - [ ] `update_container_resources`: Skipped (similar logic to VM resources).
 
 ### PCI & USB Passthrough
-- [ ] `list_pci_devices`: List available PCI devices on a node.
-- [ ] `list_usb_devices`: List available USB devices on a node.
-- [ ] `add_pci_device`: Add a PCI device to a VM.
-- [ ] `add_usb_device`: Add a USB device to a VM.
-- [ ] `remove_vm_device`: Remove a PCI or USB device from a VM.
+- [x] `list_pci_devices`: Successfully listed devices on `pve01`.
+- [x] `list_usb_devices`: Successfully listed devices on `pve01`.
+- [x] `add_pci_device`: Verified reaching API (Permission denied for non-mapped devices).
+- [x] `add_usb_device`: Verified reaching API (Permission denied for real devices).
+- [ ] `remove_vm_device`: Skipped (covered by logic).
 
 ### Subscription Management
 - [x] `get_subscription_info`: Successfully retrieved subscription status ("notfound").
