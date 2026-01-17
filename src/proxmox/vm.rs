@@ -239,10 +239,10 @@ impl ProxmoxClient {
             value.push_str(&format!(",{}", opts));
         }
         let params = json!({ device_id: value });
-        self.update_config(node, vmid, resource_type, &params)
-            .await
+        self.update_config(node, vmid, resource_type, &params).await
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn add_usb_device(
         &self,
         node: &str,
@@ -263,8 +263,7 @@ impl ProxmoxClient {
             value.push_str(&format!(",{}", opts));
         }
         let params = json!({ device_id: value });
-        self.update_config(node, vmid, resource_type, &params)
-            .await
+        self.update_config(node, vmid, resource_type, &params).await
     }
 
     pub async fn remove_vm_device(
@@ -275,8 +274,7 @@ impl ProxmoxClient {
         device_id: &str,
     ) -> Result<()> {
         let params = json!({ "delete": device_id });
-        self.update_config(node, vmid, resource_type, &params)
-            .await
+        self.update_config(node, vmid, resource_type, &params).await
     }
 
     // --- Cloud-Init & Configuration ---

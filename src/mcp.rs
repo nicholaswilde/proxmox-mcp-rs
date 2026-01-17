@@ -1813,15 +1813,7 @@ impl McpServer {
         let extra_options = args.get("extra_options").and_then(|v| v.as_str());
 
         self.client
-            .add_usb_device(
-                node,
-                vmid,
-                "qemu",
-                device_id,
-                host,
-                usb3,
-                extra_options,
-            )
+            .add_usb_device(node, vmid, "qemu", device_id, host, usb3, extra_options)
             .await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("USB device {} added to VM {}", device_id, vmid) }] }),
@@ -1856,14 +1848,14 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing clustername"))?;
         let res = self.client.create_cluster(clustername).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": format!("Cluster creation initiated. Result: {}", res) }] }))
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Cluster creation initiated. Result: {}", res) }] }),
+        )
     }
 
     async fn handle_get_cluster_join_info(&self) -> Result<Value> {
         let info = self.client.get_join_info().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
     }
 
     async fn handle_join_cluster(&self, args: &Value) -> Result<Value> {
@@ -1884,7 +1876,9 @@ impl McpServer {
             .client
             .join_cluster(hostname, password, fingerprint)
             .await?;
-        Ok(json!({ "content": [{ "type": "text", "text": format!("Cluster join initiated. Result: {}", res) }] }))
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Cluster join initiated. Result: {}", res) }] }),
+        )
     }
 
     async fn handle_get_subscription_info(&self, args: &Value) -> Result<Value> {
@@ -1893,9 +1887,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let info = self.client.get_subscription(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
     }
 
     async fn handle_set_subscription_key(&self, args: &Value) -> Result<Value> {

@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 impl ProxmoxClient {
     pub async fn get_subscription(&self, node: &str) -> Result<Value> {
         let path = format!("nodes/{}/subscription", node);
-        Ok(self.request(Method::GET, &path, None).await?)
+        self.request(Method::GET, &path, None).await
     }
 
     pub async fn set_subscription(&self, node: &str, key: &str) -> Result<()> {

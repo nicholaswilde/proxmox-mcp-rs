@@ -1855,10 +1855,7 @@ mod tests {
             .call_tool("set_subscription_key", &args)
             .await
             .unwrap();
-        assert!(res["content"][0]["text"]
-            .as_str()
-            .unwrap()
-            .contains("set"));
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("set"));
 
         // Test CHECK
         let args = json!({ "node": "pve1" });
