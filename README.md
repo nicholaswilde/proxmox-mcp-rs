@@ -270,7 +270,7 @@ Add the following to your `claude_desktop_config.json`:
 }
 ```
 
-### :whale: Configuration Example (Docker for Claude Code/Desktop)
+### :robot: Configuration Example (Docker for Claude Code/Desktop)
 
 If you prefer to run the server via Docker, use the following configuration:
 
@@ -292,6 +292,27 @@ If you prefer to run the server via Docker, use the following configuration:
     }
   }
 }
+```
+
+## :test_tube: Testing
+
+### MCP Inspector
+The easiest way to test the server interactively is using the MCP Inspector. It provides a web interface to call tools and inspect resources.
+
+```bash
+task inspector
+```
+
+If running on a remote host, you can specify the host and allowed origins:
+```bash
+task inspector HOST=0.0.0.0 ALLOWED_ORIGINS="*"
+```
+
+### Integration Tests
+You can run the automated integration tests to verify the MCP protocol and Proxmox API connectivity:
+
+```bash
+python3 integration_test.py
 ```
 
 ## :handshake: Contributing
