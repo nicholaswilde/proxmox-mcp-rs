@@ -89,6 +89,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `run_apt_update`: Run apt-get update on a node.
   - `get_apt_versions`: Get versions of installed Proxmox packages.
 
+  **Subscription Management**
+  - `get_subscription_info`: Get subscription status for a node.
+  - `set_subscription_key`: Set a new subscription key.
+  - `check_subscription`: Force update/check of the subscription.
+
   **Users & Access Control**
   - `list_users`: List all users in the cluster.
   - `create_user`: Create a new user.

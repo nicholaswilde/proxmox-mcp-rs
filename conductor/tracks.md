@@ -9,3 +9,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Enhance error reporting for MCP clients**
   *Link: [./tracks/error_reporting/](./tracks/error_reporting/)*
+
+- [x] **Track: Implement Subscription Management Tools**
+  *Link: [./tracks/subscription_management/](./tracks/subscription_management/)*

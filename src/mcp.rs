@@ -1408,6 +1408,40 @@ impl McpServer {
                     "required": ["node", "vmid", "tags"]
                 }
             }),
+            json!({
+                "name": "get_subscription_info",
+                "description": "Get subscription status for a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "set_subscription_key",
+                "description": "Set a new subscription key",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "key": { "type": "string", "description": "The subscription key" }
+                    },
+                    "required": ["node", "key"]
+                }
+            }),
+            json!({
+                "name": "check_subscription",
+                "description": "Force update/check of the subscription",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
         ]
     }
 
@@ -1582,8 +1616,44 @@ impl McpServer {
             "add_tag" => self.handle_add_tag(args).await,
             "remove_tag" => self.handle_remove_tag(args).await,
             "set_tags" => self.handle_set_tags(args).await,
+            "get_subscription_info" => self.handle_get_subscription_info(args).await,
+            "set_subscription_key" => self.handle_set_subscription_key(args).await,
+            "check_subscription" => self.handle_check_subscription(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_get_subscription_info(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let info = self.client.get_subscription(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }),
+        )
+    }
+
+    async fn handle_set_subscription_key(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let key = args
+            .get("key")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing key"))?;
+        self.client.set_subscription(node, key).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Subscription key set" }] }))
+    }
+
+    async fn handle_check_subscription(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        self.client.update_subscription(node).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Subscription check initiated" }] }))
     }
 
     async fn handle_vm_agent_ping(&self, args: &Value) -> Result<Value> {

@@ -7,6 +7,7 @@ pub mod pool;
 pub mod replication;
 pub mod snapshot;
 pub mod storage;
+pub mod subscription;
 pub mod system;
 pub mod vm;
 

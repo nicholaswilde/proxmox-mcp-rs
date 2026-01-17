@@ -1807,4 +1807,65 @@ mod tests {
             _ => panic!("Expected Api error"),
         }
     }
+
+    #[tokio::test]
+    async fn test_subscription_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock GET subscription
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/subscription"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "status": "active", "level": "community" }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock SET subscription
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/subscription"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock CHECK subscription
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/subscription"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test GET
+        let args = json!({ "node": "pve1" });
+        let res = server
+            .call_tool("get_subscription_info", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("community"));
+
+        // Test SET
+        let args = json!({ "node": "pve1", "key": "test-key" });
+        let res = server
+            .call_tool("set_subscription_key", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("set"));
+
+        // Test CHECK
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("check_subscription", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("initiated"));
+    }
 }
