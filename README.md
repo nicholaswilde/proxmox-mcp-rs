@@ -16,89 +16,114 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
 - **Authentication:** Proxmox User/Password (Ticket-based) or API Token.
 - **Logging:** Configurable log levels, console output (stderr), and optional file logging with rotation (daily, hourly).
 - **Tools:**
+
+  **Cluster & Node**
   - `list_nodes`: List all nodes in the cluster.
+  - `get_cluster_status`: Get cluster status information.
+  - `get_cluster_log`: Read cluster log.
+  - `get_node_stats`: Get RRD statistics for a node.
+
+  **VM & Container Lifecycle**
   - `list_vms`: List all VMs and LXC containers (uses `get_all_vms`).
   - `list_containers`: List all LXC containers.
-  - `list_templates`: List container templates on a storage.
+  - `create_vm` / `create_container`: Create a new VM or Container.
   - `start_vm` / `start_container`: Start a VM/Container.
   - `stop_vm` / `stop_container`: Stop (Power Off) a VM/Container.
   - `shutdown_vm` / `shutdown_container`: Gracefully shutdown a VM/Container.
   - `reset_vm` / `reset_container`: Reset (Stop and Start) a VM/Container.
   - `reboot_vm`: Reboot a VM/Container.
-  - `create_vm` / `create_container`: Create a new VM or Container.
   - `delete_vm` / `delete_container`: Delete a VM or Container.
+  - `clone_vm`: Clone a VM or Container.
+  - `migrate_vm`: Migrate a VM or Container to another node.
+  - `get_vm_config`: Get the configuration of a VM or Container.
+  - `get_console_url`: Get the URL for the Proxmox web console (NoVNC, xterm.js, or Spice).
+  - `get_vm_stats`: Get RRD statistics for a VM or Container.
+
+  **VM & Container Configuration**
   - `update_container_resources`: Update LXC container resources (cores, memory, swap, disk).
+  - `update_vm_resources`: Update VM hardware configuration (cores, memory, sockets).
+  - `add_disk`: Add a virtual disk to a VM or Container.
+  - `remove_disk`: Remove (detach/delete) a virtual disk.
+  - `add_network`: Add a network interface to a VM or Container.
+  - `remove_network`: Remove a network interface.
+  - `set_vm_cloudinit`: Configure Cloud-Init settings for a VM (user, password, IP, SSH keys).
+  - `add_tag`: Add tags to a VM or Container.
+  - `remove_tag`: Remove tags from a VM or Container.
+  - `set_tags`: Set (overwrite) tags for a VM or Container.
+
+  **Snapshots & Backups**
   - `list_snapshots`: List snapshots for a VM or Container.
   - `snapshot_vm`: Create a snapshot of a VM or Container.
   - `rollback_vm`: Rollback a VM or Container to a snapshot.
   - `delete_snapshot`: Delete a snapshot of a VM or Container.
-  - `clone_vm`: Clone a VM or Container.
-  - `migrate_vm`: Migrate a VM or Container to another node.
   - `list_backups`: List backups on a storage.
   - `create_backup`: Create a backup (vzdump).
   - `restore_backup`: Restore a VM or Container from a backup.
-  - `get_task_status`: Get the status of a specific task (UPID).
+
+  **Storage & Templates**
+  - `list_storage`: List all storage on a node.
+  - `list_cluster_storage`: List all storage definitions in the cluster configuration.
+  - `list_isos`: List ISO images on a specific storage.
+  - `list_templates`: List container templates on a storage.
+  - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
+  - `update_storage`: Update a storage definition.
+  - `delete_storage`: Delete a storage definition.
+  - `download_url`: Download an ISO or Container template from a URL to storage.
+
+  **Network & Firewall**
+  - `list_networks`: List network interfaces and bridges on a node.
+  - `list_firewall_rules`: List firewall rules.
+  - `add_firewall_rule`: Add a firewall rule.
+  - `delete_firewall_rule`: Delete a firewall rule.
+
+  **Task Monitoring**
   - `list_tasks`: List recent tasks on a node.
+  - `get_task_status`: Get the status of a specific task (UPID).
   - `read_task_log`: Read the log of a specific task (UPID).
   - `wait_for_task`: Wait for a task to finish (with timeout).
-  - `get_vm_config`: Get the configuration of a VM or Container.
-  - `get_console_url`: Get the URL for the Proxmox web console (NoVNC, xterm.js, or Spice).
-  - `download_url`: Download an ISO or Container template from a URL to storage.
+
+  **System & Services**
+  - `list_services`: List system services on a node.
+  - `manage_service`: Manage a system service (Start, Stop, Restart, Reload).
+  - `list_apt_updates`: List available APT updates on a node.
+  - `run_apt_update`: Run apt-get update on a node.
+  - `get_apt_versions`: Get versions of installed Proxmox packages.
+
+  **Users & Access Control**
   - `list_users`: List all users in the cluster.
   - `create_user`: Create a new user.
   - `delete_user`: Delete a user.
-  - `list_pools`: List all resource pools.
-  - `create_pool`: Create a new resource pool.
-  - `get_pool_details`: Get detailed information about a resource pool.
-  - `update_pool`: Update a resource pool (add/remove members or change comment).
-  - `delete_pool`: Delete a resource pool.
-  - `list_replication_jobs`: List all configured replication jobs.
-  - `create_replication_job`: Create a new replication job.
-  - `update_replication_job`: Update a replication job configuration.
-  - `delete_replication_job`: Delete a replication job.
-  - `list_ha_resources`: List all High Availability (HA) resources.
-  - `list_ha_groups`: List all High Availability (HA) groups.
-  - `add_ha_resource`: Add a VM or Container to HA management.
-  - `update_ha_resource`: Update HA resource configuration or state.
-  - `remove_ha_resource`: Remove a resource from HA management.
   - `list_roles`: List all defined roles and their privileges.
   - `create_role`: Create a new role with specific privileges.
   - `update_role`: Update role privileges.
   - `delete_role`: Delete a role.
   - `list_acls`: List all Access Control List (ACL) entries.
   - `update_acl`: Update Access Control List (Add/Remove permissions).
-  - `list_apt_updates`: List available APT updates on a node.
-  - `run_apt_update`: Run apt-get update on a node.
-  - `get_apt_versions`: Get versions of installed Proxmox packages.
-  - `list_services`: List system services on a node.
-  - `manage_service`: Manage a system service (Start, Stop, Restart, Reload).
-  - `set_vm_cloudinit`: Configure Cloud-Init settings for a VM (user, password, IP, SSH keys).
-  - `add_tag`: Add tags to a VM or Container.
-  - `remove_tag`: Remove tags from a VM or Container.
-  - `set_tags`: Set (overwrite) tags for a VM or Container.
-  - `list_cluster_storage`: List all storage definitions in the cluster configuration.
-  - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
-  - `delete_storage`: Delete a storage definition.
-  - `update_storage`: Update a storage definition.
+
+  **QEMU Guest Agent**
   - `vm_agent_ping`: Ping the QEMU Guest Agent inside a VM.
   - `vm_exec`: Execute a command inside a VM via QEMU Agent (Async, returns PID).
   - `vm_exec_status`: Get status/output of a command executed via QEMU Agent.
   - `vm_read_file`: Read a file from inside a VM via QEMU Agent.
   - `vm_write_file`: Write to a file inside a VM via QEMU Agent.
-  - `list_networks`: List network interfaces and bridges on a node.
-  - `list_storage`: List all storage on a node.
-  - `list_isos`: List ISO images on a specific storage.
-  - `get_cluster_status`: Get cluster status information.
-  - `get_cluster_log`: Read cluster log.
-  - `list_firewall_rules`: List firewall rules.
-  - `add_firewall_rule`: Add a firewall rule.
-  - `delete_firewall_rule`: Delete a firewall rule.
-  - `add_disk`: Add a virtual disk to a VM or Container.
-  - `remove_disk`: Remove (detach/delete) a virtual disk.
-  - `add_network`: Add a network interface to a VM or Container.
-  - `remove_network`: Remove a network interface.
-  - `get_node_stats`: Get RRD statistics for a node.
-  - `get_vm_stats`: Get RRD statistics for a VM or Container.
+
+  **Resource Pools**
+  - `list_pools`: List all resource pools.
+  - `create_pool`: Create a new resource pool.
+  - `get_pool_details`: Get detailed information about a resource pool.
+  - `update_pool`: Update a resource pool (add/remove members or change comment).
+  - `delete_pool`: Delete a resource pool.
+
+  **High Availability (HA) & Replication**
+  - `list_ha_resources`: List all High Availability (HA) resources.
+  - `list_ha_groups`: List all High Availability (HA) groups.
+  - `add_ha_resource`: Add a VM or Container to HA management.
+  - `update_ha_resource`: Update HA resource configuration or state.
+  - `remove_ha_resource`: Remove a resource from HA management.
+  - `list_replication_jobs`: List all configured replication jobs.
+  - `create_replication_job`: Create a new replication job.
+  - `update_replication_job`: Update a replication job configuration.
+  - `delete_replication_job`: Delete a replication job.
 - **Resources:**
   - `proxmox://vms`: Live JSON list of all VMs and Containers.
 
