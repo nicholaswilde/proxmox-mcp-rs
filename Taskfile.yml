@@ -1,6 +1,10 @@
 ---
 version: '3'
 
+vars:
+  LOCAL_IP:
+    sh: hostname -I | awk '{print $1}'
+
 tasks:
   clippy:
     desc: Run cargo clippy
@@ -67,6 +71,15 @@ tasks:
     desc: Run the project (requires arguments or env vars, runs help by default)
     cmds:
       - cargo run -- --help
+
+  inspector:
+    desc: Run the MCP Inspector against the debug build
+    deps: [build:debug]
+    env:
+      HOST: '{{.HOST | default .LOCAL_IP}}'
+      ALLOWED_ORIGINS: '{{.ALLOWED_ORIGINS | default (printf "http://%s:6274" .LOCAL_IP)}}'
+    cmds:
+      - npx @modelcontextprotocol/inspector -- ./target/debug/proxmox-mcp-rs --config config.toml
 
   check:
     desc: Check code for errors without generating binary
