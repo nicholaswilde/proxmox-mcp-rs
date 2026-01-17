@@ -5,7 +5,9 @@ use serde_json::{json, Value};
 
 impl ProxmoxClient {
     pub async fn get_replication_jobs(&self) -> Result<Vec<Value>> {
-        Ok(self.request(Method::GET, "cluster/replication", None).await?)
+        Ok(self
+            .request(Method::GET, "cluster/replication", None)
+            .await?)
     }
 
     pub async fn create_replication_job(

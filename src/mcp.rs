@@ -99,18 +99,32 @@ impl McpServer {
                                 error: None,
                             },
                             Err(e) => {
-                                let (code, message, data) = if let Some(pve_err) = e.downcast_ref::<crate::proxmox::ProxmoxError>() {
+                                let (code, message, data) = if let Some(pve_err) =
+                                    e.downcast_ref::<crate::proxmox::ProxmoxError>()
+                                {
                                     match pve_err {
-                                        crate::proxmox::error::ProxmoxError::Auth(_) => (-32001, pve_err.to_string(), None),
-                                        crate::proxmox::error::ProxmoxError::NotFound(_) => (-32004, pve_err.to_string(), None),
-                                        crate::proxmox::error::ProxmoxError::Timeout(_) => (-32002, pve_err.to_string(), None),
+                                        crate::proxmox::error::ProxmoxError::Auth(_) => {
+                                            (-32001, pve_err.to_string(), None)
+                                        }
+                                        crate::proxmox::error::ProxmoxError::NotFound(_) => {
+                                            (-32004, pve_err.to_string(), None)
+                                        }
+                                        crate::proxmox::error::ProxmoxError::Timeout(_) => {
+                                            (-32002, pve_err.to_string(), None)
+                                        }
                                         crate::proxmox::error::ProxmoxError::Api(status, msg) => {
                                             let code = match status.as_u16() {
                                                 401 | 403 => -32001,
                                                 404 => -32004,
                                                 _ => -32603,
                                             };
-                                            (code, format!("API Error {}: {}", status, msg), Some(json!({ "status": status.as_u16(), "details": msg })))
+                                            (
+                                                code,
+                                                format!("API Error {}: {}", status, msg),
+                                                Some(
+                                                    json!({ "status": status.as_u16(), "details": msg }),
+                                                ),
+                                            )
                                         }
                                         _ => (-32603, pve_err.to_string(), None),
                                     }
@@ -128,7 +142,7 @@ impl McpServer {
                                         data,
                                     }),
                                 }
-                            },
+                            }
                         };
 
                         let out = serde_json::to_string(&json_resp)?;
