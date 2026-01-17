@@ -1543,6 +1543,37 @@ impl McpServer {
                     "required": ["node", "vmid", "device_id"]
                 }
             }),
+            json!({
+                "name": "add_lxc_mountpoint",
+                "description": "Add a bind mount to an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "mp_id": { "type": "string", "description": "Mount point ID (e.g. mp0)" },
+                        "volume": { "type": "string", "description": "Host path or storage volume" },
+                        "path": { "type": "string", "description": "Path inside container" },
+                        "read_only": { "type": "boolean" },
+                        "backup": { "type": "boolean" },
+                        "extra_options": { "type": "string" }
+                    },
+                    "required": ["node", "vmid", "mp_id", "volume", "path"]
+                }
+            }),
+            json!({
+                "name": "remove_lxc_mountpoint",
+                "description": "Remove a mount point from an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "mp_id": { "type": "string", "description": "Mount point ID (e.g. mp0)" }
+                    },
+                    "required": ["node", "vmid", "mp_id"]
+                }
+            }),
         ]
     }
 
@@ -1728,8 +1759,72 @@ impl McpServer {
             "add_pci_device" => self.handle_add_pci_device(args).await,
             "add_usb_device" => self.handle_add_usb_device(args).await,
             "remove_vm_device" => self.handle_remove_vm_device(args).await,
+            "add_lxc_mountpoint" => self.handle_add_lxc_mountpoint(args).await,
+            "remove_lxc_mountpoint" => self.handle_remove_lxc_mountpoint(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_add_lxc_mountpoint(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let mp_id = args
+            .get("mp_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing mp_id"))?;
+        let volume = args
+            .get("volume")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing volume"))?;
+        let path = args
+            .get("path")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing path"))?;
+        let read_only = args.get("read_only").and_then(|v| v.as_bool());
+        let backup = args.get("backup").and_then(|v| v.as_bool());
+        let extra_options = args.get("extra_options").and_then(|v| v.as_str());
+
+        self.client
+            .add_lxc_mountpoint(
+                node,
+                vmid,
+                mp_id,
+                volume,
+                path,
+                read_only,
+                backup,
+                extra_options,
+            )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Mount point {} added to CT {}", mp_id, vmid) }] }),
+        )
+    }
+
+    async fn handle_remove_lxc_mountpoint(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let mp_id = args
+            .get("mp_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing mp_id"))?;
+
+        self.client.remove_lxc_mountpoint(node, vmid, mp_id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Mount point {} removed from CT {}", mp_id, vmid) }] }),
+        )
     }
 
     async fn handle_list_pci_devices(&self, args: &Value) -> Result<Value> {

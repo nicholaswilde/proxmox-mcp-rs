@@ -20,3 +20,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Implement PCI/USB Passthrough Tools**
   *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*
+
+- [ ] **Track: Implement LXC Bind Mount Tools**
+  *Link: [./tracks/lxc_bind_mounts/](./tracks/lxc_bind_mounts/)*

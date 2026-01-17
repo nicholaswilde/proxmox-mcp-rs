@@ -277,6 +277,39 @@ impl ProxmoxClient {
         self.update_config(node, vmid, resource_type, &params).await
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_lxc_mountpoint(
+        &self,
+        node: &str,
+        vmid: i64,
+        mp_id: &str,
+        volume: &str,
+        path: &str,
+        read_only: Option<bool>,
+        backup: Option<bool>,
+        extra_options: Option<&str>,
+    ) -> Result<()> {
+        let mut value = format!("{},mp={}", volume, path);
+        if let Some(ro) = read_only {
+            if ro {
+                value.push_str(",ro=1");
+            }
+        }
+        if let Some(bk) = backup {
+            value.push_str(&format!(",backup={}", if bk { 1 } else { 0 }));
+        }
+        if let Some(opts) = extra_options {
+            value.push_str(&format!(",{}", opts));
+        }
+        let params = json!({ mp_id: value });
+        self.update_config(node, vmid, "lxc", &params).await
+    }
+
+    pub async fn remove_lxc_mountpoint(&self, node: &str, vmid: i64, mp_id: &str) -> Result<()> {
+        let params = json!({ "delete": mp_id });
+        self.update_config(node, vmid, "lxc", &params).await
+    }
+
     // --- Cloud-Init & Configuration ---
 
     pub async fn set_vm_cloudinit(&self, node: &str, vmid: i64, params: &Value) -> Result<()> {
