@@ -12,3 +12,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Implement Subscription Management Tools**
   *Link: [./tracks/subscription_management/](./tracks/subscription_management/)*
+
+- [x] **Track: Implement Cluster Management Tools**
+  *Link: [./tracks/cluster_management/](./tracks/cluster_management/)*

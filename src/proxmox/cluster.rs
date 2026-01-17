@@ -109,6 +109,37 @@ impl ProxmoxClient {
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
+    // --- Cluster Management ---
+
+    pub async fn create_cluster(&self, clustername: &str) -> Result<String> {
+        let params = json!({ "clustername": clustername });
+        Ok(self
+            .request(Method::POST, "cluster/config", Some(&params))
+            .await?)
+    }
+
+    pub async fn get_join_info(&self) -> Result<Value> {
+        Ok(self
+            .request(Method::GET, "cluster/config/join", None)
+            .await?)
+    }
+
+    pub async fn join_cluster(
+        &self,
+        hostname: &str,
+        password: &str,
+        fingerprint: &str,
+    ) -> Result<String> {
+        let params = json!({
+            "hostname": hostname,
+            "password": password,
+            "fingerprint": fingerprint
+        });
+        Ok(self
+            .request(Method::POST, "cluster/config/join", Some(&params))
+            .await?)
+    }
+
     // --- HA Management ---
 
     pub async fn get_ha_resources(&self) -> Result<Vec<Value>> {

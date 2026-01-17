@@ -1868,4 +1868,65 @@ mod tests {
             .unwrap()
             .contains("initiated"));
     }
+
+    #[tokio::test]
+    async fn test_cluster_management_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock create_cluster
+        Mock::given(method("POST"))
+            .and(path("/api2/json/cluster/config"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "Cluster created" })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        // Mock get_join_info
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/config/join"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "ip": "1.2.3.4", "fingerprint": "fp", "totem": {} }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock join_cluster
+        Mock::given(method("POST"))
+            .and(path("/api2/json/cluster/config/join"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "Joined cluster" })),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test create_cluster
+        let args = json!({ "clustername": "newcluster" });
+        let res = server.call_tool("create_cluster", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Cluster created"));
+
+        // Test get_cluster_join_info
+        let res = server
+            .call_tool("get_cluster_join_info", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("1.2.3.4"));
+
+        // Test join_cluster
+        let args = json!({ "hostname": "1.2.3.4", "password": "pass", "fingerprint": "fp" });
+        let res = server.call_tool("join_cluster", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Joined cluster"));
+    }
 }

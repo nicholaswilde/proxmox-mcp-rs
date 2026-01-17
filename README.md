@@ -17,6 +17,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
 - **Logging:** Configurable log levels, console output (stderr), and optional file logging with rotation (daily, hourly).
 - **Tools:**
 
+  **Cluster Management**
+  - `create_cluster`: Create a new cluster.
+  - `get_cluster_join_info`: Get the join info for the current cluster.
+  - `join_cluster`: Join an existing cluster.
+
   **Cluster & Node**
   - `list_nodes`: List all nodes in the cluster.
   - `get_cluster_status`: Get cluster status information.

@@ -1442,6 +1442,39 @@ impl McpServer {
                     "required": ["node"]
                 }
             }),
+            json!({
+                "name": "create_cluster",
+                "description": "Create a new cluster",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "clustername": { "type": "string" }
+                    },
+                    "required": ["clustername"]
+                }
+            }),
+            json!({
+                "name": "get_cluster_join_info",
+                "description": "Get the join info for the current cluster",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "join_cluster",
+                "description": "Join an existing cluster",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "hostname": { "type": "string", "description": "IP or Hostname of the cluster node to join" },
+                        "password": { "type": "string", "description": "Root password of the cluster node" },
+                        "fingerprint": { "type": "string", "description": "Fingerprint of the cluster node" }
+                    },
+                    "required": ["hostname", "password", "fingerprint"]
+                }
+            }),
         ]
     }
 
@@ -1619,8 +1652,48 @@ impl McpServer {
             "get_subscription_info" => self.handle_get_subscription_info(args).await,
             "set_subscription_key" => self.handle_set_subscription_key(args).await,
             "check_subscription" => self.handle_check_subscription(args).await,
+            "create_cluster" => self.handle_create_cluster(args).await,
+            "get_cluster_join_info" => self.handle_get_cluster_join_info().await,
+            "join_cluster" => self.handle_join_cluster(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_create_cluster(&self, args: &Value) -> Result<Value> {
+        let clustername = args
+            .get("clustername")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing clustername"))?;
+        let res = self.client.create_cluster(clustername).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Cluster creation initiated. Result: {}", res) }] }))
+    }
+
+    async fn handle_get_cluster_join_info(&self) -> Result<Value> {
+        let info = self.client.get_join_info().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }),
+        )
+    }
+
+    async fn handle_join_cluster(&self, args: &Value) -> Result<Value> {
+        let hostname = args
+            .get("hostname")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing hostname"))?;
+        let password = args
+            .get("password")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing password"))?;
+        let fingerprint = args
+            .get("fingerprint")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing fingerprint"))?;
+
+        let res = self
+            .client
+            .join_cluster(hostname, password, fingerprint)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Cluster join initiated. Result: {}", res) }] }))
     }
 
     async fn handle_get_subscription_info(&self, args: &Value) -> Result<Value> {
