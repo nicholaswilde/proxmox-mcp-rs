@@ -1929,4 +1929,94 @@ mod tests {
             .unwrap()
             .contains("Joined cluster"));
     }
+
+    #[tokio::test]
+    async fn test_hardware_passthrough_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list_pci_devices
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/hardware/pci"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "id": "0000:01:00.0", "class": "VGA" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock list_usb_devices
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/hardware/usb"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "busnum": 1, "devnum": 2, "vendor": "Logitech" }]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock VM Config Update (Add/Remove)
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let server = McpServer::new(client, false);
+
+        // Test List PCI
+        let res = server
+            .call_tool("list_pci_devices", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("VGA"));
+
+        // Test List USB
+        let res = server
+            .call_tool("list_usb_devices", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Logitech"));
+
+        // Test Add PCI
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device_id": "hostpci0",
+            "host": "0000:01:00.0",
+            "pcie": true
+        });
+        let res = server.call_tool("add_pci_device", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("PCI device hostpci0 added"));
+
+        // Test Add USB
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device_id": "usb0",
+            "host": "host=1234:5678",
+            "usb3": true
+        });
+        let res = server.call_tool("add_usb_device", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("USB device usb0 added"));
+
+        // Test Remove Device
+        let args = json!({
+            "node": "pve1",
+            "vmid": 100,
+            "device_id": "hostpci0"
+        });
+        let res = server.call_tool("remove_vm_device", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Device hostpci0 removed"));
+    }
 }

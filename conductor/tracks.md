@@ -17,3 +17,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Implement Cluster Management Tools**
   *Link: [./tracks/cluster_management/](./tracks/cluster_management/)*
+
+- [x] **Track: Implement PCI/USB Passthrough Tools**
+  *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*

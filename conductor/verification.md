@@ -36,6 +36,13 @@ This file tracks the tools and features that have been manually verified against
 - [ ] `set_tags`: Skipped (covered by add/remove).
 - [ ] `update_container_resources`: Skipped (similar logic to VM resources).
 
+### PCI & USB Passthrough
+- [ ] `list_pci_devices`: List available PCI devices on a node.
+- [ ] `list_usb_devices`: List available USB devices on a node.
+- [ ] `add_pci_device`: Add a PCI device to a VM.
+- [ ] `add_usb_device`: Add a USB device to a VM.
+- [ ] `remove_vm_device`: Remove a PCI or USB device from a VM.
+
 ### Subscription Management
 - [x] `get_subscription_info`: Successfully retrieved subscription status ("notfound").
 - [x] `check_subscription`: Successfully initiated subscription check.

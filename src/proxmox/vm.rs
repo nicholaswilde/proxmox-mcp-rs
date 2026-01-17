@@ -214,6 +214,71 @@ impl ProxmoxClient {
         self.update_config(node, vmid, resource_type, &params).await
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_pci_device(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device_id: &str, // hostpciX
+        host: &str,      // 0000:00:00.0 or mapping
+        pcie: Option<bool>,
+        mdev: Option<&str>,
+        extra_options: Option<&str>,
+    ) -> Result<()> {
+        let mut value = host.to_string();
+        if let Some(p) = pcie {
+            if p {
+                value.push_str(",pcie=1");
+            }
+        }
+        if let Some(m) = mdev {
+            value.push_str(&format!(",mdev={}", m));
+        }
+        if let Some(opts) = extra_options {
+            value.push_str(&format!(",{}", opts));
+        }
+        let params = json!({ device_id: value });
+        self.update_config(node, vmid, resource_type, &params)
+            .await
+    }
+
+    pub async fn add_usb_device(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device_id: &str, // usbX
+        host: &str,      // host=... or spice
+        usb3: Option<bool>,
+        extra_options: Option<&str>,
+    ) -> Result<()> {
+        let mut value = host.to_string();
+        if let Some(u) = usb3 {
+            if u {
+                value.push_str(",usb3=1");
+            }
+        }
+        if let Some(opts) = extra_options {
+            value.push_str(&format!(",{}", opts));
+        }
+        let params = json!({ device_id: value });
+        self.update_config(node, vmid, resource_type, &params)
+            .await
+    }
+
+    pub async fn remove_vm_device(
+        &self,
+        node: &str,
+        vmid: i64,
+        resource_type: &str,
+        device_id: &str,
+    ) -> Result<()> {
+        let params = json!({ "delete": device_id });
+        self.update_config(node, vmid, resource_type, &params)
+            .await
+    }
+
     // --- Cloud-Init & Configuration ---
 
     pub async fn set_vm_cloudinit(&self, node: &str, vmid: i64, params: &Value) -> Result<()> {

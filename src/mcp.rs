@@ -1475,6 +1475,74 @@ impl McpServer {
                     "required": ["hostname", "password", "fingerprint"]
                 }
             }),
+            json!({
+                "name": "list_pci_devices",
+                "description": "List available PCI devices on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_usb_devices",
+                "description": "List available USB devices on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "add_pci_device",
+                "description": "Add a PCI device to a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "device_id": { "type": "string", "description": "e.g. hostpci0" },
+                        "host": { "type": "string", "description": "PCI ID (0000:00:00.0) or mapping" },
+                        "pcie": { "type": "boolean", "description": "PCIe flag" },
+                        "mdev": { "type": "string", "description": "Mediated device type" },
+                        "extra_options": { "type": "string" }
+                    },
+                    "required": ["node", "vmid", "device_id", "host"]
+                }
+            }),
+            json!({
+                "name": "add_usb_device",
+                "description": "Add a USB device to a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "device_id": { "type": "string", "description": "e.g. usb0" },
+                        "host": { "type": "string", "description": "host=ID or spice" },
+                        "usb3": { "type": "boolean", "description": "USB3 flag" },
+                        "extra_options": { "type": "string" }
+                    },
+                    "required": ["node", "vmid", "device_id", "host"]
+                }
+            }),
+            json!({
+                "name": "remove_vm_device",
+                "description": "Remove a PCI or USB device from a VM",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "device_id": { "type": "string", "description": "Device ID to remove (e.g. hostpci0, usb0)" }
+                    },
+                    "required": ["node", "vmid", "device_id"]
+                }
+            }),
         ]
     }
 
@@ -1655,8 +1723,131 @@ impl McpServer {
             "create_cluster" => self.handle_create_cluster(args).await,
             "get_cluster_join_info" => self.handle_get_cluster_join_info().await,
             "join_cluster" => self.handle_join_cluster(args).await,
+            "list_pci_devices" => self.handle_list_pci_devices(args).await,
+            "list_usb_devices" => self.handle_list_usb_devices(args).await,
+            "add_pci_device" => self.handle_add_pci_device(args).await,
+            "add_usb_device" => self.handle_add_usb_device(args).await,
+            "remove_vm_device" => self.handle_remove_vm_device(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_list_pci_devices(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let devices = self.client.get_pci_devices(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&devices)? }] }),
+        )
+    }
+
+    async fn handle_list_usb_devices(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let devices = self.client.get_usb_devices(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&devices)? }] }),
+        )
+    }
+
+    async fn handle_add_pci_device(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let device_id = args
+            .get("device_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device_id"))?;
+        let host = args
+            .get("host")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing host"))?;
+        let pcie = args.get("pcie").and_then(|v| v.as_bool());
+        let mdev = args.get("mdev").and_then(|v| v.as_str());
+        let extra_options = args.get("extra_options").and_then(|v| v.as_str());
+
+        self.client
+            .add_pci_device(
+                node,
+                vmid,
+                "qemu",
+                device_id,
+                host,
+                pcie,
+                mdev,
+                extra_options,
+            )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("PCI device {} added to VM {}", device_id, vmid) }] }),
+        )
+    }
+
+    async fn handle_add_usb_device(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let device_id = args
+            .get("device_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device_id"))?;
+        let host = args
+            .get("host")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing host"))?;
+        let usb3 = args.get("usb3").and_then(|v| v.as_bool());
+        let extra_options = args.get("extra_options").and_then(|v| v.as_str());
+
+        self.client
+            .add_usb_device(
+                node,
+                vmid,
+                "qemu",
+                device_id,
+                host,
+                usb3,
+                extra_options,
+            )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("USB device {} added to VM {}", device_id, vmid) }] }),
+        )
+    }
+
+    async fn handle_remove_vm_device(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let device_id = args
+            .get("device_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing device_id"))?;
+
+        self.client
+            .remove_vm_device(node, vmid, "qemu", device_id)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Device {} removed from VM {}", device_id, vmid) }] }),
+        )
     }
 
     async fn handle_create_cluster(&self, args: &Value) -> Result<Value> {
