@@ -78,6 +78,8 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `update_storage`: Update a storage definition.
   - `delete_storage`: Delete a storage definition.
   - `download_url`: Download an ISO or Container template from a URL to storage.
+  - `delete_storage_content`: Delete a specific volume/file from storage.
+  - `get_storage_volume`: Get details about a specific storage volume.
 
   **Network & Firewall**
   - `list_networks`: List network interfaces and bridges on a node.
@@ -117,6 +119,12 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `delete_ceph_pool`: Delete a Ceph pool.
   - `list_ceph_osds`: List Ceph OSDs.
   - `list_ceph_monitors`: List Ceph Monitors.
+
+  **Metric Server Configuration**
+  - `list_metric_servers`: List configured metric export servers.
+  - `create_metric_server`: Configure a new metric export server (InfluxDB/Graphite).
+  - `update_metric_server`: Update a metric export server configuration.
+  - `delete_metric_server`: Remove a metric export server.
 
   **Task Monitoring**
   - `list_tasks`: List recent tasks on a node.

@@ -289,6 +289,7 @@ impl McpServer {
         tools.extend(self.tool_defs_ceph());
         tools.extend(self.tool_defs_backup_schedule());
         tools.extend(self.tool_defs_mapping());
+        tools.extend(self.tool_defs_metric_server());
         tools.extend(self.tool_defs_misc());
         tools
     }
@@ -412,6 +413,8 @@ impl McpServer {
             "read_task_log" => self.handle_read_task_log(args).await,
             "get_vm_config" => self.handle_get_vm_config(args).await,
             "download_url" => self.handle_download_url(args).await,
+            "delete_storage_content" => self.handle_delete_storage_content(args).await,
+            "get_storage_volume" => self.handle_get_storage_volume(args).await,
             "list_users" => self.handle_list_users().await,
             "create_user" => self.handle_create_user(args).await,
             "delete_user" => self.handle_delete_user(args).await,
@@ -491,6 +494,10 @@ impl McpServer {
             "create_usb_mapping" => self.handle_create_usb_mapping(args).await,
             "update_usb_mapping" => self.handle_update_usb_mapping(args).await,
             "delete_usb_mapping" => self.handle_delete_usb_mapping(args).await,
+            "list_metric_servers" => self.handle_list_metric_servers().await,
+            "create_metric_server" => self.handle_create_metric_server(args).await,
+            "update_metric_server" => self.handle_update_metric_server(args).await,
+            "delete_metric_server" => self.handle_delete_metric_server(args).await,
             "list_sdn_zones" => self.handle_list_sdn_zones().await,
             "create_sdn_zone" => self.handle_create_sdn_zone(args).await,
             "delete_sdn_zone" => self.handle_delete_sdn_zone(args).await,
@@ -640,6 +647,70 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let mons = self.client.get_ceph_monitors(node).await?;
         Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mons)? }] }))
+    }
+
+    async fn handle_list_metric_servers(&self) -> Result<Value> {
+        let servers = self.client.get_metric_servers().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&servers)? }] }),
+        )
+    }
+
+    async fn handle_create_metric_server(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let server_type = args
+            .get("type")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing type"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        params.remove("type");
+
+        self.client
+            .create_metric_server(id, server_type, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Metric server {} created", id) }] }),
+        )
+    }
+
+    async fn handle_update_metric_server(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+
+        self.client
+            .update_metric_server(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Metric server {} updated", id) }] }),
+        )
+    }
+
+    async fn handle_delete_metric_server(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+
+        self.client.delete_metric_server(id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Metric server {} deleted", id) }] }),
+        )
     }
 
     async fn handle_list_sdn_zones(&self) -> Result<Value> {
@@ -1369,6 +1440,47 @@ impl McpServer {
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Download initiated. UPID: {}", upid) }] }),
         )
+    }
+
+    async fn handle_delete_storage_content(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+        let volume = args
+            .get("volume")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing volume"))?;
+
+        self.client
+            .delete_storage_content(node, storage, volume)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Deleted volume {}", volume) }] }))
+    }
+
+    async fn handle_get_storage_volume(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage = args
+            .get("storage")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing storage"))?;
+        let volume = args
+            .get("volume")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing volume"))?;
+
+        let info = self
+            .client
+            .get_storage_content_volume(node, storage, volume)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
     }
 
     async fn handle_get_node_stats(&self, args: &Value) -> Result<Value> {
@@ -3326,6 +3438,32 @@ impl McpServer {
                     "required": ["node", "storage", "url", "filename", "content"]
                 }
             }),
+            json!({
+                "name": "delete_storage_content",
+                "description": "Delete a specific volume/file from storage",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "storage": { "type": "string", "description": "Storage ID" },
+                        "volume": { "type": "string", "description": "Volume ID (e.g. 'local:iso/image.iso')" }
+                    },
+                    "required": ["node", "storage", "volume"]
+                }
+            }),
+            json!({
+                "name": "get_storage_volume",
+                "description": "Get details about a specific storage volume",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "storage": { "type": "string" },
+                        "volume": { "type": "string" }
+                    },
+                    "required": ["node", "storage", "volume"]
+                }
+            }),
         ]
     }
 
@@ -4003,6 +4141,63 @@ impl McpServer {
                     "type": "object",
                     "properties": {
                         "id": { "type": "string" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_metric_server(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_metric_servers",
+                "description": "List configured metric export servers",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_metric_server",
+                "description": "Configure a new metric export server (InfluxDB/Graphite)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "ID/Name" },
+                        "type": { "type": "string", "enum": ["influxdb", "graphite"], "description": "Server type" },
+                        "server": { "type": "string", "description": "Server IP/Hostname" },
+                        "port": { "type": "integer", "description": "Server Port" },
+                        "path": { "type": "string", "description": "Path (InfluxDB only)" },
+                        "bucket": { "type": "string", "description": "Bucket (InfluxDB v2)" },
+                        "organization": { "type": "string", "description": "Organization (InfluxDB v2)" },
+                        "token": { "type": "string", "description": "Token (InfluxDB v2)" }
+                    },
+                    "required": ["id", "type", "server", "port"]
+                }
+            }),
+            json!({
+                "name": "update_metric_server",
+                "description": "Update a metric export server configuration",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "ID/Name" },
+                        "server": { "type": "string" },
+                        "port": { "type": "integer" },
+                        "disable": { "type": "integer", "enum": [0, 1] }
+                    },
+                    "required": ["id"]
+                }
+            }),
+            json!({
+                "name": "delete_metric_server",
+                "description": "Remove a metric export server",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "ID/Name" }
                     },
                     "required": ["id"]
                 }

@@ -119,6 +119,27 @@ impl ProxmoxClient {
         Ok(res)
     }
 
+    pub async fn delete_storage_content(
+        &self,
+        node: &str,
+        storage: &str,
+        volume: &str,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/storage/{}/content/{}", node, storage, volume);
+        self.request::<()>(Method::DELETE, &path, None).await?;
+        Ok(())
+    }
+
+    pub async fn get_storage_content_volume(
+        &self,
+        node: &str,
+        storage: &str,
+        volume: &str,
+    ) -> Result<Value> {
+        let path = format!("nodes/{}/storage/{}/content/{}", node, storage, volume);
+        Ok(self.request(Method::GET, &path, None).await?)
+    }
+
     // --- Backup Management ---
 
     pub async fn get_backups(
