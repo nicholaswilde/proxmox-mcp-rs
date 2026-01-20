@@ -181,7 +181,7 @@ impl McpServer {
                 "protocolVersion": "2024-11-05",
                 "serverInfo": {
                     "name": "proxmox-mcp-rs",
-                    "version": "0.1.0"
+                    "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {
                     "tools": {
@@ -285,6 +285,9 @@ impl McpServer {
         tools.extend(self.tool_defs_system());
         tools.extend(self.tool_defs_access());
         tools.extend(self.tool_defs_ha());
+        tools.extend(self.tool_defs_sdn());
+        tools.extend(self.tool_defs_ceph());
+        tools.extend(self.tool_defs_backup_schedule());
         tools.extend(self.tool_defs_misc());
         tools
     }
@@ -386,6 +389,12 @@ impl McpServer {
             "list_tasks" => self.handle_list_tasks(args).await,
             "wait_for_task" => self.handle_wait_for_task(args).await,
             "list_networks" => self.handle_list_networks(args).await,
+            "create_network_bridge" => self.handle_create_network_bridge(args).await,
+            "create_network_bond" => self.handle_create_network_bond(args).await,
+            "update_network_interface" => self.handle_update_network_interface(args).await,
+            "delete_network_interface" => self.handle_delete_network_interface(args).await,
+            "apply_network_config" => self.handle_apply_network_config(args).await,
+            "revert_network_config" => self.handle_revert_network_config(args).await,
             "list_storage" => self.handle_list_storage(args).await,
             "list_isos" => self.handle_list_isos(args).await,
             "get_cluster_status" => self.handle_get_cluster_status(args).await,
@@ -473,8 +482,240 @@ impl McpServer {
             "remove_vm_device" => self.handle_remove_vm_device(args).await,
             "add_lxc_mountpoint" => self.handle_add_lxc_mountpoint(args).await,
             "remove_lxc_mountpoint" => self.handle_remove_lxc_mountpoint(args).await,
+            "list_sdn_zones" => self.handle_list_sdn_zones().await,
+            "create_sdn_zone" => self.handle_create_sdn_zone(args).await,
+            "delete_sdn_zone" => self.handle_delete_sdn_zone(args).await,
+            "list_sdn_vnets" => self.handle_list_sdn_vnets().await,
+            "create_sdn_vnet" => self.handle_create_sdn_vnet(args).await,
+            "delete_sdn_vnet" => self.handle_delete_sdn_vnet(args).await,
+            "apply_sdn_changes" => self.handle_apply_sdn_changes().await,
+            "get_ceph_status" => self.handle_get_ceph_status(args).await,
+            "list_ceph_pools" => self.handle_list_ceph_pools(args).await,
+            "create_ceph_pool" => self.handle_create_ceph_pool(args).await,
+            "delete_ceph_pool" => self.handle_delete_ceph_pool(args).await,
+            "list_ceph_osds" => self.handle_list_ceph_osds(args).await,
+            "list_ceph_monitors" => self.handle_list_ceph_monitors(args).await,
+            "list_backup_schedules" => self.handle_list_backup_schedules().await,
+            "create_backup_schedule" => self.handle_create_backup_schedule(args).await,
+            "update_backup_schedule" => self.handle_update_backup_schedule(args).await,
+            "delete_backup_schedule" => self.handle_delete_backup_schedule(args).await,
             _ => anyhow::bail!("Unknown tool: {}", name),
         }
+    }
+
+    async fn handle_list_backup_schedules(&self) -> Result<Value> {
+        let schedules = self.client.get_backup_schedules().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&schedules)? }] }),
+        )
+    }
+
+    async fn handle_create_backup_schedule(&self, args: &Value) -> Result<Value> {
+        self.client.create_backup_schedule(args).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Backup schedule created" }] }))
+    }
+
+    async fn handle_update_backup_schedule(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .update_backup_schedule(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Backup schedule {} updated", id) }] }),
+        )
+    }
+
+    async fn handle_delete_backup_schedule(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        self.client.delete_backup_schedule(id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Backup schedule {} deleted", id) }] }),
+        )
+    }
+
+    async fn handle_get_ceph_status(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let status = self.client.get_ceph_status(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
+        )
+    }
+
+    async fn handle_list_ceph_pools(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let pools = self.client.get_ceph_pools(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&pools)? }] }),
+        )
+    }
+
+    async fn handle_create_ceph_pool(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("name");
+
+        let upid = self
+            .client
+            .create_ceph_pool(node, name, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Ceph pool creation initiated. UPID: {}", upid) }] }),
+        )
+    }
+
+    async fn handle_delete_ceph_pool(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+        let remove_storages = args
+            .get("remove_storages")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let upid = self
+            .client
+            .delete_ceph_pool(node, name, remove_storages)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Ceph pool deletion initiated. UPID: {}", upid) }] }),
+        )
+    }
+
+    async fn handle_list_ceph_osds(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let osds = self.client.get_ceph_osds(node).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&osds)? }] }))
+    }
+
+    async fn handle_list_ceph_monitors(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let mons = self.client.get_ceph_monitors(node).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mons)? }] }))
+    }
+
+    async fn handle_list_sdn_zones(&self) -> Result<Value> {
+        let zones = self.client.get_sdn_zones().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&zones)? }] }),
+        )
+    }
+
+    async fn handle_create_sdn_zone(&self, args: &Value) -> Result<Value> {
+        let zone = args
+            .get("zone")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing zone"))?;
+        let zone_type = args
+            .get("type")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing type"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("zone");
+        params.remove("type");
+
+        self.client
+            .create_sdn_zone(zone, zone_type, &Value::Object(params))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("SDN Zone {} created", zone) }] }))
+    }
+
+    async fn handle_delete_sdn_zone(&self, args: &Value) -> Result<Value> {
+        let zone = args
+            .get("zone")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing zone"))?;
+        self.client.delete_sdn_zone(zone).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("SDN Zone {} deleted", zone) }] }))
+    }
+
+    async fn handle_list_sdn_vnets(&self) -> Result<Value> {
+        let vnets = self.client.get_sdn_vnets().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&vnets)? }] }),
+        )
+    }
+
+    async fn handle_create_sdn_vnet(&self, args: &Value) -> Result<Value> {
+        let vnet = args
+            .get("vnet")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing vnet"))?;
+        let zone = args
+            .get("zone")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing zone"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("vnet");
+        params.remove("zone");
+
+        self.client
+            .create_sdn_vnet(vnet, zone, &Value::Object(params))
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("SDN Vnet {} created", vnet) }] }))
+    }
+
+    async fn handle_delete_sdn_vnet(&self, args: &Value) -> Result<Value> {
+        let vnet = args
+            .get("vnet")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing vnet"))?;
+        self.client.delete_sdn_vnet(vnet).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("SDN Vnet {} deleted", vnet) }] }))
+    }
+
+    async fn handle_apply_sdn_changes(&self) -> Result<Value> {
+        let upid = self.client.apply_sdn().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("SDN changes applied. UPID: {}", upid) }] }),
+        )
     }
 
     async fn handle_add_lxc_mountpoint(&self, args: &Value) -> Result<Value> {
@@ -1271,6 +1512,119 @@ impl McpServer {
         let networks = self.client.get_network_interfaces(node).await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&networks)? }] }),
+        )
+    }
+
+    async fn handle_create_network_bridge(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let iface = args
+            .get("iface")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing iface"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("iface");
+
+        self.client
+            .create_network_bridge(node, iface, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Bridge {} created on {}", iface, node) }] }),
+        )
+    }
+
+    async fn handle_create_network_bond(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let iface = args
+            .get("iface")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing iface"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("iface");
+
+        self.client
+            .create_network_bond(node, iface, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Bond {} created on {}", iface, node) }] }),
+        )
+    }
+
+    async fn handle_update_network_interface(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let iface = args
+            .get("iface")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing iface"))?;
+
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("node");
+        params.remove("iface");
+
+        self.client
+            .update_network_interface(node, iface, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Interface {} updated on {}", iface, node) }] }),
+        )
+    }
+
+    async fn handle_delete_network_interface(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let iface = args
+            .get("iface")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing iface"))?;
+
+        self.client.delete_network_interface(node, iface).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Interface {} deleted on {}", iface, node) }] }),
+        )
+    }
+
+    async fn handle_apply_network_config(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = self.client.apply_network_config(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Network config applied on {}. UPID: {}", node, upid) }] }),
+        )
+    }
+
+    async fn handle_revert_network_config(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        self.client.revert_network_config(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Network config reverted on {}", node) }] }),
         )
     }
 
@@ -2872,6 +3226,93 @@ impl McpServer {
                 }
             }),
             json!({
+                "name": "create_network_bridge",
+                "description": "Create a network bridge (vmbr)",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "iface": { "type": "string", "description": "Interface Name (e.g. vmbr0)" },
+                        "bridge_ports": { "type": "string", "description": "Bridge ports (e.g. eno1)" },
+                        "cidr": { "type": "string", "description": "IP/CIDR (e.g. 192.168.1.10/24)" },
+                        "gateway": { "type": "string", "description": "Gateway IP" },
+                        "autostart": { "type": "boolean", "description": "Autostart" },
+                        "comments": { "type": "string", "description": "Comments" }
+                    },
+                    "required": ["node", "iface"]
+                }
+            }),
+            json!({
+                "name": "create_network_bond",
+                "description": "Create a network bond",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "iface": { "type": "string", "description": "Interface Name (e.g. bond0)" },
+                        "slaves": { "type": "string", "description": "Slaves (e.g. eno1 eno2)" },
+                        "bond_mode": { "type": "string", "enum": ["balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb", "unknown"], "description": "Bond mode" },
+                        "bond_xmit_hash_policy": { "type": "string", "description": "Hash policy" },
+                        "cidr": { "type": "string" },
+                        "autostart": { "type": "boolean" },
+                        "comments": { "type": "string" }
+                    },
+                    "required": ["node", "iface", "slaves"]
+                }
+            }),
+            json!({
+                "name": "update_network_interface",
+                "description": "Update a network interface configuration",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "iface": { "type": "string" },
+                        "bridge_ports": { "type": "string" },
+                        "slaves": { "type": "string" },
+                        "cidr": { "type": "string" },
+                        "gateway": { "type": "string" },
+                        "autostart": { "type": "boolean" },
+                        "comments": { "type": "string" }
+                    },
+                    "required": ["node", "iface"]
+                }
+            }),
+            json!({
+                "name": "delete_network_interface",
+                "description": "Delete a network interface configuration",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" },
+                        "iface": { "type": "string" }
+                    },
+                    "required": ["node", "iface"]
+                }
+            }),
+            json!({
+                "name": "apply_network_config",
+                "description": "Apply pending network configuration changes",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "revert_network_config",
+                "description": "Revert pending network configuration changes",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
                 "name": "list_firewall_rules",
                 "description": "List firewall rules",
                 "inputSchema": {
@@ -3350,6 +3791,228 @@ impl McpServer {
                         "sid": { "type": "string", "description": "Service ID" }
                     },
                     "required": ["sid"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_backup_schedule(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_backup_schedules",
+                "description": "List all cluster-wide backup schedules",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_backup_schedule",
+                "description": "Create a new cluster-wide backup schedule",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "vmid": { "type": "string", "description": "Comma-separated list of VMIDs or 'all'" },
+                        "storage": { "type": "string", "description": "Target storage ID" },
+                        "schedule": { "type": "string", "description": "Backup schedule (Proxmox schedule format, e.g., 'daily', '02:00')" },
+                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"], "description": "Backup mode" },
+                        "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"], "description": "Compression algorithm" },
+                        "enabled": { "type": "boolean", "description": "Whether the schedule is enabled" },
+                        "node": { "type": "string", "description": "Restrict to specific node" },
+                        "all": { "type": "boolean", "description": "Backup all VMs" },
+                        "exclude": { "type": "string", "description": "Comma-separated list of VMIDs to exclude" }
+                    },
+                    "required": ["storage", "schedule"]
+                }
+            }),
+            json!({
+                "name": "update_backup_schedule",
+                "description": "Update an existing backup schedule",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "The ID of the backup job (e.g., backup-1234)" },
+                        "vmid": { "type": "string" },
+                        "storage": { "type": "string" },
+                        "schedule": { "type": "string" },
+                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"] },
+                        "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"] },
+                        "enabled": { "type": "boolean" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+            json!({
+                "name": "delete_backup_schedule",
+                "description": "Delete a backup schedule",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "The ID of the backup job" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_ceph(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "get_ceph_status",
+                "description": "Get Ceph cluster status from a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_ceph_pools",
+                "description": "List Ceph pools",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "create_ceph_pool",
+                "description": "Create a Ceph pool",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "name": { "type": "string", "description": "Pool name" },
+                        "pg_num": { "type": "integer", "description": "Placement groups (default: 128)" },
+                        "add_storages": { "type": "integer", "description": "Configure VM/CT storage (0 or 1, default 1)" },
+                        "min_size": { "type": "integer", "description": "Minimum replicas" },
+                        "size": { "type": "integer", "description": "Replicas" },
+                        "crush_rule": { "type": "string", "description": "Crush rule name" }
+                    },
+                    "required": ["node", "name"]
+                }
+            }),
+            json!({
+                "name": "delete_ceph_pool",
+                "description": "Delete a Ceph pool",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "name": { "type": "string", "description": "Pool name" },
+                        "remove_storages": { "type": "boolean", "description": "Remove associated VM/CT storages (default: false)" }
+                    },
+                    "required": ["node", "name"]
+                }
+            }),
+            json!({
+                "name": "list_ceph_osds",
+                "description": "List Ceph OSDs",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "list_ceph_monitors",
+                "description": "List Ceph Monitors",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_sdn(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_sdn_zones",
+                "description": "List all SDN Zones",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_sdn_zone",
+                "description": "Create a new SDN Zone",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "zone": { "type": "string", "description": "Zone ID" },
+                        "type": { "type": "string", "enum": ["simple", "vlan", "qinq", "vxlan", "evpn"], "description": "Zone Type" },
+                        "mtu": { "type": "integer", "description": "MTU" },
+                        "nodes": { "type": "string", "description": "Comma separated list of nodes (optional)" }
+                    },
+                    "required": ["zone", "type"]
+                }
+            }),
+            json!({
+                "name": "delete_sdn_zone",
+                "description": "Delete an SDN Zone",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "zone": { "type": "string", "description": "Zone ID" }
+                    },
+                    "required": ["zone"]
+                }
+            }),
+            json!({
+                "name": "list_sdn_vnets",
+                "description": "List all SDN Vnets",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_sdn_vnet",
+                "description": "Create a new SDN Vnet",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "vnet": { "type": "string", "description": "Vnet ID" },
+                        "zone": { "type": "string", "description": "Zone ID" },
+                        "tag": { "type": "integer", "description": "VLAN Tag/ID" },
+                        "alias": { "type": "string", "description": "Alias" }
+                    },
+                    "required": ["vnet", "zone"]
+                }
+            }),
+            json!({
+                "name": "delete_sdn_vnet",
+                "description": "Delete an SDN Vnet",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "vnet": { "type": "string", "description": "Vnet ID" }
+                    },
+                    "required": ["vnet"]
+                }
+            }),
+            json!({
+                "name": "apply_sdn_changes",
+                "description": "Apply pending SDN changes to the cluster",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
                 }
             }),
         ]

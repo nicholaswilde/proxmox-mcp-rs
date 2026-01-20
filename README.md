@@ -64,6 +64,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_backups`: List backups on a storage.
   - `create_backup`: Create a backup (vzdump).
   - `restore_backup`: Restore a VM or Container from a backup.
+  - `list_backup_schedules`: List all cluster-wide backup schedules.
+  - `create_backup_schedule`: Create a new cluster-wide backup schedule.
+  - `update_backup_schedule`: Update an existing backup schedule.
+  - `delete_backup_schedule`: Delete a backup schedule.
 
   **Storage & Templates**
   - `list_storage`: List all storage on a node.
@@ -77,9 +81,32 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
 
   **Network & Firewall**
   - `list_networks`: List network interfaces and bridges on a node.
+  - `create_network_bridge`: Create a network bridge (vmbr).
+  - `create_network_bond`: Create a network bond.
+  - `update_network_interface`: Update a network interface configuration.
+  - `delete_network_interface`: Delete a network interface configuration.
+  - `apply_network_config`: Apply pending network configuration changes.
+  - `revert_network_config`: Revert pending network configuration changes.
   - `list_firewall_rules`: List firewall rules.
   - `add_firewall_rule`: Add a firewall rule.
   - `delete_firewall_rule`: Delete a firewall rule.
+
+  **SDN (Software Defined Network)**
+  - `list_sdn_zones`: List all SDN Zones.
+  - `create_sdn_zone`: Create a new SDN Zone.
+  - `delete_sdn_zone`: Delete an SDN Zone.
+  - `list_sdn_vnets`: List all SDN Vnets.
+  - `create_sdn_vnet`: Create a new SDN Vnet.
+  - `delete_sdn_vnet`: Delete an SDN Vnet.
+  - `apply_sdn_changes`: Apply pending SDN changes to the cluster.
+
+  **Ceph Cluster Management**
+  - `get_ceph_status`: Get Ceph cluster status.
+  - `list_ceph_pools`: List Ceph pools.
+  - `create_ceph_pool`: Create a Ceph pool.
+  - `delete_ceph_pool`: Delete a Ceph pool.
+  - `list_ceph_osds`: List Ceph OSDs.
+  - `list_ceph_monitors`: List Ceph Monitors.
 
   **Task Monitoring**
   - `list_tasks`: List recent tasks on a node.

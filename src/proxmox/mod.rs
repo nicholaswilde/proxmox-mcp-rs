@@ -1,11 +1,15 @@
 pub mod access;
 pub mod agent;
+pub mod backup_schedule;
+pub mod ceph;
 pub mod client;
 pub mod cluster;
 pub mod error;
 pub mod hardware;
+pub mod network_config;
 pub mod pool;
 pub mod replication;
+pub mod sdn;
 pub mod snapshot;
 pub mod storage;
 pub mod subscription;
