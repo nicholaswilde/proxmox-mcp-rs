@@ -288,6 +288,7 @@ impl McpServer {
         tools.extend(self.tool_defs_sdn());
         tools.extend(self.tool_defs_ceph());
         tools.extend(self.tool_defs_backup_schedule());
+        tools.extend(self.tool_defs_mapping());
         tools.extend(self.tool_defs_misc());
         tools
     }
@@ -482,6 +483,14 @@ impl McpServer {
             "remove_vm_device" => self.handle_remove_vm_device(args).await,
             "add_lxc_mountpoint" => self.handle_add_lxc_mountpoint(args).await,
             "remove_lxc_mountpoint" => self.handle_remove_lxc_mountpoint(args).await,
+            "list_pci_mappings" => self.handle_list_pci_mappings().await,
+            "create_pci_mapping" => self.handle_create_pci_mapping(args).await,
+            "update_pci_mapping" => self.handle_update_pci_mapping(args).await,
+            "delete_pci_mapping" => self.handle_delete_pci_mapping(args).await,
+            "list_usb_mappings" => self.handle_list_usb_mappings().await,
+            "create_usb_mapping" => self.handle_create_usb_mapping(args).await,
+            "update_usb_mapping" => self.handle_update_usb_mapping(args).await,
+            "delete_usb_mapping" => self.handle_delete_usb_mapping(args).await,
             "list_sdn_zones" => self.handle_list_sdn_zones().await,
             "create_sdn_zone" => self.handle_create_sdn_zone(args).await,
             "delete_sdn_zone" => self.handle_delete_sdn_zone(args).await,
@@ -637,6 +646,114 @@ impl McpServer {
         let zones = self.client.get_sdn_zones().await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&zones)? }] }),
+        )
+    }
+
+    async fn handle_list_pci_mappings(&self) -> Result<Value> {
+        let mappings = self.client.get_pci_mappings().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mappings)? }] }),
+        )
+    }
+
+    async fn handle_create_pci_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .create_pci_mapping(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("PCI Mapping {} created", id) }] }),
+        )
+    }
+
+    async fn handle_update_pci_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .update_pci_mapping(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("PCI Mapping {} updated", id) }] }),
+        )
+    }
+
+    async fn handle_delete_pci_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        self.client.delete_pci_mapping(id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("PCI Mapping {} deleted", id) }] }),
+        )
+    }
+
+    async fn handle_list_usb_mappings(&self) -> Result<Value> {
+        let mappings = self.client.get_usb_mappings().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mappings)? }] }),
+        )
+    }
+
+    async fn handle_create_usb_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .create_usb_mapping(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("USB Mapping {} created", id) }] }),
+        )
+    }
+
+    async fn handle_update_usb_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        let mut params = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        params.remove("id");
+        self.client
+            .update_usb_mapping(id, &Value::Object(params))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("USB Mapping {} updated", id) }] }),
+        )
+    }
+
+    async fn handle_delete_usb_mapping(&self, args: &Value) -> Result<Value> {
+        let id = args
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing id"))?;
+        self.client.delete_usb_mapping(id).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("USB Mapping {} deleted", id) }] }),
         )
     }
 
@@ -3791,6 +3908,103 @@ impl McpServer {
                         "sid": { "type": "string", "description": "Service ID" }
                     },
                     "required": ["sid"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_mapping(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_pci_mappings",
+                "description": "List all cluster-wide PCI resource mappings",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_pci_mapping",
+                "description": "Create a new cluster-wide PCI resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "The ID of the mapping (logical name, e.g., 'nvidia-t4')" },
+                        "map": { "type": "string", "description": "Comma-separated list of mapping entries (node=N,path=P,...)" },
+                        "description": { "type": "string" }
+                    },
+                    "required": ["id", "map"]
+                }
+            }),
+            json!({
+                "name": "update_pci_mapping",
+                "description": "Update an existing PCI resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" },
+                        "map": { "type": "string" },
+                        "description": { "type": "string" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+            json!({
+                "name": "delete_pci_mapping",
+                "description": "Delete a PCI resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+            json!({
+                "name": "list_usb_mappings",
+                "description": "List all cluster-wide USB resource mappings",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_usb_mapping",
+                "description": "Create a new cluster-wide USB resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string", "description": "The ID of the mapping (logical name)" },
+                        "map": { "type": "string", "description": "Comma-separated list of mapping entries (node=N,path=P,...)" },
+                        "description": { "type": "string" }
+                    },
+                    "required": ["id", "map"]
+                }
+            }),
+            json!({
+                "name": "update_usb_mapping",
+                "description": "Update an existing USB resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" },
+                        "map": { "type": "string" },
+                        "description": { "type": "string" }
+                    },
+                    "required": ["id"]
+                }
+            }),
+            json!({
+                "name": "delete_usb_mapping",
+                "description": "Delete a USB resource mapping",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" }
+                    },
+                    "required": ["id"]
                 }
             }),
         ]

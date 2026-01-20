@@ -6,6 +6,7 @@ pub mod client;
 pub mod cluster;
 pub mod error;
 pub mod hardware;
+pub mod mapping;
 pub mod network_config;
 pub mod pool;
 pub mod replication;

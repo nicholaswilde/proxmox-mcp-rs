@@ -100,6 +100,16 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `delete_sdn_vnet`: Delete an SDN Vnet.
   - `apply_sdn_changes`: Apply pending SDN changes to the cluster.
 
+  **Cluster Resource Mappings**
+  - `list_pci_mappings`: List all cluster-wide PCI resource mappings.
+  - `create_pci_mapping`: Create a new PCI resource mapping.
+  - `update_pci_mapping`: Update an existing PCI resource mapping.
+  - `delete_pci_mapping`: Delete a PCI resource mapping.
+  - `list_usb_mappings`: List all cluster-wide USB resource mappings.
+  - `create_usb_mapping`: Create a new USB resource mapping.
+  - `update_usb_mapping`: Update an existing USB resource mapping.
+  - `delete_usb_mapping`: Delete a USB resource mapping.
+
   **Ceph Cluster Management**
   - `get_ceph_status`: Get Ceph cluster status.
   - `list_ceph_pools`: List Ceph pools.
