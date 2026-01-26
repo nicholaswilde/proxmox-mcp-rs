@@ -34,6 +34,9 @@ user = "root@pam"
 # Each instance needs a unique host or name.
 # All tools support an optional 'instance' argument to target a specific environment.
 # Target an instance using its 'name' (highest priority) or 'host'.
+#
+# You can also configure instances via environment variables using the pattern:
+# PROXMOX_INSTANCES__<INDEX>__<FIELD> (e.g. PROXMOX_INSTANCES__0__HOST=...)
 
 # [[instances]]
 # name = "prod-cluster" # Optional: defaults to host

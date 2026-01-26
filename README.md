@@ -340,6 +340,22 @@ You can also configure the server using environment variables:
 - `PROXMOX_HTTP_PORT` (default: `3000`)
 - `PROXMOX_HTTP_AUTH_TOKEN`
 
+**Multi-Instance via Environment Variables:**
+You can configure multiple instances using the pattern `PROXMOX_INSTANCES__<INDEX>__<FIELD>`. Use double underscores `__` as separators.
+
+Example:
+```bash
+PROXMOX_INSTANCES__0__HOST=192.168.1.10
+PROXMOX_INSTANCES__0__USER=root@pam
+PROXMOX_INSTANCES__0__PASSWORD=secret
+
+PROXMOX_INSTANCES__1__NAME=seedbox
+PROXMOX_INSTANCES__1__HOST=seedbox.example.com
+PROXMOX_INSTANCES__1__USER=root@pve
+PROXMOX_INSTANCES__1__TOKEN_NAME=mcp
+PROXMOX_INSTANCES__1__TOKEN_VALUE=...
+```
+
 ### :robot: Configuration Example (Claude Desktop)
 
 Add the following to your `claude_desktop_config.json`:
