@@ -32,7 +32,8 @@ user = "root@pam"
 # --- Multiple Instances Configuration ---
 # You can configure multiple Proxmox instances using the [[instances]] array.
 # Each instance needs a unique host or name.
-# Tools can target a specific instance using the 'instance' argument (using the 'name' or 'host').
+# All tools support an optional 'instance' argument to target a specific environment.
+# Target an instance using its 'name' (highest priority) or 'host'.
 
 # [[instances]]
 # name = "prod-cluster" # Optional: defaults to host

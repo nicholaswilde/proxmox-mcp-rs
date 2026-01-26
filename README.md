@@ -13,9 +13,12 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
 ## :sparkles: Features
 
 - **Protocol:** JSON-RPC 2.0 over Stdio (MCP standard).
+- **Multi-Instance:** Support for multiple Proxmox instances in a single configuration.
 - **Authentication:** Proxmox User/Password (Ticket-based) or API Token.
 - **Logging:** Configurable log levels, console output (stderr), and optional file logging with rotation (daily, hourly).
 - **Tools:**
+  - All tools support an optional `instance` argument to target a specific Proxmox environment.
+  ...
 
   **Cluster Management**
   - `create_cluster`: Create a new cluster.
@@ -272,6 +275,49 @@ Arguments:
 ### :gear: Configuration File
 
 The server can load configuration from a file named `config.toml`, `config.yaml`, or `config.json` in the current directory, or via the `--config` flag. See `config.toml.example` for details.
+
+### :gear: Multi-Instance Configuration
+
+You can configure multiple Proxmox instances in your `config.toml` using the `[[instances]]` array. This allows you to manage several clusters or standalone nodes from a single MCP server.
+
+```toml
+# Default instance (legacy format)
+host = "192.168.1.10"
+user = "root@pam"
+password = "..."
+
+# Additional instances
+[[instances]]
+name = "lab"
+host = "192.168.1.20"
+user = "root@pve"
+token_name = "..."
+token_value = "..."
+
+[[instances]]
+name = "prod"
+host = "pve.example.com"
+user = "root@pam"
+password = "..."
+```
+
+#### Targeting Instances
+Every tool supports an optional `instance` argument. This argument matches the `name` (if provided) or the `host` of the instance.
+
+If no `instance` is specified, the server uses the default instance (the top-level configuration or the first entry in the `[[instances]]` list).
+
+**Example tool call (JSON-RPC):**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "list_vms",
+    "arguments": {
+      "instance": "lab"
+    }
+  }
+}
+```
 
 ### :earth_africa: Environment Variables
 

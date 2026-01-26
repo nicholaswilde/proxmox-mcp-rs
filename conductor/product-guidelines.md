@@ -13,4 +13,4 @@
 - **Test-Driven Reliability:** Every new Proxmox tool or core feature should be accompanied by unit tests using `wiremock` to simulate Proxmox API responses.
 - **Testing Coverage:** Every Proxmox function and MCP tool must have corresponding unit tests in `src/tests.rs` (or relevant module).
 - **CI Verification:** Run `task test:ci` after every feature addition to ensure formatting, linting, and tests all pass.
-- **Versioning:** When asked to create a new git tag, always update the version in `Cargo.toml` to match the new tag version.
+- **Versioning:** When asked to create a new git tag, always update the version in `Cargo.toml` to match the new tag version. When creating the tag, use the `-m` argument to add a descriptive comment (e.g., `git tag -a v0.3.22 -m "v0.3.22"`).

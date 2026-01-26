@@ -295,8 +295,8 @@ A task is complete when:
 
 ### Deployment Steps
 1. Merge feature branch to main
-2. Tag release with version
-3. Push to deployment service
+2. Tag release with version (e.g., `git tag -a v0.3.22 -m "v0.3.22"`)
+3. Push to deployment service (including tags: `git push origin --tags`)
 4. Run database migrations
 5. Verify deployment
 6. Test critical paths
