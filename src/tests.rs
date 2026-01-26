@@ -75,7 +75,9 @@ mod tests {
         // BUT request() method might fail if no ticket, unless we mock the response ignoring auth headers.
         // Our mock server ignores headers by default unless matched.
 
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "vm_id": "100" });
         let res = server.call_tool("reset_vm", &args).await.unwrap();
@@ -109,7 +111,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "container_id": "200" });
         let res = server.call_tool("reset_container", &args).await.unwrap();
@@ -130,7 +134,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "vm_id": "999" });
         let res = server.call_tool("reset_vm", &args).await;
@@ -150,7 +156,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
         let res = server.call_tool("list_nodes", &json!({})).await.unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
         assert!(content.contains("pve1"));
@@ -171,7 +179,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_vms (should return both)
         let res_vms = server.call_tool("list_vms", &json!({})).await.unwrap();
@@ -199,7 +209,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         // Default type is qemu
@@ -220,7 +232,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("stop_vm", &args).await.unwrap();
@@ -240,7 +254,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("shutdown_vm", &args).await.unwrap();
@@ -260,7 +276,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("reboot_vm", &args).await.unwrap();
@@ -280,7 +298,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 101, "name": "test-vm", "memory": 2048 });
         let res = server.call_tool("create_vm", &args).await.unwrap();
@@ -300,7 +320,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100 });
         let res = server.call_tool("delete_vm", &args).await.unwrap();
@@ -320,7 +342,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({
             "node": "pve1",
@@ -372,7 +396,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -417,7 +443,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 200 });
         let res = server.call_tool("delete_container", &args).await.unwrap();
@@ -437,7 +465,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100, "newid": 102, "name": "cloned-vm" });
         let res = server.call_tool("clone_vm", &args).await.unwrap();
@@ -457,7 +487,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1", "vmid": 100, "target_node": "pve2" });
         let res = server.call_tool("migrate_vm", &args).await.unwrap();
@@ -482,7 +514,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1" });
         let res = server.call_tool("list_templates", &args).await.unwrap();
@@ -509,7 +543,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Update both
         let args = json!({
@@ -549,7 +585,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Update both
         let args = json!({
@@ -602,7 +640,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List
         let args = json!({ "node": "pve1", "storage": "local" });
@@ -651,7 +691,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test get_task_status
         let args = json!({ "node": "pve1", "upid": upid });
@@ -685,7 +727,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({ "node": "pve1" });
         let res = server.call_tool("list_networks", &args).await.unwrap();
@@ -723,7 +767,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_storage
         let args = json!({ "node": "pve1" });
@@ -757,7 +803,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test resources/list via handle_request
         let req = crate::mcp::JsonRpcRequest {
@@ -808,7 +856,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let res = server
             .call_tool("get_cluster_status", &json!({}))
@@ -866,7 +916,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list (Cluster)
         let res = server
@@ -917,7 +969,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // 1. Add Disk
         let args = json!({
@@ -1001,7 +1055,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // 1. Get Node Stats
         let args = json!({ "node": "pve1", "timeframe": "hour" });
@@ -1027,7 +1083,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         let args = json!({
             "node": "pve1",
@@ -1074,7 +1132,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List
         let res = server.call_tool("list_users", &json!({})).await.unwrap();
@@ -1142,7 +1202,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List
         let res = server
@@ -1237,7 +1299,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test Ping
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -1287,7 +1351,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, true); // lazy_mode = true
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), true); // lazy_mode = true
 
         // 1. Check initial tool list
         let req = crate::mcp::JsonRpcRequest {
@@ -1376,7 +1442,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List
         let res = server.call_tool("list_pools", &json!({})).await.unwrap();
@@ -1466,7 +1534,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List Resources
         let res = server
@@ -1554,7 +1624,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List Roles
         let res = server.call_tool("list_roles", &json!({})).await.unwrap();
@@ -1628,7 +1700,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test APT List
         let args = json!({ "node": "pve1" });
@@ -1683,7 +1757,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test Cloud-Init
         let args = json!({
@@ -1728,7 +1804,9 @@ mod tests {
         // We don't really need a mock server running for this, but create_test_client uses it.
         // We can just use a dummy URL.
         let client = ProxmoxClient::new("https://pve.example.com", 8006, true).unwrap();
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test QEMU NoVNC (default)
         let args = json!({ "node": "pve1", "vmid": 100 });
@@ -1769,7 +1847,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test 401
         let req = crate::mcp::JsonRpcRequest {
@@ -1836,7 +1916,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test GET
         let args = json!({ "node": "pve1" });
@@ -1898,7 +1980,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test create_cluster
         let args = json!({ "clustername": "newcluster" });
@@ -1957,7 +2041,9 @@ mod tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        let server = McpServer::new(client, false);
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test List PCI
         let res = server

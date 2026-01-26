@@ -216,7 +216,9 @@ mod tests {
         // we just need the State to exist.
         // We'll create a dummy ProxmoxClient (it won't be used by middleware).
         let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
-        let mcp_server = McpServer::new(client, false);
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
 
         let state = AppState {
             mcp_server,

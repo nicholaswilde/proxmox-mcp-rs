@@ -6,8 +6,9 @@
 2. **The Tech Stack is Deliberate:** Changes to the tech stack must be documented in `tech-stack.md` *before* implementation
 3. **Test-Driven Development:** Write unit tests before implementing functionality
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
-5. **User Experience First:** Every decision should prioritize user experience
-6. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+5. **Verify with CI:** Run `task test:ci` after every feature addition to ensure code quality and consistency.
+6. **User Experience First:** Every decision should prioritize user experience
+7. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
 
 ## Task Workflow
 
@@ -35,13 +36,15 @@ All tasks follow a strict lifecycle:
 6. **Verify Coverage:** Run coverage reports using the project's chosen tools.
    Target: >80% coverage for new code. The specific tools and commands will vary by language and framework.
 
-7. **Document Deviations:** If implementation differs from tech stack:
+7. **Final Verification:** Run `task test:ci` to ensure that formatting, linting, and all tests pass after the new feature addition.
+
+8. **Document Deviations:** If implementation differs from tech stack:
    - **STOP** implementation
    - Update `tech-stack.md` with new design
    - Add dated note explaining the change
    - Resume implementation
 
-8. **Mark Task Complete in Plan:**
+9. **Mark Task Complete in Plan:**
     - Read `plan.md`, find the line for the completed task, and update its status from `[~]` to `[x]`.
     - **Note:** Changes are committed at the end of each phase, not after each task.
 
@@ -69,7 +72,7 @@ All tasks follow a strict lifecycle:
     - **Step 4.2: Verify Tests:** Ensure every modified code file has corresponding tests validating the functionality described in the phase's tasks.
 
 5.  **Execute Automated Tests with Proactive Debugging:**
-    - Announce and execute the test suite.
+    - Announce and execute the test suite via `task test:ci`.
     - If tests fail, debug and fix (maximum two attempts).
 
 6.  **Propose a Detailed, Actionable Manual Verification Plan:**
@@ -89,7 +92,7 @@ All tasks follow a strict lifecycle:
 
 Before marking any task complete, verify:
 
-- [ ] All tests pass
+- [ ] All tests pass (run `task test:ci`)
 - [ ] Code coverage meets requirements (>80%)
 - [ ] Code follows project's code style guidelines (as defined in `code_styleguides/`)
 - [ ] All public functions/methods are documented (e.g., docstrings, JSDoc, GoDoc)

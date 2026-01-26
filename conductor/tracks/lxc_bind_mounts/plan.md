@@ -7,4 +7,5 @@
 
 ## Phase 2: Testing & Verification
 - [ ] Task: Add unit tests in `src/tests.rs` mocking the LXC config update endpoints.
+- [ ] Task: Run `task test:ci` to verify all tests, formatting, and linting pass.
 - [ ] Task: Manual verification using `config.toml` (create a test CT, add mount, remove mount).

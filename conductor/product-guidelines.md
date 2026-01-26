@@ -12,4 +12,5 @@
 - **Performance:** Keep the execution path efficient, especially for resource-heavy operations like listing all VMs in a large cluster.
 - **Test-Driven Reliability:** Every new Proxmox tool or core feature should be accompanied by unit tests using `wiremock` to simulate Proxmox API responses.
 - **Testing Coverage:** Every Proxmox function and MCP tool must have corresponding unit tests in `src/tests.rs` (or relevant module).
+- **CI Verification:** Run `task test:ci` after every feature addition to ensure formatting, linting, and tests all pass.
 - **Versioning:** When asked to create a new git tag, always update the version in `Cargo.toml` to match the new tag version.

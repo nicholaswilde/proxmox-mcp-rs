@@ -1,6 +1,10 @@
 # Proxmox MCP Server Configuration Example
 # Copy this to 'config.toml' in the same directory as the binary
 
+# --- Single Instance Configuration (Legacy) ---
+# You can use these top-level fields for a single instance.
+# If you use [[instances]], these can be omitted or used as a "default" instance.
+
 # Proxmox Host (IP or Domain)
 host = "192.168.1.10"
 
@@ -24,6 +28,26 @@ user = "root@pam"
 # Disable SSL Verification (useful for self-signed certificates common in Proxmox)
 # Default is false (verification enabled)
 # no_verify_ssl = true
+
+# --- Multiple Instances Configuration ---
+# You can configure multiple Proxmox instances using the [[instances]] array.
+# Each instance needs a unique host or name.
+# Tools can target a specific instance using the 'instance' argument (using the 'name' or 'host').
+
+# [[instances]]
+# name = "prod-cluster" # Optional: defaults to host
+# host = "192.168.1.10"
+# port = 8006
+# user = "root@pam"
+# password = "password"
+# no_verify_ssl = true
+
+# [[instances]]
+# name = "lab-cluster"
+# host = "192.168.1.20"
+# user = "root@pve"
+# token_name = "monitor"
+# token_value = "..."
 
 # --- Logging Configuration ---
 
@@ -59,4 +83,3 @@ user = "root@pam"
 # Lazy Mode (Default: false)
 # Start with a minimal set of tools to save tokens. Use `load_all_tools` to load the full catalog.
 # lazy_mode = false
-

@@ -12,6 +12,7 @@ use mcp::McpServer;
 use proxmox::ProxmoxClient;
 use proxmox_mcp_rs::cli::Args;
 use settings::Settings;
+use std::collections::HashMap;
 use std::process;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
@@ -120,44 +121,104 @@ async fn main() {
         process::exit(1);
     }
 
-    // Safe to unwrap because validate() checks these
-    let host = settings.host.unwrap();
-    let port = settings.port.unwrap_or(8006);
-    let user = settings.user.unwrap();
-    let password = settings.password;
-    let token_name = settings.token_name;
-    let token_value = settings.token_value;
-    let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
     let server_type = settings.server_type.unwrap_or_else(|| "stdio".to_string());
     let http_host = settings.http_host.unwrap_or_else(|| "0.0.0.0".to_string());
     let http_port = settings.http_port.unwrap_or(3000);
     let http_auth_token = settings.http_auth_token;
     let lazy_mode = settings.lazy_mode.unwrap_or(false);
 
-    info!("Connecting to Proxmox at {}:{}", host, port);
+    let mut clients = HashMap::new();
+    let mut default_id = String::new();
 
-    let mut client = match ProxmoxClient::new(&host, port, !no_verify_ssl) {
-        Ok(c) => c,
-        Err(e) => {
-            error!("Failed to create client: {}", e);
+    // 1. Process legacy single instance
+    if let (Some(host), Some(user)) = (&settings.host, &settings.user) {
+        let port = settings.port.unwrap_or(8006);
+        let no_verify_ssl = settings.no_verify_ssl.unwrap_or(false);
+        info!(
+            "Connecting to default Proxmox instance at {}:{}",
+            host, port
+        );
+
+        let mut client = match ProxmoxClient::new(host, port, !no_verify_ssl) {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Failed to create client: {}", e);
+                process::exit(1);
+            }
+        };
+
+        if let (Some(t_name), Some(t_value)) = (&settings.token_name, &settings.token_value) {
+            info!("Using API Token authentication for default instance");
+            client.set_api_token(user, t_name, t_value);
+        } else if let Some(pass) = &settings.password {
+            if let Err(e) = client.login(user, pass).await {
+                error!("Authentication failed for default instance: {}", e);
+                process::exit(1);
+            }
+        } else {
+            error!("No authentication method provided for default instance");
             process::exit(1);
         }
-    };
 
-    if let (Some(t_name), Some(t_value)) = (token_name, token_value) {
-        info!("Using API Token authentication");
-        client.set_api_token(&user, &t_name, &t_value);
-    } else if let Some(pass) = password {
-        if let Err(e) = client.login(&user, &pass).await {
-            error!("Authentication failed: {}", e);
-            process::exit(1);
+        clients.insert("default".to_string(), client);
+        default_id = "default".to_string();
+    }
+
+    // 2. Process 'instances' list
+    if let Some(instances) = settings.instances {
+        for inst in instances.into_iter() {
+            let host = inst.host.expect("Host required (validated)");
+            let user = inst.user.expect("User required (validated)");
+            let port = inst.port.unwrap_or(8006);
+            let no_verify_ssl = inst.no_verify_ssl.unwrap_or(false);
+
+            // Determine ID: name > host > "instance_{i}"
+            let id = inst.name.clone().unwrap_or_else(|| host.clone());
+
+            info!(
+                "Connecting to Proxmox instance '{}' at {}:{}",
+                id, host, port
+            );
+
+            let mut client = match ProxmoxClient::new(&host, port, !no_verify_ssl) {
+                Ok(c) => c,
+                Err(e) => {
+                    error!("Failed to create client for '{}': {}", id, e);
+                    process::exit(1);
+                }
+            };
+
+            if let (Some(t_name), Some(t_value)) = (inst.token_name, inst.token_value) {
+                client.set_api_token(&user, &t_name, &t_value);
+            } else if let Some(pass) = inst.password {
+                if let Err(e) = client.login(&user, &pass).await {
+                    error!("Authentication failed for '{}': {}", id, e);
+                    process::exit(1);
+                }
+            } else {
+                error!("No authentication method provided for '{}'", id);
+                process::exit(1);
+            }
+
+            clients.insert(id.clone(), client);
+            if default_id.is_empty() {
+                default_id = id;
+            }
         }
-    } else {
-        error!("No authentication method provided");
+    }
+
+    if clients.is_empty() {
+        error!("No Proxmox instances configured.");
         process::exit(1);
     }
 
-    let mut server = McpServer::new(client, lazy_mode);
+    info!(
+        "Initialized {} Proxmox client(s). Default: {}",
+        clients.len(),
+        default_id
+    );
+
+    let mut server = McpServer::new(clients, default_id, lazy_mode);
 
     match server_type.as_str() {
         "http" => {
