@@ -1,5 +1,6 @@
 use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Clone, Default)]
@@ -68,7 +69,51 @@ impl Settings {
         // Maps PROXMOX_HOST to host, PROXMOX_USER to user, etc.
         s = s.add_source(Environment::with_prefix("PROXMOX").separator("_"));
 
-        s.build()?.try_deserialize()
+        let mut settings: Settings = s.build()?.try_deserialize()?;
+
+        // 3. Manual Env Var Parsing for Instances (PROXMOX_INSTANCES__<N>__<FIELD>)
+        let mut env_instances: HashMap<usize, InstanceConfig> = HashMap::new();
+
+        for (key, value) in std::env::vars() {
+            if key.starts_with("PROXMOX_INSTANCES__") {
+                let parts: Vec<&str> = key.split("__").collect();
+                // Expected format: PROXMOX_INSTANCES__<INDEX>__<FIELD>
+                // e.g. PROXMOX_INSTANCES__0__HOST
+                if parts.len() == 3 {
+                    if let Ok(index) = parts[1].parse::<usize>() {
+                        let field = parts[2];
+                        let entry = env_instances.entry(index).or_default();
+
+                        match field {
+                            "NAME" => entry.name = Some(value),
+                            "HOST" => entry.host = Some(value),
+                            "PORT" => entry.port = value.parse().ok(),
+                            "USER" => entry.user = Some(value),
+                            "PASSWORD" => entry.password = Some(value),
+                            "TOKEN_NAME" => entry.token_name = Some(value),
+                            "TOKEN_VALUE" => entry.token_value = Some(value),
+                            "NO_VERIFY_SSL" => entry.no_verify_ssl = value.parse().ok(),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        if !env_instances.is_empty() {
+            let mut current_instances = settings.instances.unwrap_or_default();
+            let mut sorted_indices: Vec<_> = env_instances.keys().cloned().collect();
+            sorted_indices.sort();
+
+            for index in sorted_indices {
+                if let Some(inst) = env_instances.remove(&index) {
+                    current_instances.push(inst);
+                }
+            }
+            settings.instances = Some(current_instances);
+        }
+
+        Ok(settings)
     }
 
     pub fn validate(&self) -> Result<(), String> {
