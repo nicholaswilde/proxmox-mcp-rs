@@ -76,3 +76,82 @@ async fn test_cluster_status() {
     assert!(text.contains("production-cluster"));
     assert!(text.contains("pve-node-01"));
 }
+
+#[tokio::test]
+async fn test_vm_lifecycle() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+    let vmid = 100;
+    let upid = "UPID:pve-node-01:00000001:00000001:00000001:qmstart:100:root@pam:";
+
+    mock_vm_action_success(&mock_server, node, vmid, "start", upid).await;
+    mock_task_status_success(&mock_server, node, upid).await;
+
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "vmid": vmid
+    });
+    let result = server.call_tool("start_vm", &args).await.unwrap();
+
+            let text = result["content"][0]["text"].as_str().unwrap();
+
+            assert!(text.contains("Action 'start' initiated."));
+
+            assert!(text.contains(upid));
+
+        }
+
+        
+
+        #[tokio::test]
+
+        async fn test_hardware_config() {
+
+            let mock_server = MockServer::start().await;
+
+            let server = setup_mcp_server(&mock_server).await;
+
+        
+
+            let node = "pve-node-01";
+
+            let vmid = 100;
+
+        
+
+            mock_vm_config_update_success(&mock_server, node, vmid, "qemu").await;
+
+        
+
+            let args = json!({
+
+                "instance": "default",
+
+                "node": node,
+
+                "vmid": vmid,
+
+                "device": "scsi0",
+
+                "storage": "local-lvm",
+
+                "size_gb": 32
+
+            });
+
+            let result = server.call_tool("add_disk", &args).await.unwrap();
+
+        
+
+            let text = result["content"][0]["text"].as_str().unwrap();
+
+            assert!(text.contains("Disk scsi0 added to qemu 100"));
+
+        }
+
+        
+
+    

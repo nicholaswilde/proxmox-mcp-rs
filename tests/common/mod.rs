@@ -414,6 +414,31 @@ pub async fn mock_list_vms_success(server: &MockServer) {
         .await;
 }
 
+/// Mocks a successful VM configuration update (PUT /api2/json/nodes/{node}/{type}/{vmid}/config).
+pub async fn mock_vm_config_update_success(
+    server: &MockServer,
+    node: &str,
+    vmid: u64,
+    vm_type: &str,
+) {
+    let response = json!({
+        "data": null
+    });
+
+    let path_str = format!("/api2/json/nodes/{}/{}/{}/config", node, vm_type, vmid);
+
+    Mock::given(method("PUT"))
+        .and(path(path_str))
+        .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
+        .and(header(
+            "Cookie",
+            format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(response))
+        .mount(server)
+        .await;
+}
+
 /// Mocks an API timeout.
 pub async fn mock_api_timeout(server: &MockServer) {
     use std::time::Duration;

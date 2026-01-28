@@ -14,7 +14,7 @@ To avoid duplication, we will move existing WireMock helpers to a shared test mo
     - [ ] Implement a helper to create an `McpServer` instance pointing to a `MockServer`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Shared Helpers' (Protocol in workflow.md)
 
-## Phase 2: Information Retrieval Tests
+## Phase 2: Information Retrieval Tests fa5b55ea8fde8f78a93ea71c793fefea086808aa
 Verify that read-only tools correctly parse API responses and return valid MCP text content.
 
 - [x] Task: Test List Nodes and VMs
@@ -25,11 +25,11 @@ Verify that read-only tools correctly parse API responses and return valid MCP t
 ## Phase 3: Lifecycle & Configuration Tests
 Verify that tools requiring task polling (`wait_for_task`) and parameter mapping work correctly.
 
-- [ ] Task: Test VM Lifecycle (Start/Stop)
+- [x] Task: Test VM Lifecycle (Start/Stop)
     - [ ] Write test for `start_vm`.
     - [ ] Mock the sequence: POST start -> UPID -> GET task status (stopped).
     - [ ] Verify `McpServer` waits for task completion before responding.
-- [ ] Task: Test Hardware Configuration
+- [~] Task: Test Hardware Configuration
     - [ ] Write test for `add_disk`.
     - [ ] Verify parameters are correctly mapped to the Proxmox API request.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Lifecycle & Configuration Tests' (Protocol in workflow.md)
