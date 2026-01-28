@@ -102,6 +102,16 @@ tasks:
       - cargo test --profile ci
       - task: clippy
 
+  test:integration:
+    desc: Run end-to-end integration tests using McpServer and WireMock
+    cmds:
+      - cargo test --test mcp_integration
+
+  test:wiremock:
+    desc: Run base WireMock API tests
+    cmds:
+      - cargo test --test wiremock_proxmox
+
   fmt:
     desc: Format code with rustfmt
     cmds:

@@ -9,6 +9,7 @@
 5. **Verify with CI:** Run `task test:ci` after every feature addition to ensure code quality and consistency.
 6. **User Experience First:** Every decision should prioritize user experience
 7. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+8. **Taskfile as CLI Entry Point:** Any new project-wide development command (tests, builds, helpers) must be added to `Taskfile.yml` to maintain a consistent development interface.
 
 ## Task Workflow
 
@@ -100,6 +101,7 @@ Before marking any task complete, verify:
 - [ ] No linting or static analysis errors (using the project's configured tools)
 - [ ] Works correctly on mobile (if applicable)
 - [ ] Documentation updated if needed
+- [ ] Taskfile.yml updated with any new development commands
 - [ ] No security vulnerabilities introduced
 
 ## Development Commands
