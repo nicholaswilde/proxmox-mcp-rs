@@ -34,7 +34,7 @@ Verify that tools requiring task polling (`wait_for_task`) and parameter mapping
     - [ ] Verify parameters are correctly mapped to the Proxmox API request.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Lifecycle & Configuration Tests' (Protocol in workflow.md)
 
-## Phase 4: Error Mapping & Robustness
+## Phase 4: Error Mapping & Robustness 811fd6dcd3ff5d66786fcb1e3279df3907c09d75
 Ensure that Proxmox API errors are translated into correct MCP JSON-RPC error codes.
 
 - [~] Task: Test Error Mapping
