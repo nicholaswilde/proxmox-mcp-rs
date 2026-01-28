@@ -381,6 +381,39 @@ pub async fn mock_vm_not_found(server: &MockServer, node: &str, vmid: u64) {
         .await;
 }
 
+/// Mocks a successful VM list retrieval (GET /api2/json/cluster/resources).
+pub async fn mock_list_vms_success(server: &MockServer) {
+    let response = json!({
+        "data": [
+            {
+                "vmid": 100,
+                "name": "vm-100",
+                "status": "running",
+                "node": "pve-node-01",
+                "type": "qemu"
+            },
+            {
+                "vmid": 101,
+                "name": "vm-101",
+                "status": "stopped",
+                "node": "pve-node-02",
+                "type": "qemu"
+            }
+        ]
+    });
+
+    Mock::given(method("GET"))
+        .and(path("/api2/json/cluster/resources"))
+        .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
+        .and(header(
+            "Cookie",
+            format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(response))
+        .mount(server)
+        .await;
+}
+
 /// Mocks an API timeout.
 pub async fn mock_api_timeout(server: &MockServer) {
     use std::time::Duration;

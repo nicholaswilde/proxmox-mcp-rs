@@ -2,7 +2,7 @@
 
 This plan implements high-level integration tests that verify the `McpServer` and `ProxmoxClient` logic together against a mocked API.
 
-## Phase 1: Infrastructure & Shared Helpers
+## Phase 1: Infrastructure & Shared Helpers cf0c1a8378824aa72ace2cf46b969a84942397f3
 To avoid duplication, we will move existing WireMock helpers to a shared test module and set up the `McpServer` test harness.
 
 - [~] Task: Create Shared Test Module
@@ -17,11 +17,8 @@ To avoid duplication, we will move existing WireMock helpers to a shared test mo
 ## Phase 2: Information Retrieval Tests
 Verify that read-only tools correctly parse API responses and return valid MCP text content.
 
-- [ ] Task: Test List Nodes and VMs
-    - [ ] Write test for `list_nodes` tool.
-    - [ ] Write test for `list_vms` tool.
-    - [ ] Assert that the JSON-RPC response contains the expected node/VM names.
-- [ ] Task: Test Cluster Status
+- [x] Task: Test List Nodes and VMs
+- [~] Task: Test Cluster Status
     - [ ] Write test for `get_cluster_status` tool.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Information Retrieval Tests' (Protocol in workflow.md)
 
