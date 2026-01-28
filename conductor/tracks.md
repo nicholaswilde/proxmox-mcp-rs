@@ -23,8 +23,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Implement LXC Bind Mount Tools**
   *Link: [./tracks/lxc_bind_mounts/](./tracks/lxc_bind_mounts/)*
-
----
-
-- [x] **Track: update tests/wiremock_proxmox.rs to invoke McpServer::call_tool(...) against mocks**
-*Link: [./tracks/mcp_integration_tests_20260127/](./tracks/mcp_integration_tests_20260127/)*
