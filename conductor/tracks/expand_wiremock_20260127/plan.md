@@ -11,7 +11,7 @@ Prepare the testing infrastructure to support a wide variety of mocked endpoints
     - [ ] Create a standard `ProxmoxResponse` wrapper utility for generating JSON payloads.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Common Helpers' (Protocol in workflow.md)
 
-## Phase 2: Core Tool Integration Tests
+## Phase 2: Core Tool Integration Tests 9e94c0e64c38ba223b728d7999331e447146ef41
 Implement tests for the most frequently used cluster and compute management tools.
 
 - [x] Task: Cluster and Node Management Tests
@@ -26,13 +26,13 @@ Implement tests for the most frequently used cluster and compute management tool
 ## Phase 3: Resource & Configuration Tests
 Expand coverage to storage, networking, and guest configurations.
 
-- [ ] Task: Storage and ISO Management Tests
+- [x] Task: Storage and ISO Management Tests
     - [ ] Write failing tests for `list_storage` and `list_isos`.
     - [ ] Implement mocks for storage content listing.
-- [ ] Task: Networking and Firewall Tests
+- [x] Task: Networking and Firewall Tests
     - [ ] Write failing tests for `list_networks` and `list_firewall_rules`.
     - [ ] Implement mocks for node network interfaces.
-- [ ] Task: Snapshot and Backup Tests
+- [x] Task: Snapshot and Backup Tests
     - [ ] Write failing tests for `list_snapshots` and `list_backups`.
     - [ ] Implement mocks for snapshot trees and backup volumes.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Resource & Configuration Tests' (Protocol in workflow.md)
