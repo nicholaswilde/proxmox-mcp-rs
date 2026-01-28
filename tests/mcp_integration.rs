@@ -96,62 +96,45 @@ async fn test_vm_lifecycle() {
     });
     let result = server.call_tool("start_vm", &args).await.unwrap();
 
-            let text = result["content"][0]["text"].as_str().unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
 
-            assert!(text.contains("Action 'start' initiated."));
+    assert!(text.contains("Action 'start' initiated."));
 
-            assert!(text.contains(upid));
+    assert!(text.contains(upid));
+}
 
-        }
+#[tokio::test]
 
-        
+async fn test_hardware_config() {
+    let mock_server = MockServer::start().await;
 
-        #[tokio::test]
+    let server = setup_mcp_server(&mock_server).await;
 
-        async fn test_hardware_config() {
+    let node = "pve-node-01";
 
-            let mock_server = MockServer::start().await;
+    let vmid = 100;
 
-            let server = setup_mcp_server(&mock_server).await;
+    mock_vm_config_update_success(&mock_server, node, vmid, "qemu").await;
 
-        
+    let args = json!({
 
-            let node = "pve-node-01";
+        "instance": "default",
 
-            let vmid = 100;
+        "node": node,
 
-        
+        "vmid": vmid,
 
-            mock_vm_config_update_success(&mock_server, node, vmid, "qemu").await;
+        "device": "scsi0",
 
-        
+        "storage": "local-lvm",
 
-            let args = json!({
+        "size_gb": 32
 
-                "instance": "default",
+    });
 
-                "node": node,
+    let result = server.call_tool("add_disk", &args).await.unwrap();
 
-                "vmid": vmid,
+    let text = result["content"][0]["text"].as_str().unwrap();
 
-                "device": "scsi0",
-
-                "storage": "local-lvm",
-
-                "size_gb": 32
-
-            });
-
-            let result = server.call_tool("add_disk", &args).await.unwrap();
-
-        
-
-            let text = result["content"][0]["text"].as_str().unwrap();
-
-            assert!(text.contains("Disk scsi0 added to qemu 100"));
-
-        }
-
-        
-
-    
+    assert!(text.contains("Disk scsi0 added to qemu 100"));
+}
