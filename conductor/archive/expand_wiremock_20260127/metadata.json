@@ -1,0 +1,8 @@
+{
+  "track_id": "expand_wiremock_20260127",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-01-27T10:00:00Z",
+  "updated_at": "2026-01-27T10:00:00Z",
+  "description": "update tests/wiremock_proxmox.rs to include end points for all mcp tools and functions"
+}
