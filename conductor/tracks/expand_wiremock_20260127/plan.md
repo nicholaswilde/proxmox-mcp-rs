@@ -2,7 +2,7 @@
 
 This plan expands the integration testing suite to cover all core MCP tools and Proxmox client methods using `wiremock`.
 
-## Phase 1: Infrastructure & Common Helpers
+## Phase 1: Infrastructure & Common Helpers 4088af0e7a32503561031e180d8171dfcbdb3afc
 Prepare the testing infrastructure to support a wide variety of mocked endpoints with minimal boilerplate.
 
 - [x] Task: Create Shared Mock Helpers
@@ -14,10 +14,10 @@ Prepare the testing infrastructure to support a wide variety of mocked endpoints
 ## Phase 2: Core Tool Integration Tests
 Implement tests for the most frequently used cluster and compute management tools.
 
-- [ ] Task: Cluster and Node Management Tests
+- [x] Task: Cluster and Node Management Tests
     - [ ] Write failing test for `list_nodes` and `get_cluster_status`.
     - [ ] Implement mocks and verify success.
-- [ ] Task: VM and Container Lifecycle Tests
+- [x] Task: VM and Container Lifecycle Tests
     - [ ] Write failing tests for `start_vm`, `stop_vm`, and `shutdown_vm`.
     - [ ] Implement mocks for VM status and task UPID returns.
     - [ ] Verify `wait_for_task` logic works against mocked status polling.
