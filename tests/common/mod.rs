@@ -63,7 +63,7 @@ pub async fn mock_auth_success(server: &MockServer) {
         .await;
 }
 
-/// Mocks a failed authentication flow (GET /api2/json/nodes).
+/// Mocks a failed authentication flow (POST /api2/json/access/ticket).
 pub async fn mock_auth_failure(server: &MockServer) {
     let response = json!({
         "data": null,
@@ -72,8 +72,24 @@ pub async fn mock_auth_failure(server: &MockServer) {
         }
     });
 
-    Mock::given(method("GET"))
-        .and(path("/api2/json/nodes"))
+    Mock::given(method("POST"))
+        .and(path("/api2/json/access/ticket"))
+        .respond_with(ResponseTemplate::new(401).set_body_json(response))
+        .mount(server)
+        .await;
+}
+
+/// Mocks an unauthorized request (401 Unauthorized).
+pub async fn mock_unauthorized_request(server: &MockServer, method_str: &str, path_str: &str) {
+    let response = json!({
+        "data": null,
+        "errors": {
+            "error": "401 Unauthorized"
+        }
+    });
+
+    Mock::given(method(method_str))
+        .and(path(path_str))
         .respond_with(ResponseTemplate::new(401).set_body_json(response))
         .mount(server)
         .await;

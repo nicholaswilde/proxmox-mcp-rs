@@ -131,7 +131,7 @@ async fn test_error_mapping() {
     {
         let mock_server = MockServer::start().await;
         let server = setup_mcp_server(&mock_server).await;
-        mock_auth_failure(&mock_server).await;
+        mock_unauthorized_request(&mock_server, "GET", "/api2/json/nodes").await;
 
         let req = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
