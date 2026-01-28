@@ -18,7 +18,7 @@ pub async fn setup_mcp_server(mock_server: &MockServer) -> McpServer {
     // We mock a successful login to get the ticket/csrf for the client internal state
     // Or we just manually set them if the client allows it.
     // ProxmoxClient has internal state for ticket/csrf.
-    
+
     // In our case, we can just call client.login with dummy creds since we will mock the response.
     mock_auth_success(mock_server).await;
     client.login("root@pam", "secret").await.unwrap();

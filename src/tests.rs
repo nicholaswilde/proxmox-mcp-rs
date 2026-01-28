@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod unit_tests {
     use crate::mcp::McpServer;
     use crate::proxmox::ProxmoxClient;
     use serde_json::json;

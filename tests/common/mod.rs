@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use serde_json::json;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
