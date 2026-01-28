@@ -63,7 +63,7 @@ pub async fn mock_auth_success(server: &MockServer) {
         .await;
 }
 
-/// Mocks a failed authentication flow (POST /api2/json/access/ticket).
+/// Mocks a failed authentication flow (GET /api2/json/nodes).
 pub async fn mock_auth_failure(server: &MockServer) {
     let response = json!({
         "data": null,
@@ -72,13 +72,12 @@ pub async fn mock_auth_failure(server: &MockServer) {
         }
     });
 
-    Mock::given(method("POST"))
-        .and(path("/api2/json/access/ticket"))
+    Mock::given(method("GET"))
+        .and(path("/api2/json/nodes"))
         .respond_with(ResponseTemplate::new(401).set_body_json(response))
         .mount(server)
         .await;
 }
-
 /// Mocks a successful node list retrieval (GET /api2/json/nodes).
 pub async fn mock_node_list_success(server: &MockServer) {
     let nodes_response = json!({
@@ -435,6 +434,15 @@ pub async fn mock_vm_config_update_success(
             format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
         ))
         .respond_with(ResponseTemplate::new(200).set_body_json(response))
+        .mount(server)
+        .await;
+}
+
+/// Mocks a 404 Not Found error (GET /api2/json/nodes).
+pub async fn mock_resource_not_found(server: &MockServer) {
+    Mock::given(method("GET"))
+        .and(path("/api2/json/nodes"))
+        .respond_with(ResponseTemplate::new(404))
         .mount(server)
         .await;
 }

@@ -22,7 +22,7 @@ Verify that read-only tools correctly parse API responses and return valid MCP t
     - [ ] Write test for `get_cluster_status` tool.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Information Retrieval Tests' (Protocol in workflow.md)
 
-## Phase 3: Lifecycle & Configuration Tests
+## Phase 3: Lifecycle & Configuration Tests 91371117e70f926fa88dee3e9463597a4440190a
 Verify that tools requiring task polling (`wait_for_task`) and parameter mapping work correctly.
 
 - [x] Task: Test VM Lifecycle (Start/Stop)
@@ -37,7 +37,7 @@ Verify that tools requiring task polling (`wait_for_task`) and parameter mapping
 ## Phase 4: Error Mapping & Robustness
 Ensure that Proxmox API errors are translated into correct MCP JSON-RPC error codes.
 
-- [ ] Task: Test Error Mapping
+- [~] Task: Test Error Mapping
     - [ ] Write test for authentication failure (401 -> -32001).
     - [ ] Write test for resource missing (404 -> -32004).
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Error Mapping & Robustness' (Protocol in workflow.md)
