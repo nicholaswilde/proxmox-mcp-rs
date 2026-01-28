@@ -1,8 +1,8 @@
+use reqwest::Client;
+use serde_json::{json, Value};
+use std::time::Duration;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
-use serde_json::{json, Value};
-use reqwest::Client;
-use std::time::Duration;
 
 // =============================================================================
 // SHARED DATA STRUCTURES
@@ -92,7 +92,10 @@ pub async fn mock_node_list_success(server: &MockServer) {
     Mock::given(method("GET"))
         .and(path("/api2/json/nodes"))
         .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
-        .and(header("Cookie", format!("PVEAuthCookie={}", TEST_TICKET).as_str()))
+        .and(header(
+            "Cookie",
+            format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(nodes_response))
         .mount(server)
         .await;
@@ -127,20 +130,29 @@ pub async fn mock_cluster_status_success(server: &MockServer) {
     Mock::given(method("GET"))
         .and(path("/api2/json/cluster/status"))
         .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
-        .and(header("Cookie", format!("PVEAuthCookie={}", TEST_TICKET).as_str()))
+        .and(header(
+            "Cookie",
+            format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(status_response))
         .mount(server)
         .await;
 }
 
 /// Mocks a successful VM action (start, stop, etc.) returning a UPID.
-pub async fn mock_vm_action_success(server: &MockServer, node: &str, vmid: u64, action: &str, upid: &str) {
+pub async fn mock_vm_action_success(
+    server: &MockServer,
+    node: &str,
+    vmid: u64,
+    action: &str,
+    upid: &str,
+) {
     let response = json!({
         "data": upid
     });
     // Path: /api2/json/nodes/{node}/qemu/{vmid}/status/{action}
     let path_str = format!("/api2/json/nodes/{}/qemu/{}/status/{}", node, vmid, action);
-    
+
     Mock::given(method("POST"))
         .and(path(path_str))
         .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
@@ -241,7 +253,8 @@ async fn test_cluster_and_node_management() -> anyhow::Result<()> {
 
     // Authenticate first
     let login_url = format!("{}/api2/json/access/ticket", base_url);
-    let resp = client.post(&login_url)
+    let resp = client
+        .post(&login_url)
         .form(&[("username", "root@pam"), ("password", "secret")])
         .send()
         .await?;
@@ -251,15 +264,16 @@ async fn test_cluster_and_node_management() -> anyhow::Result<()> {
 
     // Test 2: Cluster Status
     let cluster_url = format!("{}/api2/json/cluster/status", base_url);
-    let resp = client.get(&cluster_url)
+    let resp = client
+        .get(&cluster_url)
         .header("CSRFPreventionToken", &csrf_token)
         .header("Cookie", format!("PVEAuthCookie={}", ticket))
         .send()
         .await?;
-    
+
     assert_eq!(resp.status(), 200, "Cluster status should return 200");
     let status_body: Value = resp.json().await?;
-    assert!(status_body["data"].as_array().unwrap().len() >= 1);
+    assert!(!status_body["data"].as_array().unwrap().is_empty());
 
     Ok(())
 }
@@ -268,13 +282,13 @@ async fn test_cluster_and_node_management() -> anyhow::Result<()> {
 async fn test_vm_lifecycle() -> anyhow::Result<()> {
     let mock_server = MockServer::start().await;
     mock_auth_success(&mock_server).await;
-    
+
     let node = "pve-node-01";
     let vmid = 100;
     let upid = "UPID:pve-node-01:00000001:00000001:00000001:qmstart:100:root@pam:";
 
     // Mocks
-    mock_vm_action_success(&mock_server, node, vmid, "start", upid).await; 
+    mock_vm_action_success(&mock_server, node, vmid, "start", upid).await;
     mock_task_status_success(&mock_server, node, upid).await;
 
     let client = Client::builder().timeout(Duration::from_secs(2)).build()?;
@@ -282,7 +296,8 @@ async fn test_vm_lifecycle() -> anyhow::Result<()> {
 
     // Authenticate
     let login_url = format!("{}/api2/json/access/ticket", base_url);
-    let resp = client.post(&login_url)
+    let resp = client
+        .post(&login_url)
         .form(&[("username", "root@pam"), ("password", "secret")])
         .send()
         .await?;
@@ -291,8 +306,12 @@ async fn test_vm_lifecycle() -> anyhow::Result<()> {
     let csrf_token = body.data.csrf_token;
 
     // Start VM
-    let start_url = format!("{}/api2/json/nodes/{}/qemu/{}/status/start", base_url, node, vmid);
-    let resp = client.post(&start_url)
+    let start_url = format!(
+        "{}/api2/json/nodes/{}/qemu/{}/status/start",
+        base_url, node, vmid
+    );
+    let resp = client
+        .post(&start_url)
         .header("CSRFPreventionToken", &csrf_token)
         .header("Cookie", format!("PVEAuthCookie={}", ticket))
         .send()
@@ -303,13 +322,17 @@ async fn test_vm_lifecycle() -> anyhow::Result<()> {
     assert_eq!(upid_response.data, upid);
 
     // Wait for Task
-    let task_url = format!("{}/api2/json/nodes/{}/tasks/{}/status", base_url, node, upid);
-    let resp = client.get(&task_url)
+    let task_url = format!(
+        "{}/api2/json/nodes/{}/tasks/{}/status",
+        base_url, node, upid
+    );
+    let resp = client
+        .get(&task_url)
         .header("CSRFPreventionToken", &csrf_token)
         .header("Cookie", format!("PVEAuthCookie={}", ticket))
         .send()
         .await?;
-    
+
     assert_eq!(resp.status(), 200);
     let task_body: Value = resp.json().await?;
     assert_eq!(task_body["data"]["status"], "stopped");
