@@ -23,7 +23,7 @@ Implement tests for the most frequently used cluster and compute management tool
     - [ ] Verify `wait_for_task` logic works against mocked status polling.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Core Tool Integration Tests' (Protocol in workflow.md)
 
-## Phase 3: Resource & Configuration Tests
+## Phase 3: Resource & Configuration Tests eb626888e00b2c8746409f6f581c8fec89f60dfd
 Expand coverage to storage, networking, and guest configurations.
 
 - [x] Task: Storage and ISO Management Tests
@@ -40,10 +40,10 @@ Expand coverage to storage, networking, and guest configurations.
 ## Phase 4: Error Handling & Robustness
 Ensure the MCP server handles Proxmox API failures gracefully and returns appropriate MCP errors.
 
-- [ ] Task: Authentication and Authorization Error Tests
+- [x] Task: Authentication and Authorization Error Tests
     - [ ] Write failing tests for 401 Unauthorized and 403 Forbidden responses.
     - [ ] Verify MCP error codes match specification (e.g., -32001).
-- [ ] Task: Resource Missing and API Timeout Tests
+- [x] Task: Resource Missing and API Timeout Tests
     - [ ] Write failing tests for 404 Not Found (invalid VMID).
     - [ ] Write failing tests for connection timeouts/500 errors.
     - [ ] Verify that the server returns descriptive error messages to the LLM.
