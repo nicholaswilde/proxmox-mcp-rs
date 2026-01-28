@@ -1,17 +1,10 @@
-#![allow(clippy::module_inception)]
-
-mod http_server;
-mod mcp;
-mod proxmox;
-mod settings;
-mod tests;
-
 use clap::Parser;
 use log::{error, info};
-use mcp::McpServer;
-use proxmox::ProxmoxClient;
 use proxmox_mcp_rs::cli::Args;
-use settings::Settings;
+use proxmox_mcp_rs::http_server;
+use proxmox_mcp_rs::mcp::McpServer;
+use proxmox_mcp_rs::proxmox::ProxmoxClient;
+use proxmox_mcp_rs::settings::Settings;
 use std::collections::HashMap;
 use std::process;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
