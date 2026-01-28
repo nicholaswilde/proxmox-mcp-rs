@@ -19,4 +19,5 @@
 
 ## Testing
 - **API Mocking:** [WireMock](https://docs.rs/wiremock/) - For integration testing without requiring a live Proxmox instance.
+- **Integration Testing:** High-level end-to-end testing verifying `McpServer` logic against mocked APIs (`tests/mcp_integration.rs`).
 - **Utilities:** [Tempfile](https://docs.rs/tempfile/) - For testing file-based logging and configuration loading.
