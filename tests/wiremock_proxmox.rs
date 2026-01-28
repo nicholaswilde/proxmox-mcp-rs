@@ -1,8 +1,8 @@
+use reqwest::Client;
+use serde_json::json;
+use std::time::Duration;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
-use serde_json::json;
-use reqwest::Client;
-use std::time::Duration;
 
 // =============================================================================
 // SHARED DATA STRUCTURES
@@ -92,7 +92,10 @@ pub async fn mock_node_list_success(server: &MockServer) {
     Mock::given(method("GET"))
         .and(path("/api2/json/nodes"))
         .and(header("CSRFPreventionToken", TEST_CSRF_TOKEN))
-        .and(header("Cookie", format!("PVEAuthCookie={}", TEST_TICKET).as_str()))
+        .and(header(
+            "Cookie",
+            format!("PVEAuthCookie={}", TEST_TICKET).as_str(),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(nodes_response))
         .mount(server)
         .await;
@@ -112,21 +115,20 @@ async fn test_infrastructure_helpers() -> anyhow::Result<()> {
     mock_node_list_success(&mock_server).await;
 
     // 3. Execution: Dummy Client Interaction
-    let client = Client::builder()
-        .timeout(Duration::from_secs(2))
-        .build()?;
+    let client = Client::builder().timeout(Duration::from_secs(2)).build()?;
 
     let base_url = mock_server.uri();
 
     // Step A: Login
     let login_url = format!("{}/api2/json/access/ticket", base_url);
-    let resp = client.post(&login_url)
+    let resp = client
+        .post(&login_url)
         .form(&[("username", "root@pam"), ("password", "secret")])
         .send()
         .await?;
 
     assert_eq!(resp.status(), 200, "Login should succeed");
-    
+
     let body: ProxmoxResponse<TicketResponse> = resp.json().await?;
     let ticket = body.data.ticket;
     let csrf_token = body.data.csrf_token;
@@ -136,13 +138,18 @@ async fn test_infrastructure_helpers() -> anyhow::Result<()> {
 
     // Step B: Query Nodes
     let nodes_url = format!("{}/api2/json/nodes", base_url);
-    let resp = client.get(&nodes_url)
+    let resp = client
+        .get(&nodes_url)
         .header("CSRFPreventionToken", &csrf_token)
         .header("Cookie", format!("PVEAuthCookie={}", ticket))
         .send()
         .await?;
 
-    assert_eq!(resp.status(), 200, "Node listing should succeed with valid auth");
+    assert_eq!(
+        resp.status(),
+        200,
+        "Node listing should succeed with valid auth"
+    );
 
     let node_body: ProxmoxResponse<Vec<NodeInfo>> = resp.json().await?;
     assert_eq!(node_body.data.len(), 2);
