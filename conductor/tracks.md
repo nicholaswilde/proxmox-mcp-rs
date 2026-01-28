@@ -23,3 +23,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Implement LXC Bind Mount Tools**
   *Link: [./tracks/lxc_bind_mounts/](./tracks/lxc_bind_mounts/)*
+
+---
+
+- [x] **Track: update tests/wiremock_proxmox.rs to include end points for all mcp tools and functions**
+*Link: [./tracks/expand_wiremock_20260127/](./tracks/expand_wiremock_20260127/)*

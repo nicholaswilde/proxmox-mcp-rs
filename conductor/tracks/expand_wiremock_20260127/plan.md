@@ -37,7 +37,7 @@ Expand coverage to storage, networking, and guest configurations.
     - [ ] Implement mocks for snapshot trees and backup volumes.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Resource & Configuration Tests' (Protocol in workflow.md)
 
-## Phase 4: Error Handling & Robustness
+## Phase 4: Error Handling & Robustness 5c432b3f0f9ad54c272422a8cb22baa3621384be
 Ensure the MCP server handles Proxmox API failures gracefully and returns appropriate MCP errors.
 
 - [x] Task: Authentication and Authorization Error Tests
