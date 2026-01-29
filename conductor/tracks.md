@@ -24,7 +24,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement LXC Bind Mount Tools**
   *Link: [./tracks/lxc_bind_mounts/](./tracks/lxc_bind_mounts/)*
 
-- [ ] **Track: VM Template Management**
+- [x] **Track: VM Template Management**
   *Link: [./tracks/vm_templates/](./tracks/vm_templates/)*
 
 - [ ] **Track: Firewall Alias Management**
