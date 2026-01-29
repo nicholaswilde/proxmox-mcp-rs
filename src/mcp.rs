@@ -375,6 +375,7 @@ impl McpServer {
             "shutdown_vm" => self.handle_vm_action(args, "shutdown", None).await,
             "shutdown_container" => self.handle_vm_action(args, "shutdown", Some("lxc")).await,
             "reboot_vm" => self.handle_vm_action(args, "reboot", None).await,
+            "template_vm" => self.handle_template_vm(args).await,
             "create_vm" => self.handle_create(args, "qemu").await,
             "create_container" => self.handle_create(args, "lxc").await,
             "delete_vm" => self.handle_delete(args, "qemu").await,
@@ -2351,6 +2352,22 @@ impl McpServer {
         )
     }
 
+    async fn handle_template_vm(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+
+        let res = self.get_client(args)?.template_vm(node, vmid).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Template created. UPID: {}", res) }] }),
+        )
+    }
+
     async fn handle_read_task_log(&self, args: &Value) -> Result<Value> {
         let node = args
             .get("node")
@@ -3056,6 +3073,18 @@ impl McpServer {
                         "container_id": { "type": "string", "description": "The Container ID" }
                     },
                     "required": ["container_id"]
+                }
+            }),
+            json!({
+                "name": "template_vm",
+                "description": "Convert a VM into a template",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The VM ID" }
+                    },
+                    "required": ["node", "vmid"]
                 }
             }),
             json!({

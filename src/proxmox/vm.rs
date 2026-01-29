@@ -384,6 +384,12 @@ impl ProxmoxClient {
         Ok(self.request(Method::PUT, &path, Some(&params)).await?)
     }
 
+    pub async fn template_vm(&self, node: &str, vmid: i64) -> Result<String> {
+        let path = format!("nodes/{}/qemu/{}/template", node, vmid);
+        let res: String = self.request(Method::POST, &path, None).await?;
+        Ok(res)
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub async fn clone_resource(
         &self,
