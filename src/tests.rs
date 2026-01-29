@@ -2102,4 +2102,52 @@ mod unit_tests {
             .unwrap()
             .contains("Device hostpci0 removed"));
     }
+
+    #[tokio::test]
+    async fn test_lxc_mountpoints() {
+        let mock_server = MockServer::start().await;
+
+        // Mock Update Config (Add/Remove Mountpoint)
+        Mock::given(method("PUT"))
+            .and(path("/api2/json/nodes/pve1/lxc/200/config"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        // Test Add Mountpoint
+        let args = json!({
+            "node": "pve1",
+            "vmid": 200,
+            "mp_id": "mp0",
+            "volume": "/host/data",
+            "path": "/mnt/data",
+            "read_only": true,
+            "backup": false
+        });
+        let res = server.call_tool("add_lxc_mountpoint", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Mount point mp0 added"));
+
+        // Test Remove Mountpoint
+        let args = json!({
+            "node": "pve1",
+            "vmid": 200,
+            "mp_id": "mp0"
+        });
+        let res = server
+            .call_tool("remove_lxc_mountpoint", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Mount point mp0 removed"));
+    }
 }
