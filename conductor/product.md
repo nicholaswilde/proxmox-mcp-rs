@@ -18,7 +18,7 @@ The primary users of **proxmox-mcp-rs** are DevOps engineers and system administ
 - **Dual Transport:** Stdio (JSON-RPC 2.0) and HTTP (SSE/POST) with optional authentication.
 
 ## Key Features
-- **Comprehensive Proxmox Management:** Full lifecycle control over VMs, LXC containers, snapshots, and backups.
+- **Comprehensive Proxmox Management:** Full lifecycle control over VMs (including templates), LXC containers (including bind mounts), snapshots, and backups.
 - **Cluster & Resource Management:** Tools for managing nodes, pools, storage, and networking across a Proxmox cluster.
 - **Monitoring:** Async task tracking (UPID) and live resource reading (MCP Resources).
 - **Console Access:** Get URLs for NoVNC, xterm.js, or Spice consoles.
