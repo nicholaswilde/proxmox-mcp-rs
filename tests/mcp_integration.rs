@@ -3,7 +3,8 @@ use proxmox_mcp_rs::proxmox::ProxmoxClient;
 use serde_json::json;
 use std::collections::HashMap;
 use url::Url;
-use wiremock::MockServer;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 mod common;
 use common::*;
@@ -170,4 +171,58 @@ async fn test_error_mapping() {
         let err = result.unwrap_err();
         assert!(err.to_string().contains("404 Not Found"));
     }
+}
+
+#[tokio::test]
+async fn test_firewall_aliases() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    // Mock list aliases
+    Mock::given(method("GET"))
+        .and(path("/api2/json/cluster/firewall/aliases"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": [
+                { "name": "local_net", "cidr": "192.168.0.0/24", "comment": "Local Network" }
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let args = json!({
+        "instance": "default",
+        "level": "cluster"
+    });
+    let result = server.call_tool("list_firewall_aliases", &args).await.unwrap();
+
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("local_net"));
+}
+
+#[tokio::test]
+async fn test_bulk_vm_action() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+    let vmid1 = 100;
+    let vmid2 = 101;
+    let upid1 = "UPID:pve-node-01:00000001:qmstart:100:root@pam:";
+    let upid2 = "UPID:pve-node-01:00000002:qmstart:101:root@pam:";
+
+    mock_vm_action_success(&mock_server, node, vmid1, "start", upid1).await;
+    mock_vm_action_success(&mock_server, node, vmid2, "start", upid2).await;
+
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "vmids": [vmid1, vmid2],
+        "action": "start"
+    });
+
+    let result = server.call_tool("bulk_vm_action", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+
+    assert!(text.contains("VM 100: Success"));
+    assert!(text.contains("VM 101: Success"));
 }
