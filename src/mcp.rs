@@ -1868,7 +1868,10 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing name"))?;
 
-        let rules = self.get_client(args)?.get_security_group_rules(name).await?;
+        let rules = self
+            .get_client(args)?
+            .get_security_group_rules(name)
+            .await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&rules)? }] }),
         )

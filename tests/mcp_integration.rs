@@ -392,7 +392,10 @@ async fn test_certificate_management() {
 
     // Mock upload certificate
     Mock::given(method("POST"))
-        .and(path(format!("/api2/json/nodes/{}/certificates/custom", node)))
+        .and(path(format!(
+            "/api2/json/nodes/{}/certificates/custom",
+            node
+        )))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
         .mount(&mock_server)
         .await;

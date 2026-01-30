@@ -83,15 +83,22 @@ impl ProxmoxClient {
     // --- Security Groups ---
 
     pub async fn get_security_groups(&self) -> Result<Vec<Value>> {
-        Ok(self.request(Method::GET, "cluster/firewall/groups", None).await?)
+        Ok(self
+            .request(Method::GET, "cluster/firewall/groups", None)
+            .await?)
     }
 
     pub async fn create_security_group(&self, name: &str, comment: Option<&str>) -> Result<()> {
         let mut params = json!({ "group": name });
         if let Some(c) = comment {
-            params.as_object_mut().unwrap().insert("comment".to_string(), json!(c));
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("comment".to_string(), json!(c));
         }
-        let _: Value = self.request(Method::POST, "cluster/firewall/groups", Some(&params)).await?;
+        let _: Value = self
+            .request(Method::POST, "cluster/firewall/groups", Some(&params))
+            .await?;
         Ok(())
     }
 

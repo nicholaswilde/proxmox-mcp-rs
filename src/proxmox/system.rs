@@ -134,16 +134,16 @@ impl ProxmoxClient {
             "key": key,
         });
         if let Some(f) = force {
-            params
-                .as_object_mut()
-                .unwrap()
-                .insert("force".to_string(), serde_json::json!(if f { 1 } else { 0 }));
+            params.as_object_mut().unwrap().insert(
+                "force".to_string(),
+                serde_json::json!(if f { 1 } else { 0 }),
+            );
         }
         if let Some(r) = restart {
-            params
-                .as_object_mut()
-                .unwrap()
-                .insert("restart".to_string(), serde_json::json!(if r { 1 } else { 0 }));
+            params.as_object_mut().unwrap().insert(
+                "restart".to_string(),
+                serde_json::json!(if r { 1 } else { 0 }),
+            );
         }
         let _: Value = self.request(Method::POST, &path, Some(&params)).await?;
         Ok(())
