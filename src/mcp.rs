@@ -384,6 +384,7 @@ impl McpServer {
             "delete_container" => self.handle_delete(args, "lxc").await,
             "reset_vm" => self.handle_reset(args, "qemu").await,
             "reset_container" => self.handle_reset(args, "lxc").await,
+            "scan_storage_remote" => self.handle_scan_storage_remote(args).await,
             "list_templates" => {
                 let node = args
                     .get("node")
@@ -2470,6 +2471,31 @@ impl McpServer {
         )
     }
 
+    async fn handle_scan_storage_remote(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let storage_type = args
+            .get("type")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing type"))?;
+        let server = args
+            .get("server")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing server"))?;
+        let user = args.get("username").and_then(|v| v.as_str());
+        let password = args.get("password").and_then(|v| v.as_str());
+
+        let result = self
+            .get_client(args)?
+            .scan_storage(node, storage_type, server, user, password)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result)? }] }),
+        )
+    }
+
     async fn handle_template_vm(&self, args: &Value) -> Result<Value> {
         let node = args
             .get("node")
@@ -3561,6 +3587,21 @@ impl McpServer {
 
     fn tool_defs_storage(&self) -> Vec<Value> {
         vec![
+            json!({
+                "name": "scan_storage_remote",
+                "description": "Scan a remote server for storage targets",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "type": { "type": "string", "enum": ["nfs", "cifs", "iscsi", "lvm", "zfs", "pbs"], "description": "Storage type" },
+                        "server": { "type": "string", "description": "Hostname or IP of the remote server" },
+                        "username": { "type": "string", "description": "Username (for cifs/pbs)" },
+                        "password": { "type": "string", "description": "Password (for cifs/pbs)" }
+                    },
+                    "required": ["node", "type", "server"]
+                }
+            }),
             json!({
                 "name": "list_templates",
                 "description": "List container templates on a storage",

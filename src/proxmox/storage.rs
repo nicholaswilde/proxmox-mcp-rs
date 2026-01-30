@@ -140,6 +140,33 @@ impl ProxmoxClient {
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
+    pub async fn scan_storage(
+        &self,
+        node: &str,
+        storage_type: &str,
+        server: &str,
+        user: Option<&str>,
+        password: Option<&str>,
+    ) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/scan/{}", node, storage_type);
+        let mut params = json!({ "server": server });
+
+        if let Some(u) = user {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("username".to_string(), json!(u));
+        }
+        if let Some(p) = password {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("password".to_string(), json!(p));
+        }
+
+        Ok(self.request(Method::GET, &path, Some(&params)).await?)
+    }
+
     // --- Backup Management ---
 
     pub async fn get_backups(

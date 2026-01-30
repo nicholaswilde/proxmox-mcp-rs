@@ -2279,4 +2279,36 @@ mod unit_tests {
         assert!(content.contains("VM 100: Success"));
         assert!(content.contains("VM 101: Success"));
     }
+
+    #[tokio::test]
+    async fn test_storage_scan_tool() {
+        let mock_server = MockServer::start().await;
+
+        // Mock scan NFS
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/scan/nfs"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "path": "/srv/nfs/share1", "options": "rw" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        let args = json!({
+            "node": "pve1",
+            "type": "nfs",
+            "server": "1.2.3.4"
+        });
+
+        let res = server.call_tool("scan_storage_remote", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        
+        assert!(content.contains("/srv/nfs/share1"));
+    }
 }
