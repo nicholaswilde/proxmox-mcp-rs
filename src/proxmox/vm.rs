@@ -75,6 +75,32 @@ impl ProxmoxClient {
         Ok(res)
     }
 
+    pub async fn bulk_vm_action(
+        &self,
+        node: &str,
+        vmids: Vec<i64>,
+        action: &str,
+        vm_type: Option<&str>,
+    ) -> Result<std::collections::HashMap<i64, Result<String>>> {
+        use futures::stream::{self, StreamExt};
+        
+        let results = stream::iter(vmids)
+            .map(|vmid| {
+                let node = node.to_string();
+                let action = action.to_string();
+                let vm_type = vm_type.map(|s| s.to_string());
+                async move {
+                    let res = self.vm_action(&node, vmid, &action, vm_type.as_deref()).await;
+                    (vmid, res)
+                }
+            })
+            .buffer_unordered(10) // Concurrency limit
+            .collect::<Vec<_>>()
+            .await;
+
+        Ok(results.into_iter().collect())
+    }
+
     pub async fn create_resource(
         &self,
         node: &str,

@@ -370,6 +370,7 @@ impl McpServer {
                 )
             }
             "start_vm" => self.handle_vm_action(args, "start", None).await,
+            "bulk_vm_action" => self.handle_bulk_vm_action(args).await,
             "start_container" => self.handle_vm_action(args, "start", Some("lxc")).await,
             "stop_vm" => self.handle_vm_action(args, "stop", None).await,
             "stop_container" => self.handle_vm_action(args, "stop", Some("lxc")).await,
@@ -2401,6 +2402,44 @@ impl McpServer {
         )
     }
 
+    async fn handle_bulk_vm_action(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmids = args
+            .get("vmids")
+            .and_then(|v| {
+                v.as_array().map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_i64())
+                        .collect::<Vec<i64>>()
+                })
+            })
+            .ok_or(anyhow::anyhow!("Missing or invalid vmids"))?;
+        let action = args
+            .get("action")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing action"))?;
+        let vm_type = args.get("type").and_then(|v| v.as_str());
+
+        let results = self
+            .get_client(args)?
+            .bulk_vm_action(node, vmids, action, vm_type)
+            .await?;
+
+        // Transform the results into a friendly format for the user
+        let mut report = Vec::new();
+        for (vmid, res) in results {
+            match res {
+                Ok(upid) => report.push(format!("VM {}: Success (UPID: {})", vmid, upid)),
+                Err(e) => report.push(format!("VM {}: Failed ({})", vmid, e)),
+            }
+        }
+
+        Ok(json!({ "content": [{ "type": "text", "text": report.join("\n") }] }))
+    }
+
     async fn handle_vm_action(
         &self,
         args: &Value,
@@ -2982,6 +3021,20 @@ impl McpServer {
                     "type": "object",
                     "properties": {},
                     "required": []
+                }
+            }),
+            json!({
+                "name": "bulk_vm_action",
+                "description": "Perform a power action on a list of VMs",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmids": { "type": "array", "items": { "type": "integer" }, "description": "List of VM IDs" },
+                        "action": { "type": "string", "enum": ["start", "stop", "shutdown", "suspend", "resume", "reboot"], "description": "Action to perform" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type (optional, defaults to qemu)" }
+                    },
+                    "required": ["node", "vmids", "action"]
                 }
             }),
             json!({

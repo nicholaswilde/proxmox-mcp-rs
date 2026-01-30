@@ -2243,4 +2243,40 @@ mod unit_tests {
             .unwrap()
             .contains("created"));
     }
+
+    #[tokio::test]
+    async fn test_bulk_vm_action_tool() {
+        let mock_server = MockServer::start().await;
+
+        // Mock start action for VM 100
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/100/status/start"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock start action for VM 101
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/qemu/101/status/start"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        let args = json!({
+            "node": "pve1",
+            "vmids": [100, 101],
+            "action": "start"
+        });
+
+        let res = server.call_tool("bulk_vm_action", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        
+        assert!(content.contains("VM 100: Success"));
+        assert!(content.contains("VM 101: Success"));
+    }
 }
