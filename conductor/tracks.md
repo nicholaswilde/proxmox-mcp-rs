@@ -21,8 +21,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement PCI/USB Passthrough Tools**
   *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*
 
-- [x] **Track: Bulk VM Power Management**
-  *Link: [./tracks/bulk_vm_power/](./tracks/bulk_vm_power/)*
-
 - [ ] **Track: Storage Scanning**
   *Link: [./tracks/storage_scanning/](./tracks/storage_scanning/)*
