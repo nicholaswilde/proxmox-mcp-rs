@@ -398,3 +398,37 @@ async fn test_certificate_management() {
     let text = result["content"][0]["text"].as_str().unwrap();
     assert!(text.contains("Certificate uploaded successfully"));
 }
+
+#[tokio::test]
+async fn test_add_lxc_bind_mount() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+    let vmid = 100;
+
+    // Mock successful config update
+    Mock::given(method("PUT"))
+        .and(path(format!(
+            "/api2/json/nodes/{}/lxc/{}/config",
+            node, vmid
+        )))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+        .mount(&mock_server)
+        .await;
+
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "vmid": vmid,
+        "mp_id": "mp0",
+        "source": "/mnt/host",
+        "target": "/mnt/container",
+        "read_only": true
+    });
+
+    let result = server.call_tool("add_lxc_bind_mount", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+
+    assert!(text.contains("mp0 added to CT 100"));
+}
