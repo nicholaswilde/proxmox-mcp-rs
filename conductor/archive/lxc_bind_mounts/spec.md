@@ -1,17 +1,20 @@
-# Specification: LXC Bind Mount Tools
+# LXC Bind Mounts Specification
 
 ## Goal
-Enable users to configure bind mounts (mount points) for LXC containers via MCP tools. Bind mounts allow sharing directories from the Proxmox host to the container.
+Simplify the addition of bind mounts to LXC containers. Bind mounts allow exposing directories from the host to the container.
 
-## Features
-1.  **Add Bind Mount**: Add a new bind mount (mp0, mp1...) to a container.
-2.  **Remove Bind Mount**: Remove a bind mount from a container.
+## New Tools
 
-## API Endpoints
--   PUT `/nodes/{node}/lxc/{vmid}/config`: Update Container config (add/remove mount points).
-    -   Parameter: `mp[n]=volume,mp=/path/in/ct,...`
-    -   For bind mounts: `mp[n]=/host/path,mp=/container/path`
+### `add_lxc_bind_mount`
+- **Description:** Add a bind mount to an LXC container.
+- **Arguments:**
+  - `node` (string, required): Node name.
+  - `vmid` (integer, required): Container ID.
+  - `mp_id` (string, required): Mount point ID (e.g. mp0, mp1).
+  - `source` (string, required): Host directory path.
+  - `target` (string, required): Container directory path.
+  - `read_only` (boolean, optional): Default false.
 
-## Tools to Add
--   `add_lxc_mountpoint`: Add a bind mount or volume mount point to an LXC container.
--   `remove_lxc_mountpoint`: Remove a mount point from an LXC container.
+## Technical Details
+- **Behavior:** This tool is a wrapper around the `config` endpoint that formats the string correctly (e.g. `/host/path,mp=/container/path`).
+- **Client:** Update `src/proxmox/vm.rs`.
