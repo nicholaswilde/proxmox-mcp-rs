@@ -34,6 +34,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   **VM & Container Lifecycle**
   - `list_vms`: List all VMs and LXC containers (uses `get_all_vms`).
   - `list_containers`: List all LXC containers.
+  - `bulk_vm_action`: Perform power actions (start, stop, etc.) on multiple VMs simultaneously.
   - `create_vm` / `create_container`: Create a new VM or Container.
   - `start_vm` / `start_container`: Start a VM/Container.
   - `stop_vm` / `stop_container`: Stop (Power Off) a VM/Container.
@@ -75,6 +76,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   **Storage & Templates**
   - `list_storage`: List all storage on a node.
   - `list_cluster_storage`: List all storage definitions in the cluster configuration.
+  - `scan_storage_remote`: Scan a remote server (NFS, CIFS, etc.) for available target shares.
   - `list_isos`: List ISO images on a specific storage.
   - `list_templates`: List container templates on a storage.
   - `add_storage`: Add a new storage definition (supports dir, nfs, cifs, etc.).
@@ -95,6 +97,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_firewall_rules`: List firewall rules.
   - `add_firewall_rule`: Add a firewall rule.
   - `delete_firewall_rule`: Delete a firewall rule.
+  - `list_firewall_aliases`: List firewall aliases (cluster or node level).
+  - `create_firewall_alias`: Create a new firewall alias.
+  - `update_firewall_alias`: Update an existing firewall alias.
+  - `delete_firewall_alias`: Delete a firewall alias.
 
   **SDN (Software Defined Network)**
   - `list_sdn_zones`: List all SDN Zones.

@@ -87,3 +87,8 @@ user = "root@pam"
 # Lazy Mode (Default: false)
 # Start with a minimal set of tools to save tokens. Use `load_all_tools` to load the full catalog.
 # lazy_mode = false
+
+# --- Advanced Features ---
+# Most tools like 'bulk_vm_action' or 'scan_storage_remote' take explicit 
+# arguments (e.g. 'vmids' as an array of integers) to target resources.
+
