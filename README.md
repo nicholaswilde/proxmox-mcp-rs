@@ -147,6 +147,9 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_apt_updates`: List available APT updates on a node.
   - `run_apt_update`: Run apt-get update on a node.
   - `get_apt_versions`: Get versions of installed Proxmox packages.
+  - `list_repositories`: List configured APT repositories on a node.
+  - `add_repository`: Add a standard Proxmox repository (e.g., no-subscription).
+  - `update_repository_state`: Enable or disable a specific APT repository.
 
   **Subscription Management**
   - `get_subscription_info`: Get subscription status for a node.
