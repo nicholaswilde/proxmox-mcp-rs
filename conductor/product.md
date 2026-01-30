@@ -19,7 +19,7 @@ The primary users of **proxmox-mcp-rs** are DevOps engineers and system administ
 
 ## Key Features
 - **Comprehensive Proxmox Management:** Full lifecycle control over VMs (including templates), LXC containers (including bind mounts), snapshots, and backups. Includes bulk power management operations.
-- **Cluster & Resource Management:** Tools for managing nodes, pools, storage, and networking across a Proxmox cluster.
+- **Cluster & Resource Management:** Tools for managing nodes, pools, storage (including remote scanning), and networking across a Proxmox cluster.
 - **Monitoring:** Async task tracking (UPID) and live resource reading (MCP Resources).
 - **Console Access:** Get URLs for NoVNC, xterm.js, or Spice consoles.
 - **System Management:** Manage system services, APT updates, firewall rules, and aliases on Proxmox nodes.
