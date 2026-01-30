@@ -21,7 +21,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement PCI/USB Passthrough Tools**
   *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*
 
-- [ ] **Track: Firewall Security Groups**
+- [x] **Track: Firewall Security Groups**
   *Link: [./tracks/firewall_security_groups/](./tracks/firewall_security_groups/)*
 
 - [ ] **Track: Certificate Management**
