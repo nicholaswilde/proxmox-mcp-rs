@@ -22,6 +22,6 @@ The primary users of **proxmox-mcp-rs** are DevOps engineers and system administ
 - **Cluster & Resource Management:** Tools for managing nodes, pools, storage, and networking across a Proxmox cluster.
 - **Monitoring:** Async task tracking (UPID) and live resource reading (MCP Resources).
 - **Console Access:** Get URLs for NoVNC, xterm.js, or Spice consoles.
-- **System Management:** Manage system services, APT updates, and firewall rules on Proxmox nodes.
+- **System Management:** Manage system services, APT updates, firewall rules, and aliases on Proxmox nodes.
 - **Cloud-Init:** Configure Cloud-Init settings for VMs.
 - **Guest Agent:** Execute commands, read/write files inside VMs via QEMU Guest Agent.
