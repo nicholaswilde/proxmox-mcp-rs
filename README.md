@@ -101,6 +101,11 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `create_firewall_alias`: Create a new firewall alias.
   - `update_firewall_alias`: Update an existing firewall alias.
   - `delete_firewall_alias`: Delete a firewall alias.
+  - `list_security_groups`: List all firewall security groups.
+  - `create_security_group`: Create a new security group.
+  - `delete_security_group`: Delete a security group.
+  - `list_security_group_rules`: List rules in a security group.
+  - `add_security_group_rule`: Add a rule to a security group.
 
   **SDN (Software Defined Network)**
   - `list_sdn_zones`: List all SDN Zones.
@@ -150,6 +155,9 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_repositories`: List configured APT repositories on a node.
   - `add_repository`: Add a standard Proxmox repository (e.g., no-subscription).
   - `update_repository_state`: Enable or disable a specific APT repository.
+  - `list_certificates`: List certificates installed on a node.
+  - `upload_certificate`: Upload a custom SSL certificate and private key.
+  - `generate_acme_certificate`: Trigger an ACME certificate order/renewal.
 
   **Subscription Management**
   - `get_subscription_info`: Get subscription status for a node.

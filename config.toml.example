@@ -89,6 +89,7 @@ user = "root@pam"
 # lazy_mode = false
 
 # --- Advanced Features ---
-# Most tools like 'bulk_vm_action', 'scan_storage_remote', or 'update_repository_state' 
-# take explicit arguments (e.g. 'vmids' or 'index') to target resources.
+# Most tools like 'bulk_vm_action', 'scan_storage_remote', 'update_repository_state',
+# or 'upload_certificate' take explicit arguments to target resources or 
+# provide configuration data.
 
