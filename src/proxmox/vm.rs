@@ -333,6 +333,26 @@ impl ProxmoxClient {
         self.update_config(node, vmid, "lxc", &params).await
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub async fn add_lxc_bind_mount(
+        &self,
+        node: &str,
+        vmid: i64,
+        mp_id: &str,
+        source: &str,
+        target: &str,
+        read_only: Option<bool>,
+    ) -> Result<()> {
+        let mut value = format!("{},mp={}", source, target);
+        if let Some(ro) = read_only {
+            if ro {
+                value.push_str(",ro=1");
+            }
+        }
+        let params = json!({ mp_id: value });
+        self.update_config(node, vmid, "lxc", &params).await
+    }
+
     pub async fn remove_lxc_mountpoint(&self, node: &str, vmid: i64, mp_id: &str) -> Result<()> {
         let params = json!({ "delete": mp_id });
         self.update_config(node, vmid, "lxc", &params).await

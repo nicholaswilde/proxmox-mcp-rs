@@ -531,6 +531,7 @@ impl McpServer {
             "add_usb_device" => self.handle_add_usb_device(args).await,
             "remove_vm_device" => self.handle_remove_vm_device(args).await,
             "add_lxc_mountpoint" => self.handle_add_lxc_mountpoint(args).await,
+            "add_lxc_bind_mount" => self.handle_add_lxc_bind_mount(args).await,
             "remove_lxc_mountpoint" => self.handle_remove_lxc_mountpoint(args).await,
             "list_pci_mappings" => self.handle_list_pci_mappings(args).await,
             "create_pci_mapping" => self.handle_create_pci_mapping(args).await,
@@ -988,6 +989,37 @@ impl McpServer {
                 backup,
                 extra_options,
             )
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Mount point {} added to CT {}", mp_id, vmid) }] }),
+        )
+    }
+
+    async fn handle_add_lxc_bind_mount(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let vmid = args
+            .get("vmid")
+            .and_then(|v| v.as_i64())
+            .ok_or(anyhow::anyhow!("Missing vmid"))?;
+        let mp_id = args
+            .get("mp_id")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing mp_id"))?;
+        let source = args
+            .get("source")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing source"))?;
+        let target = args
+            .get("target")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing target"))?;
+        let read_only = args.get("read_only").and_then(|v| v.as_bool());
+
+        self.get_client(args)?
+            .add_lxc_bind_mount(node, vmid, mp_id, source, target, read_only)
             .await?;
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Mount point {} added to CT {}", mp_id, vmid) }] }),
@@ -3528,6 +3560,22 @@ impl McpServer {
                         "disk": { "type": "string", "description": "Disk to resize (default: rootfs)" }
                     },
                     "required": ["node", "vmid"]
+                }
+            }),
+            json!({
+                "name": "add_lxc_bind_mount",
+                "description": "Add a bind mount to an LXC container",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "The node name" },
+                        "vmid": { "type": "integer", "description": "The Container ID" },
+                        "mp_id": { "type": "string", "description": "Mount point ID (e.g. mp0)" },
+                        "source": { "type": "string", "description": "Host directory path" },
+                        "target": { "type": "string", "description": "Container directory path" },
+                        "read_only": { "type": "boolean", "description": "Read-only mount" }
+                    },
+                    "required": ["node", "vmid", "mp_id", "source", "target"]
                 }
             }),
             json!({
