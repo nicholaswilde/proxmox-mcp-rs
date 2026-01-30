@@ -226,3 +226,34 @@ async fn test_bulk_vm_action() {
     assert!(text.contains("VM 100: Success"));
     assert!(text.contains("VM 101: Success"));
 }
+
+#[tokio::test]
+async fn test_scan_storage_remote() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+    
+    // Mock scan NFS
+    Mock::given(method("GET"))
+        .and(path(format!("/api2/json/nodes/{}/scan/nfs", node)))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": [
+                { "path": "/srv/nfs/share1", "options": "rw" }
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "type": "nfs",
+        "server": "1.2.3.4"
+    });
+
+    let result = server.call_tool("scan_storage_remote", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+
+    assert!(text.contains("/srv/nfs/share1"));
+}
