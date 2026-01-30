@@ -325,3 +325,95 @@ async fn test_apt_repositories() {
     let text = result["content"][0]["text"].as_str().unwrap();
     assert!(text.contains("Repository state updated"));
 }
+
+#[tokio::test]
+async fn test_firewall_security_groups() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    // Mock list security groups
+    Mock::given(method("GET"))
+        .and(path("/api2/json/cluster/firewall/groups"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": [
+                { "group": "web_servers", "comment": "Web servers security group" }
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    // Mock create security group
+    Mock::given(method("POST"))
+        .and(path("/api2/json/cluster/firewall/groups"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+        .mount(&mock_server)
+        .await;
+
+    // 1. Test list_security_groups
+    let args = json!({ "instance": "default" });
+    let result = server
+        .call_tool("list_security_groups", &args)
+        .await
+        .unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("web_servers"));
+
+    // 2. Test create_security_group
+    let args = json!({
+        "instance": "default",
+        "name": "new_group",
+        "comment": "Test group"
+    });
+    let result = server
+        .call_tool("create_security_group", &args)
+        .await
+        .unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("Security group 'new_group' created"));
+}
+
+#[tokio::test]
+async fn test_certificate_management() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+
+    // Mock list certificates
+    Mock::given(method("GET"))
+        .and(path(format!("/api2/json/nodes/{}/certificates/info", node)))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": [
+                { "filename": "pveproxy-ssl.pem", "subject": "/CN=pve1" }
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    // Mock upload certificate
+    Mock::given(method("POST"))
+        .and(path(format!("/api2/json/nodes/{}/certificates/custom", node)))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+        .mount(&mock_server)
+        .await;
+
+    // 1. Test list_certificates
+    let args = json!({
+        "instance": "default",
+        "node": node
+    });
+    let result = server.call_tool("list_certificates", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("pveproxy-ssl.pem"));
+
+    // 2. Test upload_certificate
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "certificates": "-----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----",
+        "key": "-----BEGIN PRIVATE KEY-----...-----END PRIVATE KEY-----"
+    });
+    let result = server.call_tool("upload_certificate", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("Certificate uploaded successfully"));
+}
