@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "proxmox": {
+            "command": "/home/nicholas/git/nicholaswilde/proxmox-mcp-rs/target/release/proxmox-mcp-rs",
+            "args": [
+              "--config",
+              "/home/nicholas/git/nicholaswilde/proxmox-mcp-rs/config.toml"
+            ]
+        }
+    }
+}
+        
