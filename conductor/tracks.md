@@ -21,7 +21,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement PCI/USB Passthrough Tools**
   *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*
 
-- [ ] **Track: Certificate Management**
+- [x] **Track: Certificate Management**
   *Link: [./tracks/certificate_management/](./tracks/certificate_management/)*
 
 - [ ] **Track: LXC Bind Mounts**
