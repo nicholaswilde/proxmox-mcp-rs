@@ -304,6 +304,7 @@ impl McpServer {
         tools.extend(self.tool_defs_network());
         tools.extend(self.tool_defs_firewall_aliases());
         tools.extend(self.tool_defs_system());
+        tools.extend(self.tool_defs_apt());
         tools.extend(self.tool_defs_access());
         tools.extend(self.tool_defs_ha());
         tools.extend(self.tool_defs_sdn());
@@ -499,6 +500,9 @@ impl McpServer {
             "list_apt_updates" => self.handle_list_apt_updates(args).await,
             "run_apt_update" => self.handle_run_apt_update(args).await,
             "get_apt_versions" => self.handle_get_apt_versions(args).await,
+            "list_repositories" => self.handle_list_repositories(args).await,
+            "add_repository" => self.handle_add_repository(args).await,
+            "update_repository_state" => self.handle_update_repository_state(args).await,
             "list_services" => self.handle_list_services(args).await,
             "manage_service" => self.handle_manage_service(args).await,
             "set_vm_cloudinit" => self.handle_set_vm_cloudinit(args).await,
@@ -2826,6 +2830,54 @@ impl McpServer {
         )
     }
 
+    async fn handle_list_repositories(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let repos = self.get_client(args)?.get_repositories(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&repos)? }] }),
+        )
+    }
+
+    async fn handle_add_repository(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let handle = args
+            .get("handle")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing handle"))?;
+        self.get_client(args)?.add_repository(node, handle).await?;
+        Ok(json!({ "content": [{ "type": "text", "text": format!("Repository {} added", handle) }] }))
+    }
+
+    async fn handle_update_repository_state(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let path = args
+            .get("path")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing path"))?;
+        let index = args
+            .get("index")
+            .and_then(|v| v.as_u64())
+            .ok_or(anyhow::anyhow!("Missing index"))? as usize;
+        let enabled = args
+            .get("enabled")
+            .and_then(|v| v.as_bool())
+            .ok_or(anyhow::anyhow!("Missing enabled"))?;
+
+        self.get_client(args)?
+            .change_repository_state(node, path, index, enabled)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Repository state updated" }] }))
+    }
+
     async fn handle_list_services(&self, args: &Value) -> Result<Value> {
         let node = args
             .get("node")
@@ -3942,6 +3994,48 @@ impl McpServer {
                         "name": { "type": "string", "description": "Alias name to delete" }
                     },
                     "required": ["level", "name"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_apt(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_repositories",
+                "description": "List configured APT repositories on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "add_repository",
+                "description": "Add a standard Proxmox repository",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "handle": { "type": "string", "description": "Repository handle (e.g. 'pve-no-subscription', 'pve-enterprise')" }
+                    },
+                    "required": ["node", "handle"]
+                }
+            }),
+            json!({
+                "name": "update_repository_state",
+                "description": "Enable or disable a repository",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "path": { "type": "string", "description": "Path to repository file" },
+                        "index": { "type": "integer", "description": "Repository index" },
+                        "enabled": { "type": "boolean", "description": "Enable/Disable" }
+                    },
+                    "required": ["node", "path", "index", "enabled"]
                 }
             }),
         ]

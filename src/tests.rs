@@ -2321,4 +2321,29 @@ mod unit_tests {
 
         assert!(content.contains("/srv/nfs/share1"));
     }
+
+    #[tokio::test]
+    async fn test_apt_repository_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list repositories
+        Mock::given(method("GET"))
+            .and(path("/api2/json/nodes/pve1/apt/repositories"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "files": [ { "path": "/etc/apt/sources.list" } ] }
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        let args = json!({ "node": "pve1" });
+        let res = server.call_tool("list_repositories", &args).await.unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+        
+        assert!(content.contains("/etc/apt/sources.list"));
+    }
 }

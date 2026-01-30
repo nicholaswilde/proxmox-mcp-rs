@@ -72,6 +72,35 @@ impl ProxmoxClient {
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
+    pub async fn get_repositories(&self, node: &str) -> Result<Value> {
+        let path = format!("nodes/{}/apt/repositories", node);
+        Ok(self.request(Method::GET, &path, None).await?)
+    }
+
+    pub async fn add_repository(&self, node: &str, handle: &str) -> Result<()> {
+        let path = format!("nodes/{}/apt/repositories", node);
+        let params = serde_json::json!({ "handle": handle });
+        let _: Value = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(())
+    }
+
+    pub async fn change_repository_state(
+        &self,
+        node: &str,
+        path_str: &str,
+        index: usize,
+        enabled: bool,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/apt/repositories", node);
+        let params = serde_json::json!({
+            "path": path_str,
+            "index": index,
+            "enabled": if enabled { 1 } else { 0 }
+        });
+        let _: Value = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(())
+    }
+
     // --- Service Management ---
 
     pub async fn get_services(&self, node: &str) -> Result<Vec<Value>> {
