@@ -59,6 +59,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `add_tag`: Add tags to a VM or Container.
   - `remove_tag`: Remove tags from a VM or Container.
   - `set_tags`: Set (overwrite) tags for a VM or Container.
+  - `add_lxc_bind_mount`: Add a bind mount to an LXC container.
 
   **Snapshots & Backups**
   - `list_snapshots`: List snapshots for a VM or Container.
