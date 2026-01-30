@@ -2851,7 +2851,9 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing handle"))?;
         self.get_client(args)?.add_repository(node, handle).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": format!("Repository {} added", handle) }] }))
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Repository {} added", handle) }] }),
+        )
     }
 
     async fn handle_update_repository_state(&self, args: &Value) -> Result<Value> {

@@ -2343,7 +2343,7 @@ mod unit_tests {
         let args = json!({ "node": "pve1" });
         let res = server.call_tool("list_repositories", &args).await.unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
-        
+
         assert!(content.contains("/etc/apt/sources.list"));
     }
 }
