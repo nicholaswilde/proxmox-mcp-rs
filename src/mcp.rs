@@ -2411,11 +2411,8 @@ impl McpServer {
         let vmids = args
             .get("vmids")
             .and_then(|v| {
-                v.as_array().map(|a| {
-                    a.iter()
-                        .filter_map(|x| x.as_i64())
-                        .collect::<Vec<i64>>()
-                })
+                v.as_array()
+                    .map(|a| a.iter().filter_map(|x| x.as_i64()).collect::<Vec<i64>>())
             })
             .ok_or(anyhow::anyhow!("Missing or invalid vmids"))?;
         let action = args

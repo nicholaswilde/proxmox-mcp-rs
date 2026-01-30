@@ -193,7 +193,10 @@ async fn test_firewall_aliases() {
         "instance": "default",
         "level": "cluster"
     });
-    let result = server.call_tool("list_firewall_aliases", &args).await.unwrap();
+    let result = server
+        .call_tool("list_firewall_aliases", &args)
+        .await
+        .unwrap();
 
     let text = result["content"][0]["text"].as_str().unwrap();
     assert!(text.contains("local_net"));
@@ -233,7 +236,7 @@ async fn test_scan_storage_remote() {
     let server = setup_mcp_server(&mock_server).await;
 
     let node = "pve-node-01";
-    
+
     // Mock scan NFS
     Mock::given(method("GET"))
         .and(path(format!("/api2/json/nodes/{}/scan/nfs", node)))
@@ -252,7 +255,10 @@ async fn test_scan_storage_remote() {
         "server": "1.2.3.4"
     });
 
-    let result = server.call_tool("scan_storage_remote", &args).await.unwrap();
+    let result = server
+        .call_tool("scan_storage_remote", &args)
+        .await
+        .unwrap();
     let text = result["content"][0]["text"].as_str().unwrap();
 
     assert!(text.contains("/srv/nfs/share1"));

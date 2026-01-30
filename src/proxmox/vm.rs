@@ -83,14 +83,16 @@ impl ProxmoxClient {
         vm_type: Option<&str>,
     ) -> Result<std::collections::HashMap<i64, Result<String>>> {
         use futures::stream::{self, StreamExt};
-        
+
         let results = stream::iter(vmids)
             .map(|vmid| {
                 let node = node.to_string();
                 let action = action.to_string();
                 let vm_type = vm_type.map(|s| s.to_string());
                 async move {
-                    let res = self.vm_action(&node, vmid, &action, vm_type.as_deref()).await;
+                    let res = self
+                        .vm_action(&node, vmid, &action, vm_type.as_deref())
+                        .await;
                     (vmid, res)
                 }
             })

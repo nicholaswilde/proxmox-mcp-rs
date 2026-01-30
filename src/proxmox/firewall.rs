@@ -8,10 +8,13 @@ impl ProxmoxClient {
         match level {
             "cluster" => Ok("cluster/firewall/aliases".to_string()),
             "node" => {
-                let node = node.ok_or_else(|| anyhow::anyhow!("Node name required for node level"))?;
+                let node =
+                    node.ok_or_else(|| anyhow::anyhow!("Node name required for node level"))?;
                 Ok(format!("nodes/{}/firewall/aliases", node))
             }
-            _ => Err(anyhow::anyhow!("Invalid level: must be 'cluster' or 'node'")),
+            _ => Err(anyhow::anyhow!(
+                "Invalid level: must be 'cluster' or 'node'"
+            )),
         }
     }
 
@@ -69,12 +72,7 @@ impl ProxmoxClient {
         Ok(())
     }
 
-    pub async fn delete_alias(
-        &self,
-        level: &str,
-        node: Option<&str>,
-        name: &str,
-    ) -> Result<()> {
+    pub async fn delete_alias(&self, level: &str, node: Option<&str>, name: &str) -> Result<()> {
         let base_path = self.resolve_alias_base_path(level, node)?;
         let path = format!("{}/{}", base_path, name);
 

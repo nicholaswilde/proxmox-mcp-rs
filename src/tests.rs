@@ -2224,11 +2224,11 @@ mod unit_tests {
 
         // Test List (Cluster)
         let args = json!({ "level": "cluster" });
-        let res = server.call_tool("list_firewall_aliases", &args).await.unwrap();
-        assert!(res["content"][0]["text"]
-            .as_str()
-            .unwrap()
-            .contains("web"));
+        let res = server
+            .call_tool("list_firewall_aliases", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"].as_str().unwrap().contains("web"));
 
         // Test Create (Node)
         let args = json!({
@@ -2237,7 +2237,10 @@ mod unit_tests {
             "name": "local",
             "cidr": "127.0.0.1/32"
         });
-        let res = server.call_tool("create_firewall_alias", &args).await.unwrap();
+        let res = server
+            .call_tool("create_firewall_alias", &args)
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"]
             .as_str()
             .unwrap()
@@ -2251,14 +2254,18 @@ mod unit_tests {
         // Mock start action for VM 100
         Mock::given(method("POST"))
             .and(path("/api2/json/nodes/pve1/qemu/100/status/start"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })),
+            )
             .mount(&mock_server)
             .await;
 
         // Mock start action for VM 101
         Mock::given(method("POST"))
             .and(path("/api2/json/nodes/pve1/qemu/101/status/start"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "data": "UPID:pve1:..." })),
+            )
             .mount(&mock_server)
             .await;
 
@@ -2275,7 +2282,7 @@ mod unit_tests {
 
         let res = server.call_tool("bulk_vm_action", &args).await.unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
-        
+
         assert!(content.contains("VM 100: Success"));
         assert!(content.contains("VM 101: Success"));
     }
@@ -2306,9 +2313,12 @@ mod unit_tests {
             "server": "1.2.3.4"
         });
 
-        let res = server.call_tool("scan_storage_remote", &args).await.unwrap();
+        let res = server
+            .call_tool("scan_storage_remote", &args)
+            .await
+            .unwrap();
         let content = res["content"][0]["text"].as_str().unwrap();
-        
+
         assert!(content.contains("/srv/nfs/share1"));
     }
 }
