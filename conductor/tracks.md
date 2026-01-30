@@ -21,7 +21,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement PCI/USB Passthrough Tools**
   *Link: [./tracks/pci_usb_passthrough/](./tracks/pci_usb_passthrough/)*
 
-- [ ] **Track: APT Repository Management**
+- [x] **Track: APT Repository Management**
   *Link: [./tracks/apt_repository_management/](./tracks/apt_repository_management/)*
 
 - [ ] **Track: Firewall Security Groups**
