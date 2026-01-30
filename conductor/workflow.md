@@ -169,6 +169,7 @@ When asked to test new functions since the last tag against a *live, connected* 
 
 ### Integration Testing
 - Test complete user flows
+- **MCP Server Tools:** `tests/mcp_integration.rs` MUST be updated with a functional test case whenever a new MCP server tool is added.
 - Verify database transactions
 - Test authentication and authorization
 - Check form submissions

@@ -11,6 +11,6 @@
 - **Safety & Robustness:** Prioritize memory safety and robust error handling. Use `anyhow` or similar crates for meaningful error reporting back to the MCP client.
 - **Performance:** Keep the execution path efficient, especially for resource-heavy operations like listing all VMs in a large cluster.
 - **Test-Driven Reliability:** Every new Proxmox tool or core feature should be accompanied by unit tests using `wiremock` to simulate Proxmox API responses.
-- **Testing Coverage:** Every Proxmox function and MCP tool must have corresponding unit tests in `src/tests.rs` (or relevant module).
+- **Testing Coverage:** Every Proxmox function and MCP tool must have corresponding unit tests in `src/tests.rs` (or relevant module). Additionally, `tests/mcp_integration.rs` MUST be updated with a functional test case whenever a new MCP server tool is added.
 - **CI Verification:** Run `task test:ci` after every feature addition to ensure formatting, linting, and tests all pass.
 - **Versioning:** When asked to create a new git tag, always update the version in `Cargo.toml` to match the new tag version. When creating the tag, use the `-m` argument to add a descriptive comment (e.g., `git tag -a v0.3.22 -m "v0.3.22"`).
