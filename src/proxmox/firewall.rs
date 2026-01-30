@@ -79,4 +79,36 @@ impl ProxmoxClient {
         let _: Value = self.request(Method::DELETE, &path, None).await?;
         Ok(())
     }
+
+    // --- Security Groups ---
+
+    pub async fn get_security_groups(&self) -> Result<Vec<Value>> {
+        Ok(self.request(Method::GET, "cluster/firewall/groups", None).await?)
+    }
+
+    pub async fn create_security_group(&self, name: &str, comment: Option<&str>) -> Result<()> {
+        let mut params = json!({ "group": name });
+        if let Some(c) = comment {
+            params.as_object_mut().unwrap().insert("comment".to_string(), json!(c));
+        }
+        let _: Value = self.request(Method::POST, "cluster/firewall/groups", Some(&params)).await?;
+        Ok(())
+    }
+
+    pub async fn delete_security_group(&self, name: &str) -> Result<()> {
+        let path = format!("cluster/firewall/groups/{}", name);
+        let _: Value = self.request(Method::DELETE, &path, None).await?;
+        Ok(())
+    }
+
+    pub async fn get_security_group_rules(&self, name: &str) -> Result<Vec<Value>> {
+        let path = format!("cluster/firewall/groups/{}", name);
+        Ok(self.request(Method::GET, &path, None).await?)
+    }
+
+    pub async fn add_security_group_rule(&self, name: &str, rule: &Value) -> Result<()> {
+        let path = format!("cluster/firewall/groups/{}", name);
+        let _: Value = self.request(Method::POST, &path, Some(rule)).await?;
+        Ok(())
+    }
 }

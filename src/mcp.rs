@@ -303,6 +303,7 @@ impl McpServer {
         tools.extend(self.tool_defs_storage());
         tools.extend(self.tool_defs_network());
         tools.extend(self.tool_defs_firewall_aliases());
+        tools.extend(self.tool_defs_firewall_security_groups());
         tools.extend(self.tool_defs_system());
         tools.extend(self.tool_defs_apt());
         tools.extend(self.tool_defs_access());
@@ -438,6 +439,11 @@ impl McpServer {
             "create_firewall_alias" => self.handle_create_firewall_alias(args).await,
             "update_firewall_alias" => self.handle_update_firewall_alias(args).await,
             "delete_firewall_alias" => self.handle_delete_firewall_alias(args).await,
+            "list_security_groups" => self.handle_list_security_groups(args).await,
+            "create_security_group" => self.handle_create_security_group(args).await,
+            "delete_security_group" => self.handle_delete_security_group(args).await,
+            "list_security_group_rules" => self.handle_list_security_group_rules(args).await,
+            "add_security_group_rule" => self.handle_add_security_group_rule(args).await,
             "add_disk" => self.handle_add_disk(args).await,
             "remove_disk" => self.handle_remove_disk(args).await,
             "add_network" => self.handle_add_network(args).await,
@@ -1816,6 +1822,72 @@ impl McpServer {
             .delete_alias(level, node, name)
             .await?;
         Ok(json!({ "content": [{ "type": "text", "text": "Firewall alias deleted" }] }))
+    }
+
+    async fn handle_list_security_groups(&self, args: &Value) -> Result<Value> {
+        let groups = self.get_client(args)?.get_security_groups().await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&groups)? }] }),
+        )
+    }
+
+    async fn handle_create_security_group(&self, args: &Value) -> Result<Value> {
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+        let comment = args.get("comment").and_then(|v| v.as_str());
+
+        self.get_client(args)?
+            .create_security_group(name, comment)
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Security group '{}' created", name) }] }),
+        )
+    }
+
+    async fn handle_delete_security_group(&self, args: &Value) -> Result<Value> {
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+
+        self.get_client(args)?.delete_security_group(name).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Security group '{}' deleted", name) }] }),
+        )
+    }
+
+    async fn handle_list_security_group_rules(&self, args: &Value) -> Result<Value> {
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+
+        let rules = self.get_client(args)?.get_security_group_rules(name).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&rules)? }] }),
+        )
+    }
+
+    async fn handle_add_security_group_rule(&self, args: &Value) -> Result<Value> {
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+
+        let mut rule = args
+            .as_object()
+            .ok_or(anyhow::anyhow!("Args must be object"))?
+            .clone();
+        rule.remove("name");
+
+        self.get_client(args)?
+            .add_security_group_rule(name, &Value::Object(rule))
+            .await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("Rule added to security group '{}'", name) }] }),
+        )
     }
 
     async fn handle_get_cluster_status(&self, args: &Value) -> Result<Value> {
@@ -4038,6 +4110,74 @@ impl McpServer {
                         "enabled": { "type": "boolean", "description": "Enable/Disable" }
                     },
                     "required": ["node", "path", "index", "enabled"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_firewall_security_groups(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_security_groups",
+                "description": "List all firewall security groups",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }),
+            json!({
+                "name": "create_security_group",
+                "description": "Create a new security group",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Group name" },
+                        "comment": { "type": "string", "description": "Description" }
+                    },
+                    "required": ["name"]
+                }
+            }),
+            json!({
+                "name": "delete_security_group",
+                "description": "Delete a security group",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Group name to delete" }
+                    },
+                    "required": ["name"]
+                }
+            }),
+            json!({
+                "name": "list_security_group_rules",
+                "description": "List rules in a security group",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Group name" }
+                    },
+                    "required": ["name"]
+                }
+            }),
+            json!({
+                "name": "add_security_group_rule",
+                "description": "Add a rule to a security group",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "Group name" },
+                        "type": { "type": "string", "enum": ["in", "out"], "description": "Direction" },
+                        "action": { "type": "string", "enum": ["ACCEPT", "DROP", "REJECT"] },
+                        "source": { "type": "string" },
+                        "dest": { "type": "string" },
+                        "proto": { "type": "string" },
+                        "dport": { "type": "string" },
+                        "sport": { "type": "string" },
+                        "comment": { "type": "string" },
+                        "enable": { "type": "integer", "description": "Enable rule (0 or 1)" }
+                    },
+                    "required": ["name", "type", "action"]
                 }
             }),
         ]

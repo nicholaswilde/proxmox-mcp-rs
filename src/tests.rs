@@ -2346,4 +2346,33 @@ mod unit_tests {
 
         assert!(content.contains("/etc/apt/sources.list"));
     }
+
+    #[tokio::test]
+    async fn test_firewall_security_group_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list security groups
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/firewall/groups"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "group": "web_servers", "comment": "Web servers security group" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        let res = server
+            .call_tool("list_security_groups", &json!({}))
+            .await
+            .unwrap();
+        let content = res["content"][0]["text"].as_str().unwrap();
+
+        assert!(content.contains("web_servers"));
+    }
 }
