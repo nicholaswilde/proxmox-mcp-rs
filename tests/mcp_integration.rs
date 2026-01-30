@@ -263,3 +263,65 @@ async fn test_scan_storage_remote() {
 
     assert!(text.contains("/srv/nfs/share1"));
 }
+
+#[tokio::test]
+async fn test_apt_repositories() {
+    let mock_server = MockServer::start().await;
+    let server = setup_mcp_server(&mock_server).await;
+
+    let node = "pve-node-01";
+
+    // Mock list repositories
+    Mock::given(method("GET"))
+        .and(path(format!("/api2/json/nodes/{}/apt/repositories", node)))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": {
+                "files": [
+                    { "path": "/etc/apt/sources.list", "repositories": [] }
+                ]
+            }
+        })))
+        .mount(&mock_server)
+        .await;
+
+    // Mock add repository
+    Mock::given(method("POST"))
+        .and(path(format!("/api2/json/nodes/{}/apt/repositories", node)))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+        .mount(&mock_server)
+        .await;
+
+    // 1. Test list_repositories
+    let args = json!({
+        "instance": "default",
+        "node": node
+    });
+    let result = server.call_tool("list_repositories", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("/etc/apt/sources.list"));
+
+    // 2. Test add_repository
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "handle": "pve-no-subscription"
+    });
+    let result = server.call_tool("add_repository", &args).await.unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("Repository pve-no-subscription added"));
+
+    // 3. Test update_repository_state
+    let args = json!({
+        "instance": "default",
+        "node": node,
+        "path": "/etc/apt/sources.list",
+        "index": 0,
+        "enabled": true
+    });
+    let result = server
+        .call_tool("update_repository_state", &args)
+        .await
+        .unwrap();
+    let text = result["content"][0]["text"].as_str().unwrap();
+    assert!(text.contains("Repository state updated"));
+}
