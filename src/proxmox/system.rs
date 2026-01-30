@@ -112,4 +112,45 @@ impl ProxmoxClient {
         let path = format!("nodes/{}/services/{}/{}", node, service, action);
         Ok(self.request(Method::POST, &path, None).await?)
     }
+
+    // --- Certificate Management ---
+
+    pub async fn get_certificates(&self, node: &str) -> Result<Vec<Value>> {
+        let path = format!("nodes/{}/certificates/info", node);
+        Ok(self.request(Method::GET, &path, None).await?)
+    }
+
+    pub async fn upload_certificate(
+        &self,
+        node: &str,
+        certificates: &str,
+        key: &str,
+        force: Option<bool>,
+        restart: Option<bool>,
+    ) -> Result<()> {
+        let path = format!("nodes/{}/certificates/custom", node);
+        let mut params = serde_json::json!({
+            "certificates": certificates,
+            "key": key,
+        });
+        if let Some(f) = force {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("force".to_string(), serde_json::json!(if f { 1 } else { 0 }));
+        }
+        if let Some(r) = restart {
+            params
+                .as_object_mut()
+                .unwrap()
+                .insert("restart".to_string(), serde_json::json!(if r { 1 } else { 0 }));
+        }
+        let _: Value = self.request(Method::POST, &path, Some(&params)).await?;
+        Ok(())
+    }
+
+    pub async fn renew_acme_certificate(&self, node: &str) -> Result<String> {
+        let path = format!("nodes/{}/certificates/acme/certificate", node);
+        Ok(self.request(Method::POST, &path, None).await?)
+    }
 }

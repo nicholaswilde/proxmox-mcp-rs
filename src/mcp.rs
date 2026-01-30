@@ -306,6 +306,7 @@ impl McpServer {
         tools.extend(self.tool_defs_firewall_security_groups());
         tools.extend(self.tool_defs_system());
         tools.extend(self.tool_defs_apt());
+        tools.extend(self.tool_defs_certificates());
         tools.extend(self.tool_defs_access());
         tools.extend(self.tool_defs_ha());
         tools.extend(self.tool_defs_sdn());
@@ -511,6 +512,9 @@ impl McpServer {
             "update_repository_state" => self.handle_update_repository_state(args).await,
             "list_services" => self.handle_list_services(args).await,
             "manage_service" => self.handle_manage_service(args).await,
+            "list_certificates" => self.handle_list_certificates(args).await,
+            "upload_certificate" => self.handle_upload_certificate(args).await,
+            "generate_acme_certificate" => self.handle_generate_acme_certificate(args).await,
             "set_vm_cloudinit" => self.handle_set_vm_cloudinit(args).await,
             "add_tag" => self.handle_add_tag(args).await,
             "remove_tag" => self.handle_remove_tag(args).await,
@@ -2986,6 +2990,50 @@ impl McpServer {
         )
     }
 
+    async fn handle_list_certificates(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let certs = self.get_client(args)?.get_certificates(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&certs)? }] }),
+        )
+    }
+
+    async fn handle_upload_certificate(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let certificates = args
+            .get("certificates")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing certificates"))?;
+        let key = args
+            .get("key")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing key"))?;
+        let force = args.get("force").and_then(|v| v.as_bool());
+        let restart = args.get("restart").and_then(|v| v.as_bool());
+
+        self.get_client(args)?
+            .upload_certificate(node, certificates, key, force, restart)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Certificate uploaded successfully" }] }))
+    }
+
+    async fn handle_generate_acme_certificate(&self, args: &Value) -> Result<Value> {
+        let node = args
+            .get("node")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing node"))?;
+        let upid = self.get_client(args)?.renew_acme_certificate(node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": format!("ACME certificate renewal initiated. UPID: {}", upid) }] }),
+        )
+    }
+
     async fn handle_set_vm_cloudinit(&self, args: &Value) -> Result<Value> {
         let node = args
             .get("node")
@@ -4068,6 +4116,48 @@ impl McpServer {
                         "name": { "type": "string", "description": "Alias name to delete" }
                     },
                     "required": ["level", "name"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_certificates(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_certificates",
+                "description": "List certificates installed on a node",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
+                }
+            }),
+            json!({
+                "name": "upload_certificate",
+                "description": "Upload a custom SSL certificate and private key",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" },
+                        "certificates": { "type": "string", "description": "PEM encoded certificate chain" },
+                        "key": { "type": "string", "description": "PEM encoded private key" },
+                        "force": { "type": "boolean", "description": "Overwrite existing (default: false)" },
+                        "restart": { "type": "boolean", "description": "Restart pveproxy (default: false)" }
+                    },
+                    "required": ["node", "certificates", "key"]
+                }
+            }),
+            json!({
+                "name": "generate_acme_certificate",
+                "description": "Trigger an ACME certificate order/renewal",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "node": { "type": "string", "description": "Node name" }
+                    },
+                    "required": ["node"]
                 }
             }),
         ]
