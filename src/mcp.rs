@@ -302,6 +302,7 @@ impl McpServer {
         tools.extend(self.tool_defs_vm_config());
         tools.extend(self.tool_defs_storage());
         tools.extend(self.tool_defs_network());
+        tools.extend(self.tool_defs_firewall_aliases());
         tools.extend(self.tool_defs_system());
         tools.extend(self.tool_defs_access());
         tools.extend(self.tool_defs_ha());
@@ -430,6 +431,10 @@ impl McpServer {
             "list_firewall_rules" => self.handle_list_firewall_rules(args).await,
             "add_firewall_rule" => self.handle_add_firewall_rule(args).await,
             "delete_firewall_rule" => self.handle_delete_firewall_rule(args).await,
+            "list_firewall_aliases" => self.handle_list_firewall_aliases(args).await,
+            "create_firewall_alias" => self.handle_create_firewall_alias(args).await,
+            "update_firewall_alias" => self.handle_update_firewall_alias(args).await,
+            "delete_firewall_alias" => self.handle_delete_firewall_alias(args).await,
             "add_disk" => self.handle_add_disk(args).await,
             "remove_disk" => self.handle_remove_disk(args).await,
             "add_network" => self.handle_add_network(args).await,
@@ -1731,6 +1736,80 @@ impl McpServer {
         Ok(
             json!({ "content": [{ "type": "text", "text": format!("Firewall rule {} deleted", pos) }] }),
         )
+    }
+
+    async fn handle_list_firewall_aliases(&self, args: &Value) -> Result<Value> {
+        let level = args
+            .get("level")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing level"))?;
+        let node = args.get("node").and_then(|v| v.as_str());
+
+        let aliases = self.get_client(args)?.get_aliases(level, node).await?;
+        Ok(
+            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&aliases)? }] }),
+        )
+    }
+
+    async fn handle_create_firewall_alias(&self, args: &Value) -> Result<Value> {
+        let level = args
+            .get("level")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing level"))?;
+        let node = args.get("node").and_then(|v| v.as_str());
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+        let cidr = args
+            .get("cidr")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing cidr"))?;
+        let comment = args.get("comment").and_then(|v| v.as_str());
+
+        self.get_client(args)?
+            .create_alias(level, node, name, cidr, comment)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Firewall alias created" }] }))
+    }
+
+    async fn handle_update_firewall_alias(&self, args: &Value) -> Result<Value> {
+        let level = args
+            .get("level")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing level"))?;
+        let node = args.get("node").and_then(|v| v.as_str());
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+        let cidr = args
+            .get("cidr")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing cidr"))?;
+        let comment = args.get("comment").and_then(|v| v.as_str());
+
+        self.get_client(args)?
+            .update_alias(level, node, name, cidr, comment)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Firewall alias updated" }] }))
+    }
+
+    async fn handle_delete_firewall_alias(&self, args: &Value) -> Result<Value> {
+        let level = args
+            .get("level")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing level"))?;
+        let node = args.get("node").and_then(|v| v.as_str());
+        let name = args
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(anyhow::anyhow!("Missing name"))?;
+
+        self.get_client(args)?
+            .delete_alias(level, node, name)
+            .await?;
+        Ok(json!({ "content": [{ "type": "text", "text": "Firewall alias deleted" }] }))
     }
 
     async fn handle_get_cluster_status(&self, args: &Value) -> Result<Value> {
@@ -3712,6 +3791,66 @@ impl McpServer {
                         "pos": { "type": "integer", "description": "Rule position/index (optional if digest provided, but usually required)" }
                     },
                     "required": ["pos"]
+                }
+            }),
+        ]
+    }
+
+    fn tool_defs_firewall_aliases(&self) -> Vec<Value> {
+        vec![
+            json!({
+                "name": "list_firewall_aliases",
+                "description": "List firewall aliases",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "level": { "type": "string", "enum": ["cluster", "node"], "description": "Scope level" },
+                        "node": { "type": "string", "description": "Node name (required if level is 'node')" }
+                    },
+                    "required": ["level"]
+                }
+            }),
+            json!({
+                "name": "create_firewall_alias",
+                "description": "Create a firewall alias",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "level": { "type": "string", "enum": ["cluster", "node"] },
+                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
+                        "name": { "type": "string", "description": "Alias name" },
+                        "cidr": { "type": "string", "description": "Network/IP (CIDR)" },
+                        "comment": { "type": "string", "description": "Description" }
+                    },
+                    "required": ["level", "name", "cidr"]
+                }
+            }),
+            json!({
+                "name": "update_firewall_alias",
+                "description": "Update a firewall alias",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "level": { "type": "string", "enum": ["cluster", "node"] },
+                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
+                        "name": { "type": "string", "description": "Alias name to update" },
+                        "cidr": { "type": "string", "description": "New Network/IP (CIDR)" },
+                        "comment": { "type": "string", "description": "New Description" }
+                    },
+                    "required": ["level", "name", "cidr"]
+                }
+            }),
+            json!({
+                "name": "delete_firewall_alias",
+                "description": "Delete a firewall alias",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "level": { "type": "string", "enum": ["cluster", "node"] },
+                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
+                        "name": { "type": "string", "description": "Alias name to delete" }
+                    },
+                    "required": ["level", "name"]
                 }
             }),
         ]

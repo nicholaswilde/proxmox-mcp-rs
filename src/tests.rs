@@ -2186,14 +2186,61 @@ mod unit_tests {
         // If I strictly follow TDD, I should write the client method first, then the tool.
         // But the test validates the end result.
 
+        // ... existing tests ...
         if let Ok(val) = res {
             assert!(val["content"][0]["text"]
                 .as_str()
                 .unwrap()
                 .contains("Template created"));
-        } else {
-            // It failed as expected (Tool not found), or method missing.
-            // verifying failure is tricky if I want to confirm "Method missing" vs "Logic error".
         }
+    }
+
+    #[tokio::test]
+    async fn test_firewall_alias_tools() {
+        let mock_server = MockServer::start().await;
+
+        // Mock list aliases (Cluster)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/firewall/aliases"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [
+                    { "name": "web", "cidr": "10.0.0.1/32" }
+                ]
+            })))
+            .mount(&mock_server)
+            .await;
+
+        // Mock create alias (Node)
+        Mock::given(method("POST"))
+            .and(path("/api2/json/nodes/pve1/firewall/aliases"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        // Test List (Cluster)
+        let args = json!({ "level": "cluster" });
+        let res = server.call_tool("list_firewall_aliases", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("web"));
+
+        // Test Create (Node)
+        let args = json!({
+            "level": "node",
+            "node": "pve1",
+            "name": "local",
+            "cidr": "127.0.0.1/32"
+        });
+        let res = server.call_tool("create_firewall_alias", &args).await.unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
     }
 }

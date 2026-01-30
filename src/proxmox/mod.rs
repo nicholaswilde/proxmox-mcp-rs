@@ -5,6 +5,7 @@ pub mod ceph;
 pub mod client;
 pub mod cluster;
 pub mod error;
+pub mod firewall;
 pub mod hardware;
 pub mod mapping;
 pub mod metric_server;
