@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 
 #[derive(Parser, Debug)]
-#[command(author, version = env!("PROJECT_VERSION"), about, long_about = None)]
+#[command(author, version = env!("CARGO_PKG_VERSION"), about, long_about = None)]
 pub struct Args {
     #[command(subcommand)]
     pub command: Option<Commands>,
