@@ -18,10 +18,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement Cluster Management Tools**
   *Link: [./tracks/cluster_management/](./tracks/cluster_management/)*
 
----
-
-- [x] **Track: Add Version CLI Argument**
-  *Link: [./tracks/cli_version_20260131/](./tracks/cli_version_20260131/)*
 
 
 
