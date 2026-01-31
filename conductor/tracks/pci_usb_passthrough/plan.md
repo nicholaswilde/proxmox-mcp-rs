@@ -15,4 +15,4 @@
 
 ## Phase 3: Testing & Verification
 - [x] Task: Add unit tests in `src/tests.rs` mocking the hardware list endpoints and config update endpoints.
-- [ ] Task: Manual verification using `config.toml` (non-destructive listing, cautious adding).
+- [x] Task: Manual verification using `config.toml` (non-destructive listing, cautious adding).
