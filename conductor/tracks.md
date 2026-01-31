@@ -18,6 +18,24 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement Cluster Management Tools**
   *Link: [./tracks/cluster_management/](./tracks/cluster_management/)*
 
+---
+
+- [ ] **Track: Implement Advanced Storage Operations**
+  *Link: [./tracks/advanced_storage_20260131/](./tracks/advanced_storage_20260131/)*
+
+- [ ] **Track: Implement Advanced Firewall and Network Tools**
+  *Link: [./tracks/advanced_networking_20260131/](./tracks/advanced_networking_20260131/)*
+
+- [ ] **Track: Implement Node Maintenance and HA Tools**
+  *Link: [./tracks/node_maintenance_20260131/](./tracks/node_maintenance_20260131/)*
+
+- [ ] **Track: Implement Proxmox Backup Server (PBS) Integration**
+  *Link: [./tracks/pbs_integration_20260131/](./tracks/pbs_integration_20260131/)*
+
+- [ ] **Track: Implement Guest Agent Insights**
+  *Link: [./tracks/guest_insights_20260131/](./tracks/guest_insights_20260131/)*
+
+
 
 
 

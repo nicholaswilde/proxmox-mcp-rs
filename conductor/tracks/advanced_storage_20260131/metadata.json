@@ -1,0 +1,8 @@
+{
+  "track_id": "advanced_storage_20260131",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-31T08:50:00Z",
+  "updated_at": "2026-01-31T08:50:00Z",
+  "description": "Implement advanced storage tools: resize_vm_disk, move_vm_disk, list_zfs_pools, get_zfs_status."
+}

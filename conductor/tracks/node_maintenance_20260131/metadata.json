@@ -1,0 +1,8 @@
+{
+  "track_id": "node_maintenance_20260131",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-31T08:50:00Z",
+  "updated_at": "2026-01-31T08:50:00Z",
+  "description": "Implement node power control (reboot/shutdown) and HA maintenance mode management."
+}

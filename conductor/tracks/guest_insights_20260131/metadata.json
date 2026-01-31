@@ -1,0 +1,8 @@
+{
+  "track_id": "guest_insights_20260131",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-31T08:50:00Z",
+  "updated_at": "2026-01-31T08:50:00Z",
+  "description": "Implement IP address retrieval via QEMU Guest Agent."
+}
