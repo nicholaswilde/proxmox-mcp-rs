@@ -20,6 +20,7 @@ The primary users of **proxmox-mcp-rs** are DevOps engineers and system administ
 ## Key Features
 - **Comprehensive Proxmox Management:** Full lifecycle control over VMs (including templates), LXC containers (including bind mounts), snapshots, and backups. Includes bulk power management operations.
 - **Cluster & Resource Management:** Tools for managing nodes, pools, storage (including remote scanning), and networking across a Proxmox cluster.
+- **Hardware Passthrough:** Configure PCI (GPU) and USB device passthrough for VMs.
 - **Monitoring:** Async task tracking (UPID) and live resource reading (MCP Resources).
 - **Console Access:** Get URLs for NoVNC, xterm.js, or Spice consoles.
 - **System Management:** Manage system services, APT updates (including repositories), firewall rules (including security groups), aliases, and SSL certificates on Proxmox nodes.
