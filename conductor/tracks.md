@@ -35,6 +35,12 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Guest Agent Insights**
   *Link: [./tracks/guest_insights_20260131/](./tracks/guest_insights_20260131/)*
 
+---
+
+- [ ] **Track: Gemini Release Summary with Gitmoji**
+  *Link: [./tracks/gemini_release_summary_20260131/](./tracks/gemini_release_summary_20260131/)*
+
+
 
 
 

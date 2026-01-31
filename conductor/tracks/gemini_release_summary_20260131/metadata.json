@@ -1,0 +1,8 @@
+{
+  "track_id": "gemini_release_summary_20260131",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-31T08:55:00Z",
+  "updated_at": "2026-01-31T08:55:00Z",
+  "description": "update the release workflow to use gemini to draft a github release summary using gitmoji."
+}
