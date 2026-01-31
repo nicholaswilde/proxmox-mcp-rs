@@ -41,6 +41,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `shutdown_vm` / `shutdown_container`: Gracefully shutdown a VM/Container.
   - `reset_vm` / `reset_container`: Reset (Stop and Start) a VM/Container.
   - `reboot_vm`: Reboot a VM/Container.
+  - `template_vm`: Convert a VM to a template.
   - `delete_vm` / `delete_container`: Delete a VM or Container.
   - `clone_vm`: Clone a VM or Container.
   - `migrate_vm`: Migrate a VM or Container to another node.
@@ -59,7 +60,9 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `add_tag`: Add tags to a VM or Container.
   - `remove_tag`: Remove tags from a VM or Container.
   - `set_tags`: Set (overwrite) tags for a VM or Container.
+  - `add_lxc_mountpoint`: Add a standard mount point to an LXC container.
   - `add_lxc_bind_mount`: Add a bind mount to an LXC container.
+  - `remove_lxc_mountpoint`: Remove a mount point from an LXC container.
 
   **Snapshots & Backups**
   - `list_snapshots`: List snapshots for a VM or Container.
@@ -126,6 +129,13 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `create_usb_mapping`: Create a new USB resource mapping.
   - `update_usb_mapping`: Update an existing USB resource mapping.
   - `delete_usb_mapping`: Delete a USB resource mapping.
+
+  **Hardware Passthrough**
+  - `list_pci_devices`: List all available PCI devices on a node.
+  - `list_usb_devices`: List all available USB devices on a node.
+  - `add_pci_device`: Add a PCI device passthrough to a VM.
+  - `add_usb_device`: Add a USB device passthrough to a VM.
+  - `remove_vm_device`: Remove a PCI or USB passthrough device from a VM.
 
   **Ceph Cluster Management**
   - `get_ceph_status`: Get Ceph cluster status.
