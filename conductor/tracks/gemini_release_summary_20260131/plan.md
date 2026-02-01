@@ -7,13 +7,13 @@
 - [ ] Task: Conductor - User Manual Verification 'Data Collection' (Protocol in workflow.md)
 
 ## Phase 2: Gemini Integration
-- [ ] Task: Implement the Gemini API call to generate the summary.
-    - [ ] Sub-task: Create a Python or Node.js script `scripts/generate_release_summary.py` that takes changelog data and sends it to `gemini-2.0-flash` with a system prompt for gitmoji categorization.
-    - [ ] Sub-task: Write mock-based tests for the summary generator to ensure it handles various commit patterns and API responses.
+- [ ] Task: Configure the `run-gemini-cli` action to generate the summary.
+    - [ ] Sub-task: Draft a system prompt for Gemini that instructs it to use gitmojis and group changes by type.
+    - [ ] Sub-task: Create a test workflow file `.github/workflows/test-gemini-summary.yml` to verify the action configuration and prompt effectiveness using the `run-gemini-cli` action.
 - [ ] Task: Conductor - User Manual Verification 'Gemini Integration' (Protocol in workflow.md)
 
 ## Phase 3: Workflow Automation
 - [ ] Task: Update `.github/workflows/release.yml` to integrate the generation logic.
-    - [ ] Sub-task: Add a new job/step to run the scripts from Phase 1 & 2.
-    - [ ] Sub-task: Update the `gh release create` command to include the generated summary as the `--notes` argument.
+    - [ ] Sub-task: Add the `google-github-actions/run-gemini-cli` step to the workflow, passing the changelog data as input.
+    - [ ] Sub-task: Update the `gh release create` command to use the output from the Gemini action as the release notes.
 - [ ] Task: Conductor - User Manual Verification 'Workflow Automation' (Protocol in workflow.md)

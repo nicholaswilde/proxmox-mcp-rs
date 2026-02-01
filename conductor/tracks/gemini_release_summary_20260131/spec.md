@@ -4,7 +4,7 @@
 Update the GitHub release workflow to automatically generate a human-readable release summary using Google Gemini. The summary will use `gitmoji` to categorize changes, making releases more informative and visually consistent.
 
 ## Functional Requirements
-- **Gemini Integration:** Use the `gemini-2.0-flash` model via a GitHub Action (e.g., a custom script or a community action).
+- **Gemini Integration:** Use the `gemini-2.0-flash` model via the `google-github-actions/run-gemini-cli` GitHub Action.
 - **Data Source:** Provide Gemini with git commit messages, PR titles, and diff statistics since the last release tag.
 - **Categorization:** Instruct Gemini to group changes using appropriate `gitmoji` (e.g., :sparkles: for `feat`, :bug: for `fix`, :recycle: for `refactor`, :memo: for `docs`).
 - **Automatic Drafting:** The generated summary must be used as the body of the GitHub release created by the workflow.
