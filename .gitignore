@@ -30,3 +30,6 @@ target
 config.yaml
 config.toml
 config.json
+.env
+lcov.info
+target/llvm-cov-target/
