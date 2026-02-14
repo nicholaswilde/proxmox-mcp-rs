@@ -204,11 +204,11 @@ async fn auth_middleware(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use axum::{
         body::Body,
         http::{Request, StatusCode},
     };
+    use serde_json::json;
     use tower::ServiceExt; // for oneshot
 
     fn create_test_app(token: Option<String>) -> Router {
@@ -358,11 +358,14 @@ mod tests {
             .uri("/message?session_id=unknown")
             .method("POST")
             .header("content-type", "application/json")
-            .body(Body::from(serde_json::to_string(&json!({
-                "jsonrpc": "2.0",
-                "method": "ping",
-                "id": 1
-            })).unwrap()))
+            .body(Body::from(
+                serde_json::to_string(&json!({
+                    "jsonrpc": "2.0",
+                    "method": "ping",
+                    "id": 1
+                }))
+                .unwrap(),
+            ))
             .unwrap();
 
         let response = app.oneshot(req).await.unwrap();

@@ -1,7 +1,8 @@
 # :crab: Proxmox MCP RS :robot:
 
+[![Coveralls](https://img.shields.io/coveralls/github/nicholaswilde/proxmox-mcp-rs/main?style=for-the-badge&logo=coveralls)](https://coveralls.io/github/nicholaswilde/proxmox-mcp-rs?branch=main)
 [![task](https://img.shields.io/badge/Task-Enabled-brightgreen?style=for-the-badge&logo=task&logoColor=white)](https://taskfile.dev/#/)
-[![ci](https://img.shields.io/github/actions/workflow/status/nicholaswilde/proxmox-mcp-rs/ci.yml?label=ci&style=for-the-badge&branch=main)](https://github.com/nicholaswilde/proxmox-mcp-rs/actions/workflows/ci.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/nicholaswilde/proxmox-mcp-rs/ci.yml?label=ci&style=for-the-badge&branch=main&logo=github-actions)](https://github.com/nicholaswilde/proxmox-mcp-rs/actions/workflows/ci.yml)
 
 > [!WARNING]
 > This project is currently in active development (v0.x.x) and is **not production-ready**. Features may change, and breaking changes may occur without notice.

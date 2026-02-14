@@ -29,18 +29,25 @@ mod tests {
 
     #[test]
     fn test_args_parsing() {
-        let args = Args::try_parse_from(&[
+        let args = Args::try_parse_from([
             "proxmox-mcp-rs",
-            "--host", "1.2.3.4",
-            "--user", "root@pam",
-            "--password", "secret",
-            "--port", "8006",
+            "--host",
+            "1.2.3.4",
+            "--user",
+            "root@pam",
+            "--password",
+            "secret",
+            "--port",
+            "8006",
             "--no-verify-ssl",
-            "--log-level", "debug",
+            "--log-level",
+            "debug",
             "--log-file-enable",
-            "--server-type", "http",
-            "--lazy-mode"
-        ]).unwrap();
+            "--server-type",
+            "http",
+            "--lazy-mode",
+        ])
+        .unwrap();
 
         assert_eq!(args.host, Some("1.2.3.4".into()));
         assert_eq!(args.user, Some("root@pam".into()));
@@ -56,27 +63,26 @@ mod tests {
     #[test]
     fn test_args_token_requirements() {
         // Missing token_value
-        let res = Args::try_parse_from(&[
-            "proxmox-mcp-rs",
-            "--token-name", "mytoken"
-        ]);
+        let res = Args::try_parse_from(["proxmox-mcp-rs", "--token-name", "mytoken"]);
         assert!(res.is_err());
 
         // Missing token_name
-        let res = Args::try_parse_from(&[
-            "proxmox-mcp-rs",
-            "--token-value", "myvalue"
-        ]);
+        let res = Args::try_parse_from(["proxmox-mcp-rs", "--token-value", "myvalue"]);
         assert!(res.is_err());
 
         // Both provided
-        let args = Args::try_parse_from(&[
+        let args = Args::try_parse_from([
             "proxmox-mcp-rs",
-            "--token-name", "mytoken",
-            "--token-value", "myvalue",
-            "--host", "h",
-            "--user", "u"
-        ]).unwrap();
+            "--token-name",
+            "mytoken",
+            "--token-value",
+            "myvalue",
+            "--host",
+            "h",
+            "--user",
+            "u",
+        ])
+        .unwrap();
         assert_eq!(args.token_name, Some("mytoken".into()));
         assert_eq!(args.token_value, Some("myvalue".into()));
     }

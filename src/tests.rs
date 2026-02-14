@@ -438,7 +438,13 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("list_snapshots", &json!({ "node": "pve1", "vmid": 200, "type": "lxc" })).await.unwrap();
+        let res = server
+            .call_tool(
+                "list_snapshots",
+                &json!({ "node": "pve1", "vmid": 200, "type": "lxc" }),
+            )
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("[]"));
     }
 
@@ -802,17 +808,20 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let args = json!({ 
-            "storage": "nfs-backup", 
-            "type": "nfs", 
-            "content": "backup", 
+        let args = json!({
+            "storage": "nfs-backup",
+            "type": "nfs",
+            "content": "backup",
             "nodes": ["pve1", "pve2"],
             "enable": true,
             "server": "192.168.1.100",
             "export": "/backup"
         });
         let res = server.call_tool("add_storage", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("added"));
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
 
         // Test update_storage
         Mock::given(method("PUT"))
@@ -822,7 +831,10 @@ mod unit_tests {
             .await;
         let args = json!({ "storage": "nfs-backup", "content": "backup,iso" });
         let res = server.call_tool("update_storage", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("updated"));
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
 
         // Test delete_storage
         Mock::given(method("DELETE"))
@@ -832,7 +844,10 @@ mod unit_tests {
             .await;
         let args = json!({ "storage": "nfs-backup" });
         let res = server.call_tool("delete_storage", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test scan_storage_remote
         Mock::given(method("GET"))
@@ -842,8 +857,17 @@ mod unit_tests {
             })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("scan_storage_remote", &json!({ "node": "pve1", "type": "nfs", "server": "1.2.3.4" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("/backup"));
+        let res = server
+            .call_tool(
+                "scan_storage_remote",
+                &json!({ "node": "pve1", "type": "nfs", "server": "1.2.3.4" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("/backup"));
 
         // Test list_backups with VMID filter
         // I need a separate mock for backups that will override or be more specific.
@@ -857,7 +881,13 @@ mod unit_tests {
             })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("list_backups", &json!({ "node": "pve1", "storage": "backup-storage", "vmid": 100 })).await.unwrap();
+        let res = server
+            .call_tool(
+                "list_backups",
+                &json!({ "node": "pve1", "storage": "backup-storage", "vmid": 100 }),
+            )
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("100"));
     }
 
@@ -1418,7 +1448,10 @@ mod unit_tests {
         // Test Write File with Encode
         let args = json!({ "node": "pve1", "vmid": 100, "file": "/tmp/test2", "content": "YmFy", "encode": true });
         let res = server.call_tool("vm_write_file", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("File written"));
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("File written"));
     }
 
     #[tokio::test]
@@ -1732,8 +1765,17 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("update_role", &json!({ "roleid": "NewRole", "privs": "Sys.Audit", "append": true })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("updated"));
+        let res = server
+            .call_tool(
+                "update_role",
+                &json!({ "roleid": "NewRole", "privs": "Sys.Audit", "append": true }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
 
         // Test Delete Role
         Mock::given(method("DELETE"))
@@ -1741,8 +1783,14 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("delete_role", &json!({ "roleid": "NewRole" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_role", &json!({ "roleid": "NewRole" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test List ACLs
         let res = server.call_tool("list_acls", &json!({})).await.unwrap();
@@ -1843,8 +1891,14 @@ mod unit_tests {
             })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("get_apt_versions", &json!({ "node": "pve1" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("installed"));
+        let res = server
+            .call_tool("get_apt_versions", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("installed"));
     }
 
     #[tokio::test]
@@ -2365,8 +2419,14 @@ mod unit_tests {
             .mount(&mock_server)
             .await;
         let args = json!({ "level": "cluster", "name": "web", "cidr": "10.0.0.2/32" });
-        let res = server.call_tool("update_firewall_alias", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("updated"));
+        let res = server
+            .call_tool("update_firewall_alias", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
 
         // Test Delete (Cluster)
         Mock::given(method("DELETE"))
@@ -2375,8 +2435,14 @@ mod unit_tests {
             .mount(&mock_server)
             .await;
         let args = json!({ "level": "cluster", "name": "web" });
-        let res = server.call_tool("delete_firewall_alias", &args).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_firewall_alias", &args)
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test Error (Invalid Level)
         let args = json!({ "level": "invalid", "name": "fail" });
@@ -2522,8 +2588,17 @@ mod unit_tests {
             })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("list_security_group_rules", &json!({ "name": "web_servers" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("ACCEPT"));
+        let res = server
+            .call_tool(
+                "list_security_group_rules",
+                &json!({ "name": "web_servers" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("ACCEPT"));
 
         // Test add security group rule
         Mock::given(method("POST"))
@@ -2531,8 +2606,17 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("add_security_group_rule", &json!({ "name": "web_servers", "rule": "type=in,action=ACCEPT" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("added"));
+        let res = server
+            .call_tool(
+                "add_security_group_rule",
+                &json!({ "name": "web_servers", "rule": "type=in,action=ACCEPT" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("added"));
 
         // Test delete security group
         Mock::given(method("DELETE"))
@@ -2540,8 +2624,14 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("delete_security_group", &json!({ "name": "web_servers" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_security_group", &json!({ "name": "web_servers" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
     }
 
     #[tokio::test]
@@ -2609,20 +2699,47 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test get_ceph_status
-        let res = server.call_tool("get_ceph_status", &json!({ "node": "pve1" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("HEALTH_OK"));
+        let res = server
+            .call_tool("get_ceph_status", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("HEALTH_OK"));
 
         // Test list_ceph_pools
-        let res = server.call_tool("list_ceph_pools", &json!({ "node": "pve1" })).await.unwrap();
+        let res = server
+            .call_tool("list_ceph_pools", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("rbd"));
 
         // Test create_ceph_pool
-        let res = server.call_tool("create_ceph_pool", &json!({ "node": "pve1", "name": "newpool" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+        let res = server
+            .call_tool(
+                "create_ceph_pool",
+                &json!({ "node": "pve1", "name": "newpool" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("initiated"));
 
         // Test delete_ceph_pool
-        let res = server.call_tool("delete_ceph_pool", &json!({ "node": "pve1", "name": "rbd" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("initiated"));
+        let res = server
+            .call_tool(
+                "delete_ceph_pool",
+                &json!({ "node": "pve1", "name": "rbd" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("initiated"));
 
         // Test list_ceph_osds
         Mock::given(method("GET"))
@@ -2630,7 +2747,10 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("list_ceph_osds", &json!({ "node": "pve1" })).await.unwrap();
+        let res = server
+            .call_tool("list_ceph_osds", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("[]"));
 
         // Test list_ceph_monitors
@@ -2639,7 +2759,10 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("list_ceph_monitors", &json!({ "node": "pve1" })).await.unwrap();
+        let res = server
+            .call_tool("list_ceph_monitors", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("[]"));
     }
 
@@ -2679,27 +2802,57 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_replication_jobs
-        let res = server.call_tool("list_replication_jobs", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("100-0"));
+        let res = server
+            .call_tool("list_replication_jobs", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("100-0"));
 
         // Test create_replication_job
-        let res = server.call_tool("create_replication_job", &json!({ 
-            "id": "100-1", 
-            "target": "pve2",
-            "schedule": "*/15",
-            "rate": 10.5,
-            "comment": "high priority",
-            "enable": true
-        })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("100-1"));
+        let res = server
+            .call_tool(
+                "create_replication_job",
+                &json!({
+                    "id": "100-1",
+                    "target": "pve2",
+                    "schedule": "*/15",
+                    "rate": 10.5,
+                    "comment": "high priority",
+                    "enable": true
+                }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("100-1"));
 
         // Test update_replication_job
-        let res = server.call_tool("update_replication_job", &json!({ "id": "100-0", "comment": "updated" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("100-0"));
+        let res = server
+            .call_tool(
+                "update_replication_job",
+                &json!({ "id": "100-0", "comment": "updated" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("100-0"));
 
         // Test delete_replication_job
-        let res = server.call_tool("delete_replication_job", &json!({ "id": "100-0" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_replication_job", &json!({ "id": "100-0" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
     }
 
     #[tokio::test]
@@ -2758,31 +2911,76 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_sdn_zones
-        let res = server.call_tool("list_sdn_zones", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("myzone"));
+        let res = server
+            .call_tool("list_sdn_zones", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("myzone"));
 
         // Test create_sdn_zone
-        let res = server.call_tool("create_sdn_zone", &json!({ "zone": "newzone", "type": "simple" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("Zone newzone created"));
+        let res = server
+            .call_tool(
+                "create_sdn_zone",
+                &json!({ "zone": "newzone", "type": "simple" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Zone newzone created"));
 
         // Test delete_sdn_zone
-        let res = server.call_tool("delete_sdn_zone", &json!({ "zone": "myzone" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_sdn_zone", &json!({ "zone": "myzone" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test list_sdn_vnets
-        let res = server.call_tool("list_sdn_vnets", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("myvnet"));
+        let res = server
+            .call_tool("list_sdn_vnets", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("myvnet"));
 
         // Test create_sdn_vnet
-        let res = server.call_tool("create_sdn_vnet", &json!({ "vnet": "newvnet", "zone": "myzone" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("Vnet newvnet created"));
+        let res = server
+            .call_tool(
+                "create_sdn_vnet",
+                &json!({ "vnet": "newvnet", "zone": "myzone" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Vnet newvnet created"));
 
         // Test delete_sdn_vnet
-        let res = server.call_tool("delete_sdn_vnet", &json!({ "vnet": "myvnet" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_sdn_vnet", &json!({ "vnet": "myvnet" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test apply_sdn_changes
-        let res = server.call_tool("apply_sdn_changes", &json!({})).await.unwrap();
+        let res = server
+            .call_tool("apply_sdn_changes", &json!({}))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("UPID"));
     }
 
@@ -2822,20 +3020,50 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_metric_servers
-        let res = server.call_tool("list_metric_servers", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("influx"));
+        let res = server
+            .call_tool("list_metric_servers", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("influx"));
 
         // Test create_metric_server
-        let res = server.call_tool("create_metric_server", &json!({ "id": "newms", "type": "influxdb", "server": "localhost" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("Metric server newms created"));
+        let res = server
+            .call_tool(
+                "create_metric_server",
+                &json!({ "id": "newms", "type": "influxdb", "server": "localhost" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Metric server newms created"));
 
         // Test update_metric_server
-        let res = server.call_tool("update_metric_server", &json!({ "id": "influx", "server": "other" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("influx updated"));
+        let res = server
+            .call_tool(
+                "update_metric_server",
+                &json!({ "id": "influx", "server": "other" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("influx updated"));
 
         // Test delete_metric_server
-        let res = server.call_tool("delete_metric_server", &json!({ "id": "influx" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_metric_server", &json!({ "id": "influx" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
     }
 
     #[tokio::test]
@@ -2874,20 +3102,50 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_backup_schedules
-        let res = server.call_tool("list_backup_schedules", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("backup-123"));
+        let res = server
+            .call_tool("list_backup_schedules", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("backup-123"));
 
         // Test create_backup_schedule
-        let res = server.call_tool("create_backup_schedule", &json!({ "schedule": "weekly", "storage": "local" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("Backup schedule created"));
+        let res = server
+            .call_tool(
+                "create_backup_schedule",
+                &json!({ "schedule": "weekly", "storage": "local" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Backup schedule created"));
 
         // Test update_backup_schedule
-        let res = server.call_tool("update_backup_schedule", &json!({ "id": "backup-123", "schedule": "monthly" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("updated"));
+        let res = server
+            .call_tool(
+                "update_backup_schedule",
+                &json!({ "id": "backup-123", "schedule": "monthly" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
 
         // Test delete_backup_schedule
-        let res = server.call_tool("delete_backup_schedule", &json!({ "id": "backup-123" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_backup_schedule", &json!({ "id": "backup-123" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
     }
 
     #[tokio::test]
@@ -2928,20 +3186,47 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Test list_pci_mappings
-        let res = server.call_tool("list_pci_mappings", &json!({})).await.unwrap();
+        let res = server
+            .call_tool("list_pci_mappings", &json!({}))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("gpu"));
 
         // Test create_pci_mapping
-        let res = server.call_tool("create_pci_mapping", &json!({ "id": "newgpu", "map": "node=pve1,path=..." })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("PCI Mapping newgpu created"));
+        let res = server
+            .call_tool(
+                "create_pci_mapping",
+                &json!({ "id": "newgpu", "map": "node=pve1,path=..." }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("PCI Mapping newgpu created"));
 
         // Test list_usb_mappings
-        let res = server.call_tool("list_usb_mappings", &json!({})).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("mouse"));
+        let res = server
+            .call_tool("list_usb_mappings", &json!({}))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("mouse"));
 
         // Test create_usb_mapping
-        let res = server.call_tool("create_usb_mapping", &json!({ "id": "newusb", "map": "node=pve1,path=..." })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("USB Mapping newusb created"));
+        let res = server
+            .call_tool(
+                "create_usb_mapping",
+                &json!({ "id": "newusb", "map": "node=pve1,path=..." }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("USB Mapping newusb created"));
 
         // Test update_pci_mapping
         Mock::given(method("PUT"))
@@ -2949,8 +3234,17 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("update_pci_mapping", &json!({ "id": "gpu", "comment": "updated" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("gpu updated"));
+        let res = server
+            .call_tool(
+                "update_pci_mapping",
+                &json!({ "id": "gpu", "comment": "updated" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("gpu updated"));
 
         // Test delete_pci_mapping
         Mock::given(method("DELETE"))
@@ -2958,8 +3252,14 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("delete_pci_mapping", &json!({ "id": "gpu" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_pci_mapping", &json!({ "id": "gpu" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Test update_usb_mapping
         Mock::given(method("PUT"))
@@ -2967,8 +3267,17 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("update_usb_mapping", &json!({ "id": "mouse", "comment": "updated" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("mouse updated"));
+        let res = server
+            .call_tool(
+                "update_usb_mapping",
+                &json!({ "id": "mouse", "comment": "updated" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("mouse updated"));
 
         // Test delete_usb_mapping
         Mock::given(method("DELETE"))
@@ -2976,8 +3285,14 @@ mod unit_tests {
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
-        let res = server.call_tool("delete_usb_mapping", &json!({ "id": "mouse" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool("delete_usb_mapping", &json!({ "id": "mouse" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
     }
 
     #[tokio::test]
@@ -3033,8 +3348,17 @@ mod unit_tests {
         clients.insert("default".to_string(), client);
         let server = McpServer::new(clients, "default".to_string(), false);
 
-        let res = server.call_tool("list_firewall_aliases", &json!({ "level": "node", "node": "pve1" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("local_net"));
+        let res = server
+            .call_tool(
+                "list_firewall_aliases",
+                &json!({ "level": "node", "node": "pve1" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("local_net"));
     }
 
     #[tokio::test]
@@ -3042,7 +3366,9 @@ mod unit_tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("GET"))
-            .and(path("/api2/json/nodes/pve1/storage/local/content/iso-image.iso"))
+            .and(path(
+                "/api2/json/nodes/pve1/storage/local/content/iso-image.iso",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "data": { "size": 12345 }
             })))
@@ -3050,7 +3376,9 @@ mod unit_tests {
             .await;
 
         Mock::given(method("DELETE"))
-            .and(path("/api2/json/nodes/pve1/storage/local/content/iso-image.iso"))
+            .and(path(
+                "/api2/json/nodes/pve1/storage/local/content/iso-image.iso",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": null })))
             .mount(&mock_server)
             .await;
@@ -3060,11 +3388,29 @@ mod unit_tests {
         clients.insert("default".to_string(), client);
         let server = McpServer::new(clients, "default".to_string(), false);
 
-        let res = server.call_tool("get_storage_volume", &json!({ "node": "pve1", "storage": "local", "volume": "iso-image.iso" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("12345"));
+        let res = server
+            .call_tool(
+                "get_storage_volume",
+                &json!({ "node": "pve1", "storage": "local", "volume": "iso-image.iso" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("12345"));
 
-        let res = server.call_tool("delete_storage_content", &json!({ "node": "pve1", "storage": "local", "volume": "iso-image.iso" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("Deleted"));
+        let res = server
+            .call_tool(
+                "delete_storage_content",
+                &json!({ "node": "pve1", "storage": "local", "volume": "iso-image.iso" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("Deleted"));
     }
 
     #[tokio::test]
@@ -3085,8 +3431,14 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         let upid = "UPID:pve1:00001234:00005678:6000ABCD:vzdump:100:root@pam:";
-        let res = server.call_tool("read_task_log", &json!({ "node": "pve1", "upid": upid })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("log line 1"));
+        let res = server
+            .call_tool("read_task_log", &json!({ "node": "pve1", "upid": upid }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("log line 1"));
     }
 
     #[tokio::test]
@@ -3106,8 +3458,14 @@ mod unit_tests {
         clients.insert("default".to_string(), client);
         let server = McpServer::new(clients, "default".to_string(), false);
 
-        let res = server.call_tool("list_tasks", &json!({ "node": "pve1" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("UPID:pve1"));
+        let res = server
+            .call_tool("list_tasks", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("UPID:pve1"));
     }
 
     #[tokio::test]
@@ -3150,28 +3508,73 @@ mod unit_tests {
         let server = McpServer::new(clients, "default".to_string(), false);
 
         // Create Bridge
-        let res = server.call_tool("create_network_bridge", &json!({ "node": "pve1", "iface": "vmbr0", "bridge_ports": "eth0" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("created"));
+        let res = server
+            .call_tool(
+                "create_network_bridge",
+                &json!({ "node": "pve1", "iface": "vmbr0", "bridge_ports": "eth0" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
 
         // Create Bond
-        let res = server.call_tool("create_network_bond", &json!({ "node": "pve1", "iface": "bond0", "slaves": "eth1,eth2" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("created"));
+        let res = server
+            .call_tool(
+                "create_network_bond",
+                &json!({ "node": "pve1", "iface": "bond0", "slaves": "eth1,eth2" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("created"));
 
         // Update
-        let res = server.call_tool("update_network_interface", &json!({ "node": "pve1", "iface": "vmbr0", "address": "192.168.1.1/24" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("updated"));
+        let res = server
+            .call_tool(
+                "update_network_interface",
+                &json!({ "node": "pve1", "iface": "vmbr0", "address": "192.168.1.1/24" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("updated"));
 
         // Delete
-        let res = server.call_tool("delete_network_interface", &json!({ "node": "pve1", "iface": "vmbr0" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("deleted"));
+        let res = server
+            .call_tool(
+                "delete_network_interface",
+                &json!({ "node": "pve1", "iface": "vmbr0" }),
+            )
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("deleted"));
 
         // Apply
-        let res = server.call_tool("apply_network_config", &json!({ "node": "pve1" })).await.unwrap();
+        let res = server
+            .call_tool("apply_network_config", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
         assert!(res["content"][0]["text"].as_str().unwrap().contains("UPID"));
 
         // Revert
-        let res = server.call_tool("revert_network_config", &json!({ "node": "pve1" })).await.unwrap();
-        assert!(res["content"][0]["text"].as_str().unwrap().contains("reverted"));
+        let res = server
+            .call_tool("revert_network_config", &json!({ "node": "pve1" }))
+            .await
+            .unwrap();
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("reverted"));
     }
 
     #[tokio::test]
@@ -3187,7 +3590,7 @@ mod unit_tests {
             .await;
 
         let client = create_test_client(&mock_server.uri());
-        // We set a 1s timeout, but wait_for_task sleeps 2s. 
+        // We set a 1s timeout, but wait_for_task sleeps 2s.
         // It should timeout after the first check and before the first sleep or during it.
         let res = client.wait_for_task("pve1", "UPID:pve1:...", 1).await;
         assert!(res.is_err());

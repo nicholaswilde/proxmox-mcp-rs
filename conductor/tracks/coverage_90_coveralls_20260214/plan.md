@@ -14,10 +14,10 @@
 ## Phase 3: Server and Utility Coverage
 - [x] Task: Write tests to increase coverage for `src/http_server.rs` to >90%.
 - [x] Task: Write tests to increase coverage for `src/cli.rs` and `src/settings.rs` to >90%.
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Server and Utility Coverage' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Server and Utility Coverage' (Protocol in workflow.md)
 
 ## Phase 4: Coveralls Integration and Finalization
-- [ ] Task: Perform final coverage verification to ensure total line coverage is >90%.
-- [ ] Task: Update `README.md` with the Coveralls.io coverage badge.
-- [ ] Task: Manually upload the final LCOV report to Coveralls.io and verify the dashboard.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Coveralls Integration and Finalization' (Protocol in workflow.md)
+- [x] Task: Perform final coverage verification to ensure total line coverage is >90%.
+- [x] Task: Update `README.md` with the Coveralls.io coverage badge.
+- [x] Task: Manually upload the final LCOV report to Coveralls.io and verify the dashboard.
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Coveralls Integration and Finalization' (Protocol in workflow.md)

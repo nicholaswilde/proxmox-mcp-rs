@@ -1,6 +1,8 @@
 ---
 version: '3'
 
+dotenv: ['.env']
+
 vars:
   LOCAL_IP:
     sh: hostname -I | awk '{print $1}'
@@ -127,21 +129,24 @@ tasks:
     cmds:
       - cargo clippy -- -D warnings
 
-  cover:
+  coverage:
     desc: Run tests and generate coverage report (stdout summary)
     cmds:
-      - cargo llvm-cov --all-features --workspace
+      - cargo llvm-cov --all-features --workspace --summary-only
 
-  cover:html:
-    desc: Run tests and generate HTML coverage report
-    cmds:
-      - cargo llvm-cov --all-features --workspace --html
-      - echo "Report generated in target/llvm-cov/html/index.html"
-
-  cover:lcov:
+  coverage:report:
     desc: Run tests and generate LCOV coverage report (for Coveralls)
     cmds:
       - cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+  coverage:upload:
+    desc: Upload coverage report to Coveralls
+    precondition:
+      - sh: test -f lcov.info
+        msg: "lcov.info doesn't exist"
+    cmds:
+      - coveralls report lcov.info  -n -r {{ .COVERALLS_REPO_TOKEN }}
+    silent: true
 
   docker:build:
     desc: Build the Docker image for multiple architectures (amd64, arm64)
