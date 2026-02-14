@@ -127,6 +127,22 @@ tasks:
     cmds:
       - cargo clippy -- -D warnings
 
+  cover:
+    desc: Run tests and generate coverage report (stdout summary)
+    cmds:
+      - cargo llvm-cov --all-features --workspace
+
+  cover:html:
+    desc: Run tests and generate HTML coverage report
+    cmds:
+      - cargo llvm-cov --all-features --workspace --html
+      - echo "Report generated in target/llvm-cov/html/index.html"
+
+  cover:lcov:
+    desc: Run tests and generate LCOV coverage report (for Coveralls)
+    cmds:
+      - cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
   docker:build:
     desc: Build the Docker image for multiple architectures (amd64, arm64)
     cmds:

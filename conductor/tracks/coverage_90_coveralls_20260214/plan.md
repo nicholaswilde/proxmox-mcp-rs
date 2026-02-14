@@ -1,10 +1,10 @@
 # Plan: Coverage >90% and Coveralls.io Integration
 
 ## Phase 1: Coverage Tooling and Baseline
-- [ ] Task: Install and configure `cargo-llvm-cov` locally.
-- [ ] Task: Add coverage tasks (`cover`, `cover:html`, `cover:lcov`) to `Taskfile.yml`.
-- [ ] Task: Generate a baseline coverage report to identify current gaps.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Coverage Tooling and Baseline' (Protocol in workflow.md)
+- [x] Task: Install and configure `cargo-llvm-cov` locally.
+- [x] Task: Add coverage tasks (`cover`, `cover:html`, `cover:lcov`) to `Taskfile.yml`.
+- [x] Task: Generate a baseline coverage report to identify current gaps.
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Coverage Tooling and Baseline' (Protocol in workflow.md)
 
 ## Phase 2: Core Logic and Proxmox Client Coverage
 - [ ] Task: Write tests to increase coverage for `src/mcp.rs` to >90%.
