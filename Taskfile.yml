@@ -8,6 +8,22 @@ vars:
     sh: hostname -I | awk '{print $1}'
 
 tasks:
+  encrypt:
+    desc: Encrypt files using SOPS
+    preconditions:
+      - sh: test -f .env
+        msg: ".env file doens't exist"
+    cmds:
+      - sops -e --input-type dotenv --output-type dotenv .env > .env.enc
+
+  decrypt:
+    desc: Decrypt files using SOPS
+    preconditions:
+      - sh: test -f .env.enc
+        msg: ".env.enc doesn't exist"
+    cmds:
+      - sops -d --input-type dotenv --output-type dotenv .env.enc > .env
+
   clippy:
     desc: Run cargo clippy
     cmds:
