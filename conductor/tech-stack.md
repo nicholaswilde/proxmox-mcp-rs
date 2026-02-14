@@ -20,4 +20,6 @@
 ## Testing
 - **API Mocking:** [WireMock](https://docs.rs/wiremock/) - For integration testing without requiring a live Proxmox instance.
 - **Integration Testing:** High-level end-to-end testing verifying `McpServer` logic against mocked APIs (`tests/mcp_integration.rs`).
+- **Coverage:** [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov) - For generating precise code coverage reports.
+- **Reporting:** [Coveralls.io](https://coveralls.io/) - For tracking and displaying code coverage progress.
 - **Utilities:** [Tempfile](https://docs.rs/tempfile/) - For testing file-based logging and configuration loading.
