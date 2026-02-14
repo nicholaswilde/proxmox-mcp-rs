@@ -285,4 +285,56 @@ mod tests {
         };
         assert!(s.validate().is_err());
     }
+
+    #[test]
+    fn test_validation_instances() {
+        let s = Settings {
+            instances: Some(vec![InstanceConfig {
+                name: Some("test".into()),
+                host: Some("h".into()),
+                user: Some("u".into()),
+                password: Some("p".into()),
+                ..Default::default()
+            }]),
+            ..Default::default()
+        };
+        assert!(s.validate().is_ok());
+
+        let s_missing = Settings::default();
+        assert!(s_missing.validate().is_err());
+
+        let s_fail = Settings {
+            instances: Some(vec![InstanceConfig {
+                name: Some("test".into()),
+                host: None,
+                ..Default::default()
+            }]),
+            ..Default::default()
+        };
+        assert!(s_fail.validate().is_err());
+    }
+
+    #[test]
+    fn test_env_var_instances() {
+        std::env::set_var("PROXMOX_INSTANCES__0__NAME", "env-inst");
+        std::env::set_var("PROXMOX_INSTANCES__0__HOST", "1.1.1.1");
+        std::env::set_var("PROXMOX_INSTANCES__0__USER", "root");
+        std::env::set_var("PROXMOX_INSTANCES__0__PASSWORD", "secret");
+        std::env::set_var("PROXMOX_INSTANCES__0__PORT", "8006");
+        std::env::set_var("PROXMOX_INSTANCES__0__NO_VERIFY_SSL", "true");
+
+        let settings = Settings::new(None).unwrap();
+        let inst = &settings.instances.unwrap()[0];
+        assert_eq!(inst.name, Some("env-inst".into()));
+        assert_eq!(inst.host, Some("1.1.1.1".into()));
+        assert_eq!(inst.port, Some(8006));
+        assert_eq!(inst.no_verify_ssl, Some(true));
+
+        std::env::remove_var("PROXMOX_INSTANCES__0__NAME");
+        std::env::remove_var("PROXMOX_INSTANCES__0__HOST");
+        std::env::remove_var("PROXMOX_INSTANCES__0__USER");
+        std::env::remove_var("PROXMOX_INSTANCES__0__PASSWORD");
+        std::env::remove_var("PROXMOX_INSTANCES__0__PORT");
+        std::env::remove_var("PROXMOX_INSTANCES__0__NO_VERIFY_SSL");
+    }
 }

@@ -204,6 +204,7 @@ async fn auth_middleware(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -307,5 +308,238 @@ mod tests {
 
         let response = app.oneshot(req).await.unwrap();
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_sse_handler() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let state = AppState {
+            mcp_server,
+            sessions: Arc::new(DashMap::new()),
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/sse", get(sse_handler))
+            .with_state(state);
+
+        let req = Request::builder().uri("/sse").body(Body::empty()).unwrap();
+        let response = app.oneshot(req).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get("content-type").unwrap(),
+            "text/event-stream"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_message_handler_not_found() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let state = AppState {
+            mcp_server,
+            sessions: Arc::new(DashMap::new()),
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/message", post(message_handler))
+            .with_state(state);
+
+        let req = Request::builder()
+            .uri("/message?session_id=unknown")
+            .method("POST")
+            .header("content-type", "application/json")
+            .body(Body::from(serde_json::to_string(&json!({
+                "jsonrpc": "2.0",
+                "method": "ping",
+                "id": 1
+            })).unwrap()))
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_message_handler_success() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let sessions = Arc::new(DashMap::new());
+        let (tx, mut rx) = mpsc::channel(100);
+        let session_id = "test-session".to_string();
+        sessions.insert(session_id.clone(), tx);
+
+        let state = AppState {
+            mcp_server,
+            sessions,
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/message", post(message_handler))
+            .with_state(state);
+
+        let req = Request::builder()
+            .uri(format!("/message?session_id={}", session_id))
+            .method("POST")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::to_string(&json!({
+                    "jsonrpc": "2.0",
+                    "method": "ping",
+                    "id": 1
+                }))
+                .unwrap(),
+            ))
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::ACCEPTED);
+
+        // Wait for spawned task to send message
+        let msg = rx.recv().await.unwrap().unwrap();
+        // Event is opaque, but receiving it confirms the path works
+        let debug_str = format!("{:?}", msg);
+        assert!(debug_str.contains("data"));
+    }
+
+    #[tokio::test]
+    async fn test_message_handler_notification() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let sessions = Arc::new(DashMap::new());
+        let (tx, mut rx) = mpsc::channel(100);
+        let session_id = "test-session".to_string();
+        sessions.insert(session_id.clone(), tx);
+
+        let state = AppState {
+            mcp_server,
+            sessions,
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/message", post(message_handler))
+            .with_state(state);
+
+        let req = Request::builder()
+            .uri(format!("/message?session_id={}", session_id))
+            .method("POST")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::to_string(&json!({
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "load_all_tools",
+                        "arguments": {}
+                    },
+                    "id": 1
+                }))
+                .unwrap(),
+            ))
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::ACCEPTED);
+
+        // Receive response
+        let _ = rx.recv().await.unwrap().unwrap();
+        // Receive notification
+        let msg = rx.recv().await.unwrap().unwrap();
+        let debug_str = format!("{:?}", msg);
+        assert!(debug_str.contains("list_changed"));
+    }
+
+    #[tokio::test]
+    async fn test_message_handler_invalid_json() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let state = AppState {
+            mcp_server,
+            sessions: Arc::new(DashMap::new()),
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/message", post(message_handler))
+            .with_state(state);
+
+        let req = Request::builder()
+            .uri("/message?session_id=test")
+            .method("POST")
+            .header("content-type", "application/json")
+            .body(Body::from("invalid json"))
+            .unwrap();
+
+        let response = app.oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn test_message_handler_error() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let sessions = Arc::new(DashMap::new());
+        let (tx, mut rx) = mpsc::channel(100);
+        let session_id = "test-session".to_string();
+        sessions.insert(session_id.clone(), tx);
+
+        let state = AppState {
+            mcp_server,
+            sessions,
+            auth_token: None,
+        };
+
+        let app = Router::new()
+            .route("/message", post(message_handler))
+            .with_state(state);
+
+        // Request a tool that doesn't exist to trigger error
+        let req = Request::builder()
+            .uri(format!("/message?session_id={}", session_id))
+            .method("POST")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::to_string(&json!({
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                        "name": "non_existent_tool",
+                        "arguments": {}
+                    },
+                    "id": 1
+                }))
+                .unwrap(),
+            ))
+            .unwrap();
+
+        let _ = app.oneshot(req).await.unwrap();
+
+        let msg = rx.recv().await.unwrap().unwrap();
+        let debug_str = format!("{:?}", msg);
+        assert!(debug_str.contains("error"));
+        assert!(debug_str.contains("-32603"));
     }
 }

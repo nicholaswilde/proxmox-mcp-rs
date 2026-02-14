@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::cli::Args;
-    use clap::CommandFactory;
+    use clap::{CommandFactory, Parser};
 
     #[test]
     fn test_version_format() {
@@ -25,5 +25,59 @@ mod tests {
             "Version should start with a number: {}",
             version
         );
+    }
+
+    #[test]
+    fn test_args_parsing() {
+        let args = Args::try_parse_from(&[
+            "proxmox-mcp-rs",
+            "--host", "1.2.3.4",
+            "--user", "root@pam",
+            "--password", "secret",
+            "--port", "8006",
+            "--no-verify-ssl",
+            "--log-level", "debug",
+            "--log-file-enable",
+            "--server-type", "http",
+            "--lazy-mode"
+        ]).unwrap();
+
+        assert_eq!(args.host, Some("1.2.3.4".into()));
+        assert_eq!(args.user, Some("root@pam".into()));
+        assert_eq!(args.password, Some("secret".into()));
+        assert_eq!(args.port, Some(8006));
+        assert!(args.no_verify_ssl);
+        assert_eq!(args.log_level, "debug");
+        assert!(args.log_file_enable);
+        assert_eq!(args.server_type, Some("http".into()));
+        assert!(args.lazy_mode);
+    }
+
+    #[test]
+    fn test_args_token_requirements() {
+        // Missing token_value
+        let res = Args::try_parse_from(&[
+            "proxmox-mcp-rs",
+            "--token-name", "mytoken"
+        ]);
+        assert!(res.is_err());
+
+        // Missing token_name
+        let res = Args::try_parse_from(&[
+            "proxmox-mcp-rs",
+            "--token-value", "myvalue"
+        ]);
+        assert!(res.is_err());
+
+        // Both provided
+        let args = Args::try_parse_from(&[
+            "proxmox-mcp-rs",
+            "--token-name", "mytoken",
+            "--token-value", "myvalue",
+            "--host", "h",
+            "--user", "u"
+        ]).unwrap();
+        assert_eq!(args.token_name, Some("mytoken".into()));
+        assert_eq!(args.token_value, Some("myvalue".into()));
     }
 }
