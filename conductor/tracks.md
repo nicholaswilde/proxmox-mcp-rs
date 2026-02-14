@@ -40,6 +40,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Gemini Release Summary with Gitmoji**
   *Link: [./tracks/gemini_release_summary_20260131/](./tracks/gemini_release_summary_20260131/)*
 
+- [ ] **Track: Increase code coverage to >90% and integrate with Coveralls.io.**
+  *Link: [./tracks/coverage_90_coveralls_20260214/](./tracks/coverage_90_coveralls_20260214/)*
+
 
 
 
