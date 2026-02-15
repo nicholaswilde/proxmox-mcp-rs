@@ -9,6 +9,8 @@ This track focuses on reducing the token footprint of the MCP server during agen
 - **Tool Consolidation**: Group related granular tools into unified, multi-purpose tools (e.g., merging `start_vm`, `stop_vm`, etc., into a single `vm_power_action`) to reduce the total number of tools and their associated schema tokens.
 - **Resource Metadata Optimization**: Update MCP resource names and descriptions to be more concise.
 - **Schema Optimization**: Review JSON schema definitions for tools to ensure they are as compact as possible without losing structural integrity.
+- **Documentation Sync**: Update `README.md` and any other user-facing documentation to reflect tool consolidation and schema changes.
+- **Test Alignment**: Update all integration and unit tests to align with consolidated tools and thinned response payloads.
 
 ## Non-Functional Requirements
 - **Compatibility**: Ensure that the optimized payloads still provide sufficient information for the agent to perform its tasks correctly.

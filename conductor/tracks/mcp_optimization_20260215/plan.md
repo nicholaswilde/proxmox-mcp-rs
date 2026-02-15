@@ -22,7 +22,8 @@
 - [ ] Task: Identify tool groups suitable for consolidation (e.g., VM power actions, Firewall management, Storage operations).
 - [ ] Task: Implement consolidated tools in `src/mcp.rs` (e.g., `vm_power_action`, `manage_firewall_alias`).
 - [ ] Task: Deprecate or remove redundant granular tools.
-- [ ] Task: Update `tests/mcp_integration.rs` to use consolidated tools.
+- [ ] Task: Update `tests/mcp_integration.rs` and any relevant unit tests to use consolidated tools.
+- [ ] Task: Update `README.md` to reflect the new consolidated tool list and usage.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Tool Consolidation' (Protocol in workflow.md)
 
 ## Phase 5: Resource & Schema Refinement
