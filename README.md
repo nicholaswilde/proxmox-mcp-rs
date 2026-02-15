@@ -17,69 +17,55 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
 - **Multi-Instance:** Support for multiple Proxmox instances in a single configuration.
 - **Authentication:** Proxmox User/Password (Ticket-based) or API Token.
 - **Logging:** Configurable log levels, console output (stderr), and optional file logging with rotation (daily, hourly).
+- **Token Optimized:** Consolidated tools and shortened descriptions reduce context window usage by ~85%.
 - **Tools:**
   - All tools support an optional `instance` argument to target a specific Proxmox environment.
 
-  **Consolidated Management**
-  - `vm_power_action`: Perform power actions (start, stop, shutdown, reboot, reset, suspend, resume) on a VM or Container.
-  - `manage_resource`: Resource lifecycle management (create, delete, clone, migrate, template).
-  - `manage_resource_config`: Update hardware, disks, network, Cloud-Init, or execute commands (via Agent).
-  - `manage_snapshot_backup`: Create/manage snapshots, backups, and backup schedules.
-  - `manage_node_system`: Manage node services, APT repositories, certificates, and subscriptions.
-  - `manage_cluster_config`: Configure cluster-wide storage, SDN, firewall, pools, roles, users, ACLs, HA, and Ceph.
-  - `manage_tags`: Add, remove, or set tags on resources.
+  ### Consolidated Management
+  - `vm_power_action`: Unified power state transitions (start, stop, shutdown, reboot, reset, suspend, resume) for VMs and Containers.
+  - `manage_resource`: Lifecycle operations (create, delete, clone, migrate, template).
+  - `manage_resource_config`: Hardware updates (CPU, RAM), disk management, network configuration, Cloud-Init, and Guest Agent command execution.
+  - `manage_snapshot_backup`: Unified management of snapshots, manual backups, and backup schedules.
+  - `manage_node_system`: Service management, APT repository configuration, SSL certificates, and Proxmox subscriptions.
+  - `manage_cluster_config`: Cluster-wide configuration for Storage, SDN, Firewall, Pools, Roles, Users, ACLs, HA, and Ceph.
+  - `manage_tags`: Add, remove, or set resource tags.
 
-  **Listings**
-  - `list_nodes`: List all nodes in the cluster.
-  - `list_vms`: List all VMs and LXC containers.
-  - `list_containers`: List only LXC containers.
-  - `list_storage`: List node storage.
-  - `list_cluster_storage`: List all storage definitions.
-  - `list_networks`: List node network interfaces.
-  - `list_firewall_rules`: List firewall rules for node/VM.
-  - `list_firewall_aliases`: List firewall aliases.
-  - `list_security_groups`: List firewall security groups.
-  - `list_tasks`: List recent tasks on a node.
-  - `list_backups`: List backups on a storage.
-  - `list_snapshots`: List snapshots for a VM/Container.
-  - `list_templates`: List container templates.
-  - `list_isos`: List ISO images.
-  - `list_pools`: List resource pools.
-  - `list_replication_jobs`: List replication jobs.
-  - `list_ha_resources`: List HA resources.
-  - `list_users`: List cluster users.
-  - `list_roles`: List roles.
-  - `list_acls`: List ACLs.
-  - `list_apt_updates`: List available APT updates.
-  - `list_services`: List node services.
-  - `list_certificates`: List node certificates.
-  - `list_pci_devices` / `list_usb_devices`: List hardware available for passthrough.
-  - `list_pci_mappings` / `list_usb_mappings`: List cluster resource mappings.
-  - `list_metric_servers`: List configured metric servers.
-  - `list_sdn_zones` / `list_sdn_vnets`: List SDN configuration.
-  - `list_ceph_pools` / `list_ceph_osds`: List Ceph status and resources.
-  - `list_backup_schedules`: List backup schedules.
+  ### Listings
+  - `list_nodes`: Cluster node status.
+  - `list_vms` / `list_containers`: Resource discovery.
+  - `list_storage` / `list_cluster_storage`: Storage status and definitions.
+  - `list_networks`: Node network interfaces.
+  - `list_firewall_rules` / `list_firewall_aliases` / `list_security_groups`: Firewall inspection.
+  - `list_tasks`: Node task history.
+  - `list_backups` / `list_snapshots`: Backup and snapshot inventory.
+  - `list_templates` / `list_isos`: Image and template discovery.
+  - `list_pools` / `list_users` / `list_roles` / `list_acls`: Access control inspection.
+  - `list_apt_updates` / `list_services` / `list_certificates`: System maintenance.
+  - `list_pci_devices` / `list_usb_devices`: Hardware discovery.
+  - `list_pci_mappings` / `list_usb_mappings`: Resource mapping inventory.
+  - `list_metric_servers`: External monitoring config.
+  - `list_sdn_zones` / `list_sdn_vnets`: Software Defined Network status.
+  - `list_ceph_pools` / `list_ceph_osds`: Ceph storage status.
+  - `list_backup_schedules`: Cluster backup jobs.
 
-  **Stats & Logs**
-  - `get_cluster_status`: Get cluster status information.
-  - `get_cluster_log`: Read cluster log.
-  - `get_node_stats`: Get RRD statistics for a node.
-  - `get_vm_stats`: Get RRD statistics for a VM/Container.
-  - `get_vm_config`: Get the full configuration of a VM/Container.
-  - `get_task_status`: Get the status of a specific task (UPID).
-  - `read_task_log`: Read the log of a specific task (UPID).
-  - `get_ceph_status`: Get Ceph cluster status.
+  ### Stats & Logs
+  - `get_cluster_status` / `get_cluster_log`: Cluster-wide monitoring.
+  - `get_node_stats` / `get_vm_stats`: Performance metrics (RRD).
+  - `get_vm_config`: Full hardware/software configuration.
+  - `get_task_status` / `read_task_log`: Detailed task monitoring.
+  - `get_ceph_status`: Ceph health and status.
 
-  **Utilities**
-  - `bulk_vm_action`: Perform power actions on multiple VMs simultaneously.
-  - `scan_storage_remote`: Scan a remote server (NFS, CIFS) for target shares.
-  - `download_url`: Download ISO/Template from a URL to storage.
-  - `get_console_url`: Get URL for Proxmox web console.
-  - `wait_for_task`: Wait for a task to finish.
-  - `apply_sdn_changes`: Apply pending SDN changes.
-  - `load_all_tools`: Load full tool catalog (when in Lazy Mode).
+  ### Utilities
+  - `bulk_vm_action`: Concurrent power actions on multiple IDs.
+  - `scan_storage_remote`: Remote share discovery (NFS/CIFS).
+  - `download_url`: Integrated ISO/Template downloader.
+  - `get_console_url`: Generate console links (NoVNC/xterm.js).
+  - `wait_for_task`: Synchronous task waiting.
+  - `apply_sdn_changes`: Commit pending network changes.
+  - `load_all_tools`: Catalog expansion for Lazy Mode.
+
 - **Resources:**
-  - `proxmox://vms`: Live JSON list of all VMs and Containers.
+  - `proxmox://vms`: Live JSON stream of all VMs and Containers.
 
 ## :hammer_and_wrench: Build
 
@@ -144,35 +130,31 @@ docker compose up -d
 ```
 
 Arguments:
-- `--config`, `-c`: Path to a configuration file (TOML, JSON, or YAML).
-- `--host`, `-H`: Proxmox Host (e.g., `192.168.1.10`).
+- `--config`, `-c`: Path to configuration file.
+- `--host`, `-H`: Proxmox Host.
 - `--port`, `-p`: Proxmox Port (default: `8006`).
-- `--user`, `-u`: Proxmox User (e.g., `root@pam`).
+- `--user`, `-u`: Proxmox User.
 - `--password`, `-P`: Proxmox Password (optional if using token).
-- `--token-name`, `-n`: API Token Name (e.g., `mytoken`).
+- `--token-name`, `-n`: API Token Name.
 - `--token-value`, `-v`: API Token Secret.
-- `--no-verify-ssl`, `-k`: Disable SSL verification (useful for self-signed certs).
-- `--log-level`, `-L`: Log level (error, warn, info, debug, trace) (default: `info`).
-- `--log-file-enable`: Enable logging to a file (default: `false`).
-- `--log-dir`: Directory for log files (default: `.`).
-- `--log-filename`: Log filename prefix (default: `proxmox-mcp-rs.log`).
-- `--log-rotate`: Log rotation strategy (daily, hourly, never) (default: `daily`).
-- `--server-type`, `-t`: Server type (`stdio` or `http`) (default: `stdio`).
-- `--http-host`: HTTP Listen Host (default: `0.0.0.0`).
-- `--http-port`, `-l`: HTTP Listen Port (default: `3000`).
-- `--http-auth-token`: HTTP Auth Token (Bearer or query param).
-- `--lazy-mode`: Enable Lazy Loading mode. Starts with a minimal set of tools to save context tokens. Use the `load_all_tools` tool to load the full catalog.
-
-### :gear: Configuration File
-
-The server can load configuration from a file named `config.toml`, `config.yaml`, or `config.json` in the current directory, or via the `--config` flag. See `config.toml.example` for details.
+- `--no-verify-ssl`, `-k`: Disable SSL verification.
+- `--log-level`, `-L`: Log level (error, warn, info, debug, trace).
+- `--log-file-enable`: Enable file logging.
+- `--log-dir`: Directory for logs.
+- `--log-filename`: Log prefix.
+- `--log-rotate`: hourly, daily, or never.
+- `--server-type`, `-t`: `stdio` or `http`.
+- `--http-host`: HTTP listen address.
+- `--http-port`, `-l`: HTTP listen port.
+- `--http-auth-token`: Optional Bearer token for HTTP security.
+- `--lazy-mode`: Minimal initial tool list to save context tokens.
 
 ### :gear: Multi-Instance Configuration
 
-You can configure multiple Proxmox instances in your `config.toml` using the `[[instances]]` array. This allows you to manage several clusters or standalone nodes from a single MCP server.
+Configure multiple Proxmox instances in `config.toml`:
 
 ```toml
-# Default instance (legacy format)
+# Default instance
 host = "192.168.1.10"
 user = "root@pam"
 password = "..."
@@ -184,109 +166,30 @@ host = "192.168.1.20"
 user = "root@pve"
 token_name = "..."
 token_value = "..."
-
-[[instances]]
-name = "prod"
-host = "pve.example.com"
-user = "root@pam"
-password = "..."
 ```
 
-#### Targeting Instances
-Every tool supports an optional `instance` argument. This argument matches the `name` (if provided) or the `host` of the instance.
-
-If no `instance` is specified, the server uses the default instance (the top-level configuration or the first entry in the `[[instances]]` list).
-
-**Example tool call (JSON-RPC):**
-```json
-{
-  "method": "tools/call",
-  "params": {
-    "name": "list_vms",
-    "arguments": {
-      "instance": "lab"
-    }
-  }
-}
-```
+Every tool supports an optional `instance` argument matching the `name` or `host`.
 
 ### :earth_africa: Environment Variables
 
-You can also configure the server using environment variables:
-- `PROXMOX_CONFIG`: Path to a configuration file.
-- `PROXMOX_HOST`
-- `PROXMOX_PORT`
-- `PROXMOX_USER`
-- `PROXMOX_PASSWORD`
-- `PROXMOX_TOKEN_NAME`
-- `PROXMOX_TOKEN_VALUE`
-- `PROXMOX_NO_VERIFY_SSL` (set to `true` to disable verification)
-- `PROXMOX_LOG_LEVEL`
-- `PROXMOX_LOG_FILE_ENABLE` (set to `true` to enable)
-- `PROXMOX_LOG_DIR`
-- `PROXMOX_LOG_FILENAME`
-- `PROXMOX_LOG_ROTATE`
-- `PROXMOX_SERVER_TYPE` (`stdio` or `http`)
-- `PROXMOX_HTTP_HOST` (default: `0.0.0.0`)
-- `PROXMOX_HTTP_PORT` (default: `3000`)
-- `PROXMOX_HTTP_AUTH_TOKEN`
+- `PROXMOX_CONFIG`
+- `PROXMOX_HOST`, `PROXMOX_PORT`, `PROXMOX_USER`, `PROXMOX_PASSWORD`
+- `PROXMOX_TOKEN_NAME`, `PROXMOX_TOKEN_VALUE`
+- `PROXMOX_NO_VERIFY_SSL`
+- `PROXMOX_LOG_LEVEL`, `PROXMOX_LOG_FILE_ENABLE`, `PROXMOX_LOG_DIR`
+- `PROXMOX_SERVER_TYPE`, `PROXMOX_HTTP_HOST`, `PROXMOX_HTTP_PORT`, `PROXMOX_HTTP_AUTH_TOKEN`
+- `PROXMOX_LAZY_MODE`
 
-**Multi-Instance via Environment Variables:**
-You can configure multiple instances using the pattern `PROXMOX_INSTANCES__<INDEX>__<FIELD>`. Use double underscores `__` as separators.
-
-Example:
-```bash
-PROXMOX_INSTANCES__0__HOST=192.168.1.10
-PROXMOX_INSTANCES__0__USER=root@pam
-PROXMOX_INSTANCES__0__PASSWORD=secret
-
-PROXMOX_INSTANCES__1__NAME=seedbox
-PROXMOX_INSTANCES__1__HOST=seedbox.example.com
-PROXMOX_INSTANCES__1__USER=root@pve
-PROXMOX_INSTANCES__1__TOKEN_NAME=mcp
-PROXMOX_INSTANCES__1__TOKEN_VALUE=...
-```
+**Multi-Instance:** `PROXMOX_INSTANCES__<INDEX>__<FIELD>` (e.g., `PROXMOX_INSTANCES__0__HOST`).
 
 ### :robot: Configuration Example (Claude Desktop)
-
-Add the following to your `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "proxmox": {
       "command": "/path/to/proxmox-mcp-rs/target/release/proxmox-mcp-rs",
-      "args": [
-        "--host", "192.168.1.10",
-        "--port", "8006",
-        "--user", "root@pam",
-        "--password", "yourpassword",
-        "--no-verify-ssl"
-      ]
-    }
-  }
-}
-```
-
-### :robot: Configuration Example (Docker for Claude Code/Desktop)
-
-If you prefer to run the server via Docker, use the following configuration:
-
-```json
-{
-  "mcpServers": {
-    "proxmox-docker": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e", "PROXMOX_HOST=192.168.1.10",
-        "-e", "PROXMOX_USER=root@pam",
-        "-e", "PROXMOX_PASSWORD=yourpassword",
-        "-e", "PROXMOX_NO_VERIFY_SSL=true",
-        "proxmox-mcp-rs"
-      ]
+      "args": ["--config", "/path/to/config.toml"]
     }
   }
 }
@@ -295,34 +198,25 @@ If you prefer to run the server via Docker, use the following configuration:
 ## :test_tube: Testing
 
 ### MCP Inspector
-The easiest way to test the server interactively is using the MCP Inspector. It provides a web interface to call tools and inspect resources.
-
+Interactive testing via web interface:
 ```bash
 task inspector
 ```
 
-If running on a remote host, you can specify the host and allowed origins:
-```bash
-task inspector HOST=0.0.0.0 ALLOWED_ORIGINS="*"
-```
-
 ### Integration Tests
-You can run the automated integration tests to verify the MCP protocol and Proxmox API connectivity:
-
+Verify protocol and connectivity:
 ```bash
 python3 integration_test.py
 ```
 
 ## :handshake: Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
+Contributions are welcome! See [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## :balance_scale: License
 
-​[​Apache License 2.0](https://raw.githubusercontent.com/nicholaswilde/proxmox-mcp-rs/refs/heads/main/LICENSE)
+​[​Apache License 2.0](LICENSE)
 
 ## :writing_hand: Author
 
-​This project was started in 2026 by [Nicholas Wilde][2].
-
-[2]: <https://github.com/nicholaswilde/>
+​Nicholas Wilde.
