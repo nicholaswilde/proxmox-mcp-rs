@@ -1,10 +1,10 @@
-use super::client::ProxmoxClient;
+use super::client::{ProxmoxClient, StorageInfo};
 use anyhow::Result;
 use reqwest::Method;
 use serde_json::{json, Value};
 
 impl ProxmoxClient {
-    pub async fn get_storage_list(&self, node: &str) -> Result<Vec<Value>> {
+    pub async fn get_storage_list(&self, node: &str) -> Result<Vec<StorageInfo>> {
         let path = format!("nodes/{}/storage", node);
         Ok(self.request(Method::GET, &path, None).await?)
     }

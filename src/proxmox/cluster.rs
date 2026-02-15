@@ -1,4 +1,4 @@
-use super::client::ProxmoxClient;
+use super::client::{ProxmoxClient, TaskInfo};
 use anyhow::Result;
 use reqwest::Method;
 use serde_json::{json, Value};
@@ -101,7 +101,7 @@ impl ProxmoxClient {
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
-    pub async fn list_tasks(&self, node: &str, limit: Option<u64>) -> Result<Vec<Value>> {
+    pub async fn list_tasks(&self, node: &str, limit: Option<u64>) -> Result<Vec<TaskInfo>> {
         let mut path = format!("nodes/{}/tasks", node);
         if let Some(l) = limit {
             path.push_str(&format!("?limit={}", l));

@@ -13,10 +13,11 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Tool Description Optimization' (Protocol in workflow.md)
 
 ## Phase 3: Response Payload Thinning
-- [ ] Task: Implement field filtering for VM and Container listing responses (Moderate reduction).
-- [ ] Task: Implement field filtering for Node and Storage status responses.
-- [ ] Task: Update `tests/mcp_integration.rs` to reflect thinned schemas (if necessary) and verify all tests pass.
-- [ ] Task: Verify reduction in average response tokens against baseline.
+- [x] Task: Implement field filtering for VM and Container listing responses (Moderate reduction).
+- [x] Task: Implement field filtering for Node and Storage status responses.
+- [x] Task: Update `tests/mcp_integration.rs` to reflect thinned schemas (if necessary) and verify all tests pass.
+- [x] Task: Verify reduction in average response tokens against baseline.
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Response Payload Thinning' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Response Payload Thinning' (Protocol in workflow.md)
 
 ## Phase 4: Tool Consolidation

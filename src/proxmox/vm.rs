@@ -1,10 +1,10 @@
-use super::client::{ClusterResource, ProxmoxClient, VmInfo};
+use super::client::{ClusterResource, NodeInfo, ProxmoxClient, VmInfo};
 use anyhow::Result;
 use reqwest::Method;
 use serde_json::{json, Value};
 
 impl ProxmoxClient {
-    pub async fn get_nodes(&self) -> Result<Vec<Value>> {
+    pub async fn get_nodes(&self) -> Result<Vec<NodeInfo>> {
         Ok(self.request(Method::GET, "nodes", None).await?)
     }
 

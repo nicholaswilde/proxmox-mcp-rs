@@ -326,7 +326,7 @@ impl McpServer {
                     .get(&self.default_id)
                     .expect("Default client missing");
                 let vms = client.get_all_vms().await?;
-                let content = serde_json::to_string_pretty(&vms)?;
+                let content = serde_json::to_string(&vms)?;
                 Ok(json!({
                     "contents": [{
                         "uri": uri,
@@ -351,15 +351,13 @@ impl McpServer {
                 let client = self.get_client(args)?;
                 let nodes = client.get_nodes().await?;
                 Ok(
-                    json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&nodes)? }] }),
+                    json!({ "content": [{ "type": "text", "text": serde_json::to_string(&nodes)? }] }),
                 )
             }
             "list_vms" => {
                 let client = self.get_client(args)?;
                 let vms = client.get_all_vms().await?;
-                Ok(
-                    json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&vms)? }] }),
-                )
+                Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&vms)? }] }))
             }
             "list_containers" => {
                 let client = self.get_client(args)?;
@@ -369,7 +367,7 @@ impl McpServer {
                     .filter(|vm| vm.vm_type.as_deref() == Some("lxc"))
                     .collect();
                 Ok(
-                    json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&containers)? }] }),
+                    json!({ "content": [{ "type": "text", "text": serde_json::to_string(&containers)? }] }),
                 )
             }
             "start_vm" => self.handle_vm_action(args, "start", None).await,
@@ -405,7 +403,7 @@ impl McpServer {
                 let client = self.get_client(args)?;
                 let templates = client.get_storage_content(node, storage, content).await?;
                 Ok(
-                    json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&templates)? }] }),
+                    json!({ "content": [{ "type": "text", "text": serde_json::to_string(&templates)? }] }),
                 )
             }
             "update_vm_resources" => self.handle_update_resources(args, "qemu").await,
@@ -568,9 +566,7 @@ impl McpServer {
 
     async fn handle_list_backup_schedules(&self, args: &Value) -> Result<Value> {
         let schedules = self.get_client(args)?.get_backup_schedules().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&schedules)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&schedules)? }] }))
     }
 
     async fn handle_create_backup_schedule(&self, args: &Value) -> Result<Value> {
@@ -613,9 +609,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let status = self.get_client(args)?.get_ceph_status(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&status)? }] }))
     }
 
     async fn handle_list_ceph_pools(&self, args: &Value) -> Result<Value> {
@@ -624,9 +618,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let pools = self.get_client(args)?.get_ceph_pools(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&pools)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&pools)? }] }))
     }
 
     async fn handle_create_ceph_pool(&self, args: &Value) -> Result<Value> {
@@ -684,7 +676,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let osds = self.get_client(args)?.get_ceph_osds(node).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&osds)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&osds)? }] }))
     }
 
     async fn handle_list_ceph_monitors(&self, args: &Value) -> Result<Value> {
@@ -693,14 +685,12 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let mons = self.get_client(args)?.get_ceph_monitors(node).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mons)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&mons)? }] }))
     }
 
     async fn handle_list_metric_servers(&self, args: &Value) -> Result<Value> {
         let servers = self.get_client(args)?.get_metric_servers().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&servers)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&servers)? }] }))
     }
 
     async fn handle_create_metric_server(&self, args: &Value) -> Result<Value> {
@@ -762,16 +752,12 @@ impl McpServer {
 
     async fn handle_list_sdn_zones(&self, args: &Value) -> Result<Value> {
         let zones = self.get_client(args)?.get_sdn_zones().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&zones)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&zones)? }] }))
     }
 
     async fn handle_list_pci_mappings(&self, args: &Value) -> Result<Value> {
         let mappings = self.get_client(args)?.get_pci_mappings().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mappings)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&mappings)? }] }))
     }
 
     async fn handle_create_pci_mapping(&self, args: &Value) -> Result<Value> {
@@ -823,9 +809,7 @@ impl McpServer {
 
     async fn handle_list_usb_mappings(&self, args: &Value) -> Result<Value> {
         let mappings = self.get_client(args)?.get_usb_mappings().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&mappings)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&mappings)? }] }))
     }
 
     async fn handle_create_usb_mapping(&self, args: &Value) -> Result<Value> {
@@ -909,9 +893,7 @@ impl McpServer {
 
     async fn handle_list_sdn_vnets(&self, args: &Value) -> Result<Value> {
         let vnets = self.get_client(args)?.get_sdn_vnets().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&vnets)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&vnets)? }] }))
     }
 
     async fn handle_create_sdn_vnet(&self, args: &Value) -> Result<Value> {
@@ -1054,9 +1036,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let devices = self.get_client(args)?.get_pci_devices(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&devices)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&devices)? }] }))
     }
 
     async fn handle_list_usb_devices(&self, args: &Value) -> Result<Value> {
@@ -1065,9 +1045,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let devices = self.get_client(args)?.get_usb_devices(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&devices)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&devices)? }] }))
     }
 
     async fn handle_add_pci_device(&self, args: &Value) -> Result<Value> {
@@ -1171,7 +1149,7 @@ impl McpServer {
 
     async fn handle_get_cluster_join_info(&self, args: &Value) -> Result<Value> {
         let info = self.get_client(args)?.get_join_info().await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&info)? }] }))
     }
 
     async fn handle_join_cluster(&self, args: &Value) -> Result<Value> {
@@ -1203,7 +1181,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let info = self.get_client(args)?.get_subscription(node).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&info)? }] }))
     }
 
     async fn handle_set_subscription_key(&self, args: &Value) -> Result<Value> {
@@ -1267,7 +1245,7 @@ impl McpServer {
             .get_client(args)?
             .agent_exec(node, vmid, &command, input_data)
             .await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&res)? }] }))
     }
 
     async fn handle_vm_exec_status(&self, args: &Value) -> Result<Value> {
@@ -1288,7 +1266,7 @@ impl McpServer {
             .get_client(args)?
             .agent_exec_status(node, vmid, pid)
             .await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&res)? }] }))
     }
 
     async fn handle_vm_read_file(&self, args: &Value) -> Result<Value> {
@@ -1311,7 +1289,7 @@ impl McpServer {
             .await?;
         // Result usually has "content" (read bytes) or "bytes" (count).
         // content is text if possible?
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&res)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&res)? }] }))
     }
 
     async fn handle_vm_write_file(&self, args: &Value) -> Result<Value> {
@@ -1341,9 +1319,7 @@ impl McpServer {
 
     async fn handle_list_cluster_storage(&self, args: &Value) -> Result<Value> {
         let storage = self.get_client(args)?.get_cluster_storage().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&storage)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&storage)? }] }))
     }
 
     async fn handle_add_storage(&self, args: &Value) -> Result<Value> {
@@ -1439,9 +1415,7 @@ impl McpServer {
 
     async fn handle_list_users(&self, args: &Value) -> Result<Value> {
         let users = self.get_client(args)?.get_users().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&users)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&users)? }] }))
     }
 
     async fn handle_create_user(&self, args: &Value) -> Result<Value> {
@@ -1568,7 +1542,7 @@ impl McpServer {
             .get_client(args)?
             .get_storage_content_volume(node, storage, volume)
             .await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&info)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&info)? }] }))
     }
 
     async fn handle_get_node_stats(&self, args: &Value) -> Result<Value> {
@@ -1583,9 +1557,7 @@ impl McpServer {
             .get_client(args)?
             .get_node_stats(node, timeframe, cf)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&stats)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&stats)? }] }))
     }
 
     async fn handle_get_vm_stats(&self, args: &Value) -> Result<Value> {
@@ -1605,9 +1577,7 @@ impl McpServer {
             .get_client(args)?
             .get_resource_stats(node, vmid, vm_type, timeframe, cf)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&stats)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&stats)? }] }))
     }
 
     async fn handle_add_disk(&self, args: &Value) -> Result<Value> {
@@ -1747,9 +1717,7 @@ impl McpServer {
             .get_client(args)?
             .get_firewall_rules(node, vmid)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&rules)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&rules)? }] }))
     }
 
     async fn handle_add_firewall_rule(&self, args: &Value) -> Result<Value> {
@@ -1794,9 +1762,7 @@ impl McpServer {
         let node = args.get("node").and_then(|v| v.as_str());
 
         let aliases = self.get_client(args)?.get_aliases(level, node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&aliases)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&aliases)? }] }))
     }
 
     async fn handle_create_firewall_alias(&self, args: &Value) -> Result<Value> {
@@ -1862,9 +1828,7 @@ impl McpServer {
 
     async fn handle_list_security_groups(&self, args: &Value) -> Result<Value> {
         let groups = self.get_client(args)?.get_security_groups().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&groups)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&groups)? }] }))
     }
 
     async fn handle_create_security_group(&self, args: &Value) -> Result<Value> {
@@ -1904,9 +1868,7 @@ impl McpServer {
             .get_client(args)?
             .get_security_group_rules(name)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&rules)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&rules)? }] }))
     }
 
     async fn handle_add_security_group_rule(&self, args: &Value) -> Result<Value> {
@@ -1931,15 +1893,13 @@ impl McpServer {
 
     async fn handle_get_cluster_status(&self, args: &Value) -> Result<Value> {
         let status = self.get_client(args)?.get_cluster_status().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&status)? }] }))
     }
 
     async fn handle_get_cluster_log(&self, args: &Value) -> Result<Value> {
         let limit = args.get("limit").and_then(|v| v.as_u64());
         let log = self.get_client(args)?.get_cluster_log(limit).await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&log)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&log)? }] }))
     }
 
     async fn handle_list_storage(&self, args: &Value) -> Result<Value> {
@@ -1949,9 +1909,7 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing node"))?;
 
         let storage = self.get_client(args)?.get_storage_list(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&storage)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&storage)? }] }))
     }
 
     async fn handle_list_isos(&self, args: &Value) -> Result<Value> {
@@ -1968,7 +1926,7 @@ impl McpServer {
             .get_client(args)?
             .get_storage_content(node, storage, Some("iso"))
             .await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&isos)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&isos)? }] }))
     }
 
     async fn handle_list_networks(&self, args: &Value) -> Result<Value> {
@@ -1978,9 +1936,7 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing node"))?;
 
         let networks = self.get_client(args)?.get_network_interfaces(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&networks)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&networks)? }] }))
     }
 
     async fn handle_create_network_bridge(&self, args: &Value) -> Result<Value> {
@@ -2109,9 +2065,7 @@ impl McpServer {
             .ok_or(anyhow::anyhow!("Missing upid"))?;
 
         let status = self.get_client(args)?.get_task_status(node, upid).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&status)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&status)? }] }))
     }
 
     async fn handle_list_tasks(&self, args: &Value) -> Result<Value> {
@@ -2122,9 +2076,7 @@ impl McpServer {
         let limit = args.get("limit").and_then(|v| v.as_u64());
 
         let tasks = self.get_client(args)?.list_tasks(node, limit).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&tasks)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&tasks)? }] }))
     }
 
     async fn handle_wait_for_task(&self, args: &Value) -> Result<Value> {
@@ -2148,7 +2100,7 @@ impl McpServer {
             .unwrap_or("unknown");
 
         Ok(
-            json!({ "content": [{ "type": "text", "text": format!("Task finished with status: {}\nFull details:\n{}", exit_status, serde_json::to_string_pretty(&status)?) }] }),
+            json!({ "content": [{ "type": "text", "text": format!("Task finished with status: {}\nFull details:\n{}", exit_status, serde_json::to_string(&status)?) }] }),
         )
     }
 
@@ -2167,9 +2119,7 @@ impl McpServer {
             .get_client(args)?
             .get_backups(node, storage, vmid)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&backups)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&backups)? }] }))
     }
 
     async fn handle_create_backup(&self, args: &Value) -> Result<Value> {
@@ -2297,9 +2247,7 @@ impl McpServer {
             .get_client(args)?
             .get_snapshots(node, vmid, vm_type)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&snapshots)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&snapshots)? }] }))
     }
 
     async fn handle_snapshot_create(&self, args: &Value) -> Result<Value> {
@@ -2603,9 +2551,7 @@ impl McpServer {
             .get_client(args)?
             .scan_storage(node, storage_type, server, user, password)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&result)? }] }))
     }
 
     async fn handle_template_vm(&self, args: &Value) -> Result<Value> {
@@ -2661,16 +2607,12 @@ impl McpServer {
             .get_client(args)?
             .get_vm_config(node, vmid, vm_type)
             .await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&config)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&config)? }] }))
     }
 
     async fn handle_list_pools(&self, args: &Value) -> Result<Value> {
         let pools = self.get_client(args)?.get_pools().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&pools)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&pools)? }] }))
     }
 
     async fn handle_create_pool(&self, args: &Value) -> Result<Value> {
@@ -2689,9 +2631,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing poolid"))?;
         let details = self.get_client(args)?.get_pool_details(poolid).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&details)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&details)? }] }))
     }
 
     async fn handle_update_pool(&self, args: &Value) -> Result<Value> {
@@ -2722,7 +2662,7 @@ impl McpServer {
 
     async fn handle_list_replication_jobs(&self, args: &Value) -> Result<Value> {
         let jobs = self.get_client(args)?.get_replication_jobs().await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&jobs)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&jobs)? }] }))
     }
 
     async fn handle_create_replication_job(&self, args: &Value) -> Result<Value> {
@@ -2778,16 +2718,12 @@ impl McpServer {
 
     async fn handle_list_ha_resources(&self, args: &Value) -> Result<Value> {
         let resources = self.get_client(args)?.get_ha_resources().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&resources)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&resources)? }] }))
     }
 
     async fn handle_list_ha_groups(&self, args: &Value) -> Result<Value> {
         let groups = self.get_client(args)?.get_ha_groups().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&groups)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&groups)? }] }))
     }
 
     async fn handle_add_ha_resource(&self, args: &Value) -> Result<Value> {
@@ -2839,9 +2775,7 @@ impl McpServer {
 
     async fn handle_list_roles(&self, args: &Value) -> Result<Value> {
         let roles = self.get_client(args)?.get_roles().await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&roles)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&roles)? }] }))
     }
 
     async fn handle_create_role(&self, args: &Value) -> Result<Value> {
@@ -2887,7 +2821,7 @@ impl McpServer {
 
     async fn handle_list_acls(&self, args: &Value) -> Result<Value> {
         let acls = self.get_client(args)?.get_acls().await?;
-        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&acls)? }] }))
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&acls)? }] }))
     }
 
     async fn handle_update_acl(&self, args: &Value) -> Result<Value> {
@@ -2914,9 +2848,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let updates = self.get_client(args)?.get_apt_updates(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&updates)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&updates)? }] }))
     }
 
     async fn handle_run_apt_update(&self, args: &Value) -> Result<Value> {
@@ -2936,9 +2868,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let versions = self.get_client(args)?.get_apt_versions(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&versions)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&versions)? }] }))
     }
 
     async fn handle_list_repositories(&self, args: &Value) -> Result<Value> {
@@ -2947,9 +2877,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let repos = self.get_client(args)?.get_repositories(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&repos)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&repos)? }] }))
     }
 
     async fn handle_add_repository(&self, args: &Value) -> Result<Value> {
@@ -2997,9 +2925,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let services = self.get_client(args)?.get_services(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&services)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&services)? }] }))
     }
 
     async fn handle_manage_service(&self, args: &Value) -> Result<Value> {
@@ -3031,9 +2957,7 @@ impl McpServer {
             .and_then(|v| v.as_str())
             .ok_or(anyhow::anyhow!("Missing node"))?;
         let certs = self.get_client(args)?.get_certificates(node).await?;
-        Ok(
-            json!({ "content": [{ "type": "text", "text": serde_json::to_string_pretty(&certs)? }] }),
-        )
+        Ok(json!({ "content": [{ "type": "text", "text": serde_json::to_string(&certs)? }] }))
     }
 
     async fn handle_upload_certificate(&self, args: &Value) -> Result<Value> {

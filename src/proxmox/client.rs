@@ -37,6 +37,42 @@ pub struct VmInfo {
     pub vm_type: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NodeInfo {
+    pub node: String,
+    pub status: String,
+    pub cpu: Option<f64>,
+    pub mem: Option<u64>,
+    pub maxcpu: Option<u64>,
+    pub maxmem: Option<u64>,
+    pub uptime: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StorageInfo {
+    pub storage: String,
+    #[serde(rename = "type")]
+    pub storage_type: Option<String>,
+    pub content: Option<String>,
+    pub used: Option<u64>,
+    pub total: Option<u64>,
+    pub avail: Option<u64>,
+    pub shared: Option<u16>,
+    pub active: Option<u16>,
+    pub enabled: Option<u16>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TaskInfo {
+    pub upid: String,
+    pub node: Option<String>,
+    pub user: Option<String>,
+    pub starttime: Option<i64>,
+    pub status: Option<String>,
+    #[serde(rename = "type")]
+    pub task_type: Option<String>,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct ClusterResource {
     pub vmid: Option<i64>,
