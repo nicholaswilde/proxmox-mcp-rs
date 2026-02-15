@@ -6,9 +6,10 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Benchmarking & Analysis' (Protocol in workflow.md)
 
 ## Phase 2: Tool Description Optimization
-- [ ] Task: Refine `src/mcp.rs` tool-level descriptions for conciseness using AI-assisted drafting.
-- [ ] Task: Refine `src/mcp.rs` argument-level descriptions for conciseness.
-- [ ] Task: Verify reduction in `list_tools` token count against baseline.
+- [x] Task: Refine `src/mcp.rs` tool-level descriptions for conciseness using AI-assisted drafting.
+- [x] Task: Refine `src/mcp.rs` argument-level descriptions for conciseness.
+- [x] Task: Verify reduction in `list_tools` token count against baseline.
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Tool Description Optimization' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Tool Description Optimization' (Protocol in workflow.md)
 
 ## Phase 3: Response Payload Thinning

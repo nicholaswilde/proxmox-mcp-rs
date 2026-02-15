@@ -276,7 +276,7 @@ impl McpServer {
                     }),
                     json!({
                         "name": "get_cluster_status",
-                        "description": "Get cluster status information",
+                        "description": "Get cluster status",
                         "inputSchema": {
                             "type": "object",
                             "properties": {},
@@ -3159,7 +3159,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_nodes",
-                "description": "List all nodes in the Proxmox cluster",
+                "description": "List cluster nodes",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3168,7 +3168,7 @@ impl McpServer {
             }),
             json!({
                 "name": "get_cluster_status",
-                "description": "Get cluster status information",
+                "description": "Get cluster status",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3181,27 +3181,27 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "limit": { "type": "integer", "description": "Max lines to read" }
+                        "limit": { "type": "integer", "description": "Max lines" }
                     },
                     "required": []
                 }
             }),
             json!({
                 "name": "get_node_stats",
-                "description": "Get RRD statistics for a node",
+                "description": "Get node RRD stats",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe (default: hour)" },
-                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function (default: AVERAGE)" }
+                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe" },
+                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "create_cluster",
-                "description": "Create a new cluster",
+                "description": "Create new cluster",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3212,7 +3212,7 @@ impl McpServer {
             }),
             json!({
                 "name": "get_cluster_join_info",
-                "description": "Get the join info for the current cluster",
+                "description": "Get cluster join info",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3221,13 +3221,13 @@ impl McpServer {
             }),
             json!({
                 "name": "join_cluster",
-                "description": "Join an existing cluster",
+                "description": "Join cluster",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "hostname": { "type": "string", "description": "IP or Hostname of the cluster node to join" },
-                        "password": { "type": "string", "description": "Root password of the cluster node" },
-                        "fingerprint": { "type": "string", "description": "Fingerprint of the cluster node" }
+                        "hostname": { "type": "string", "description": "Node IP/Hostname" },
+                        "password": { "type": "string", "description": "Root password" },
+                        "fingerprint": { "type": "string", "description": "Node fingerprint" }
                     },
                     "required": ["hostname", "password", "fingerprint"]
                 }
@@ -3239,7 +3239,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_vms",
-                "description": "List all VMs and containers across all nodes",
+                "description": "List all VMs/Containers",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3248,7 +3248,7 @@ impl McpServer {
             }),
             json!({
                 "name": "list_containers",
-                "description": "List all LXC containers across all nodes",
+                "description": "List all LXC containers",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3257,51 +3257,51 @@ impl McpServer {
             }),
             json!({
                 "name": "bulk_vm_action",
-                "description": "Perform a power action on a list of VMs",
+                "description": "Power action on multiple VMs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmids": { "type": "array", "items": { "type": "integer" }, "description": "List of VM IDs" },
-                        "action": { "type": "string", "enum": ["start", "stop", "shutdown", "suspend", "resume", "reboot"], "description": "Action to perform" },
-                        "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type (optional, defaults to qemu)" }
+                        "node": { "type": "string" },
+                        "vmids": { "type": "array", "items": { "type": "integer" }, "description": "VM IDs" },
+                        "action": { "type": "string", "enum": ["start", "stop", "shutdown", "suspend", "resume", "reboot"], "description": "Action" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type (default: qemu)" }
                     },
                     "required": ["node", "vmids", "action"]
                 }
             }),
             json!({
                 "name": "start_vm",
-                "description": "Start a VM or container",
+                "description": "Start VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The VM ID" },
-                        "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type: qemu or lxc (optional, defaults to qemu if not found)" }
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "VM ID" },
+                        "type": { "type": "string", "enum": ["qemu", "lxc"], "description": "Type (qemu/lxc)" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "start_container",
-                "description": "Start an LXC container",
+                "description": "Start LXC container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The Container ID" }
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "CT ID" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "stop_vm",
-                "description": "Stop (power off) a VM or container",
+                "description": "Stop VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The VM ID" },
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "VM ID" },
                          "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid"]
@@ -3309,19 +3309,19 @@ impl McpServer {
             }),
             json!({
                 "name": "stop_container",
-                "description": "Stop (power off) an LXC container",
+                "description": "Stop LXC container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The Container ID" }
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer", "description": "CT ID" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "shutdown_vm",
-                "description": "Gracefully shutdown a VM or container",
+                "description": "Shutdown VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3334,7 +3334,7 @@ impl McpServer {
             }),
             json!({
                 "name": "shutdown_container",
-                "description": "Gracefully shutdown an LXC container",
+                "description": "Shutdown LXC container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3346,7 +3346,7 @@ impl McpServer {
             }),
             json!({
                 "name": "reboot_vm",
-                "description": "Reboot a VM or container",
+                "description": "Reboot VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3359,43 +3359,43 @@ impl McpServer {
             }),
             json!({
                 "name": "create_vm",
-                "description": "Create a new QEMU VM",
+                "description": "Create QEMU VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string", "description": "Target node" },
                         "vmid": { "type": "integer", "description": "VM ID" },
-                        "name": { "type": "string", "description": "VM Name" },
-                        "memory": { "type": "integer", "description": "Memory in MB" },
-                        "cores": { "type": "integer", "description": "Number of cores" },
-                        "sockets": { "type": "integer", "description": "Number of sockets" },
-                        "net0": { "type": "string", "description": "Network config (e.g. 'virtio,bridge=vmbr0')" },
-                        "ide2": { "type": "string", "description": "CDROM/ISO (e.g. 'local:iso/debian.iso')" }
+                        "name": { "type": "string", "description": "Name" },
+                        "memory": { "type": "integer", "description": "Memory (MB)" },
+                        "cores": { "type": "integer", "description": "Cores" },
+                        "sockets": { "type": "integer", "description": "Sockets" },
+                        "net0": { "type": "string", "description": "Network (e.g. 'virtio,bridge=vmbr0')" },
+                        "ide2": { "type": "string", "description": "ISO (e.g. 'local:iso/debian.iso')" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "create_container",
-                "description": "Create a new LXC Container",
+                "description": "Create LXC container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string", "description": "Target node" },
-                        "vmid": { "type": "integer", "description": "VM ID" },
-                        "ostemplate": { "type": "string", "description": "OS Template (e.g. 'local:vztmpl/ubuntu-20.04...')" },
-                        "hostname": { "type": "string", "description": "Hostname" },
+                        "vmid": { "type": "integer", "description": "CT ID" },
+                        "ostemplate": { "type": "string", "description": "Template (e.g. 'local:vztmpl/ubuntu...')" },
+                        "hostname": { "type": "string" },
                         "password": { "type": "string", "description": "Root password" },
-                        "memory": { "type": "integer", "description": "Memory in MB" },
-                        "cores": { "type": "integer", "description": "Number of cores" },
-                        "rootfs": { "type": "string", "description": "Rootfs config (e.g. 'local-lvm:8')" }
+                        "memory": { "type": "integer", "description": "Memory (MB)" },
+                        "cores": { "type": "integer", "description": "Cores" },
+                        "rootfs": { "type": "string", "description": "Rootfs (e.g. 'local-lvm:8')" }
                     },
                     "required": ["node", "vmid", "ostemplate"]
                 }
             }),
             json!({
                 "name": "delete_vm",
-                "description": "Delete a QEMU VM",
+                "description": "Delete QEMU VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3407,7 +3407,7 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_container",
-                "description": "Delete an LXC Container",
+                "description": "Delete LXC container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3419,50 +3419,50 @@ impl McpServer {
             }),
             json!({
                 "name": "reset_vm",
-                "description": "Reset (Stop and Start) a VM",
+                "description": "Reset VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "vm_id": { "type": "string", "description": "The VM ID" }
+                        "vm_id": { "type": "string", "description": "VM ID" }
                     },
                     "required": ["vm_id"]
                 }
             }),
             json!({
                 "name": "reset_container",
-                "description": "Reset (Stop and Start) a Container",
+                "description": "Reset Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "container_id": { "type": "string", "description": "The Container ID" }
+                        "container_id": { "type": "string", "description": "CT ID" }
                     },
                     "required": ["container_id"]
                 }
             }),
             json!({
                 "name": "template_vm",
-                "description": "Convert a VM into a template",
+                "description": "Template VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The VM ID" }
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "clone_vm",
-                "description": "Clone a VM or Container",
+                "description": "Clone VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string", "description": "Source node" },
-                        "vmid": { "type": "integer", "description": "Source VM ID" },
-                        "newid": { "type": "integer", "description": "New VM ID" },
-                        "name": { "type": "string", "description": "New VM Name (optional)" },
-                        "target": { "type": "string", "description": "Target node (optional)" },
-                        "full": { "type": "boolean", "description": "Full clone (default: true)" },
+                        "vmid": { "type": "integer", "description": "Source ID" },
+                        "newid": { "type": "integer", "description": "New ID" },
+                        "name": { "type": "string", "description": "New Name" },
+                        "target": { "type": "string", "description": "Target node" },
+                        "full": { "type": "boolean", "description": "Full clone" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid", "newid"]
@@ -3470,14 +3470,14 @@ impl McpServer {
             }),
             json!({
                 "name": "migrate_vm",
-                "description": "Migrate a VM or Container to another node",
+                "description": "Migrate VM/Container",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string", "description": "Source node" },
-                        "vmid": { "type": "integer", "description": "VM ID" },
+                        "vmid": { "type": "integer" },
                         "target_node": { "type": "string", "description": "Target node" },
-                        "online": { "type": "boolean", "description": "Online migration (default: false)" },
+                        "online": { "type": "boolean", "description": "Online migration" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid", "target_node"]
@@ -3485,7 +3485,7 @@ impl McpServer {
             }),
             json!({
                 "name": "get_vm_config",
-                "description": "Get the configuration of a VM or Container",
+                "description": "Get VM/Container config",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3498,29 +3498,29 @@ impl McpServer {
             }),
             json!({
                 "name": "get_console_url",
-                "description": "Get the URL for the Proxmox web console (NoVNC, xterm.js, or Spice)",
+                "description": "Get console URL (NoVNC/xtermjs/spice)",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "console": { "type": "string", "enum": ["novnc", "xtermjs", "spice"], "description": "Console type (default: novnc)" }
+                        "console": { "type": "string", "enum": ["novnc", "xtermjs", "spice"], "description": "Console type" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "get_vm_stats",
-                "description": "Get RRD statistics for a VM or Container",
+                "description": "Get VM/Container RRD stats",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe (default: hour)" },
-                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function (default: AVERAGE)" }
+                        "timeframe": { "type": "string", "enum": ["hour", "day", "week", "month", "year"], "description": "Timeframe" },
+                        "cf": { "type": "string", "enum": ["AVERAGE", "MAX"], "description": "Consolidation function" }
                     },
                     "required": ["node", "vmid"]
                 }
@@ -3532,128 +3532,128 @@ impl McpServer {
         vec![
             json!({
                 "name": "update_vm_resources",
-                "description": "Update VM hardware configuration (cores, memory, sockets)",
+                "description": "Update VM hardware (cores, RAM, sockets)",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The VM ID" },
-                        "cores": { "type": "integer", "description": "New core count" },
-                        "memory": { "type": "integer", "description": "New memory (MB)" },
-                        "sockets": { "type": "integer", "description": "New socket count" }
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "cores": { "type": "integer", "description": "New cores" },
+                        "memory": { "type": "integer", "description": "New RAM (MB)" },
+                        "sockets": { "type": "integer", "description": "New sockets" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "update_container_resources",
-                "description": "Update LXC container resources (cores, memory, swap, disk)",
+                "description": "Update CT resources (cores, RAM, swap, disk)",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The Container ID" },
-                        "cores": { "type": "integer", "description": "New core count" },
-                        "memory": { "type": "integer", "description": "New memory (MB)" },
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
+                        "cores": { "type": "integer", "description": "New cores" },
+                        "memory": { "type": "integer", "description": "New RAM (MB)" },
                         "swap": { "type": "integer", "description": "New swap (MB)" },
-                        "disk_gb": { "type": "integer", "description": "Additional disk size in GB to add (e.g. 2 for +2G)" },
-                        "disk": { "type": "string", "description": "Disk to resize (default: rootfs)" }
+                        "disk_gb": { "type": "integer", "description": "Add size (GB)" },
+                        "disk": { "type": "string", "description": "Disk (default: rootfs)" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "add_lxc_bind_mount",
-                "description": "Add a bind mount to an LXC container",
+                "description": "Add CT bind mount",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "vmid": { "type": "integer", "description": "The Container ID" },
+                        "node": { "type": "string" },
+                        "vmid": { "type": "integer" },
                         "mp_id": { "type": "string", "description": "Mount point ID (e.g. mp0)" },
-                        "source": { "type": "string", "description": "Host directory path" },
-                        "target": { "type": "string", "description": "Container directory path" },
-                        "read_only": { "type": "boolean", "description": "Read-only mount" }
+                        "source": { "type": "string", "description": "Host path" },
+                        "target": { "type": "string", "description": "CT path" },
+                        "read_only": { "type": "boolean" }
                     },
                     "required": ["node", "vmid", "mp_id", "source", "target"]
                 }
             }),
             json!({
                 "name": "add_disk",
-                "description": "Add a virtual disk to a VM or Container",
+                "description": "Add virtual disk",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "device": { "type": "string", "description": "Device name (e.g. 'scsi1', 'virtio0')" },
-                        "storage": { "type": "string", "description": "Storage ID (e.g. 'local-lvm')" },
-                        "size_gb": { "type": "integer", "description": "Size in GB" },
-                        "format": { "type": "string", "enum": ["raw", "qcow2", "vmdk"], "description": "Disk format (optional)" },
-                        "extra_options": { "type": "string", "description": "Extra options string (e.g. 'discard=on,ssd=1')" }
+                        "device": { "type": "string", "description": "Device (e.g. 'scsi1')" },
+                        "storage": { "type": "string", "description": "Storage ID" },
+                        "size_gb": { "type": "integer", "description": "Size (GB)" },
+                        "format": { "type": "string", "enum": ["raw", "qcow2", "vmdk"] },
+                        "extra_options": { "type": "string" }
                     },
                     "required": ["node", "vmid", "device", "storage", "size_gb"]
                 }
             }),
             json!({
                 "name": "remove_disk",
-                "description": "Remove (detach/delete) a virtual disk",
+                "description": "Remove virtual disk",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "device": { "type": "string", "description": "Device name to remove (e.g. 'scsi1')" }
+                        "device": { "type": "string", "description": "Device (e.g. 'scsi1')" }
                     },
                     "required": ["node", "vmid", "device"]
                 }
             }),
             json!({
                 "name": "add_network",
-                "description": "Add a network interface",
+                "description": "Add network interface",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "device": { "type": "string", "description": "Interface ID (e.g. 'net1')" },
-                        "bridge": { "type": "string", "description": "Bridge to attach to (e.g. 'vmbr0')" },
-                        "model": { "type": "string", "description": "Model (e.g. 'virtio', 'e1000')" },
-                        "mac": { "type": "string", "description": "MAC address (optional)" },
-                        "extra_options": { "type": "string", "description": "Extra options string" }
+                        "device": { "type": "string", "description": "ID (e.g. 'net1')" },
+                        "bridge": { "type": "string", "description": "Bridge (e.g. 'vmbr0')" },
+                        "model": { "type": "string", "description": "Model (e.g. 'virtio')" },
+                        "mac": { "type": "string", "description": "MAC address" },
+                        "extra_options": { "type": "string" }
                     },
                     "required": ["node", "vmid", "device", "bridge"]
                 }
             }),
             json!({
                 "name": "remove_network",
-                "description": "Remove a network interface",
+                "description": "Remove network interface",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "device": { "type": "string", "description": "Interface ID to remove (e.g. 'net1')" }
+                        "device": { "type": "string", "description": "ID (e.g. 'net1')" }
                     },
                     "required": ["node", "vmid", "device"]
                 }
             }),
             json!({
                 "name": "set_vm_cloudinit",
-                "description": "Configure Cloud-Init settings for a VM",
+                "description": "Set VM Cloud-Init",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "ciuser": { "type": "string", "description": "Cloud-Init User" },
-                        "cipassword": { "type": "string", "description": "Cloud-Init Password" },
-                        "sshkeys": { "type": "string", "description": "SSH public keys (URL-encoded)" },
-                        "ipconfig0": { "type": "string", "description": "IP Config (e.g. ip=dhcp or ip=192.168.1.10/24,gw=...)" },
+                        "ciuser": { "type": "string", "description": "User" },
+                        "cipassword": { "type": "string", "description": "Password" },
+                        "sshkeys": { "type": "string", "description": "SSH keys (URL-encoded)" },
+                        "ipconfig0": { "type": "string", "description": "IP Config (e.g. ip=dhcp)" },
                         "nameserver": { "type": "string", "description": "DNS Server" },
                         "searchdomain": { "type": "string", "description": "DNS Search Domain" }
                     },
@@ -3662,49 +3662,49 @@ impl McpServer {
             }),
             json!({
                 "name": "add_tag",
-                "description": "Add tags to a VM or Container",
+                "description": "Add tags",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "tags": { "type": "string", "description": "Comma separated list of tags to add" }
+                        "tags": { "type": "string", "description": "Comma separated tags" }
                     },
                     "required": ["node", "vmid", "tags"]
                 }
             }),
             json!({
                 "name": "remove_tag",
-                "description": "Remove tags from a VM or Container",
+                "description": "Remove tags",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "tags": { "type": "string", "description": "Comma separated list of tags to remove" }
+                        "tags": { "type": "string", "description": "Comma separated tags" }
                     },
                     "required": ["node", "vmid", "tags"]
                 }
             }),
             json!({
                 "name": "set_tags",
-                "description": "Set (overwrite) tags for a VM or Container",
+                "description": "Set tags",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "tags": { "type": "string", "description": "Comma separated list of tags" }
+                        "tags": { "type": "string", "description": "Comma separated tags" }
                     },
                     "required": ["node", "vmid", "tags"]
                 }
             }),
             json!({
                 "name": "list_snapshots",
-                "description": "List snapshots for a VM or Container",
+                "description": "List snapshots",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3717,15 +3717,15 @@ impl McpServer {
             }),
             json!({
                 "name": "snapshot_vm",
-                "description": "Create a snapshot of a VM or Container",
+                "description": "Create snapshot",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "snapname": { "type": "string", "description": "Snapshot name" },
-                        "description": { "type": "string", "description": "Snapshot description" },
-                        "vmstate": { "type": "boolean", "description": "Save RAM content (only for QEMU)" },
+                        "snapname": { "type": "string", "description": "Name" },
+                        "description": { "type": "string", "description": "Description" },
+                        "vmstate": { "type": "boolean", "description": "Save RAM (QEMU)" },
                          "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid", "snapname"]
@@ -3733,13 +3733,13 @@ impl McpServer {
             }),
             json!({
                 "name": "rollback_vm",
-                "description": "Rollback a VM or Container to a snapshot",
+                "description": "Rollback to snapshot",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "snapname": { "type": "string", "description": "Snapshot name" },
+                        "snapname": { "type": "string", "description": "Name" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid", "snapname"]
@@ -3747,13 +3747,13 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_snapshot",
-                "description": "Delete a snapshot of a VM or Container",
+                "description": "Delete snapshot",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "snapname": { "type": "string", "description": "Snapshot name" },
+                        "snapname": { "type": "string", "description": "Name" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] }
                     },
                     "required": ["node", "vmid", "snapname"]
@@ -3761,45 +3761,45 @@ impl McpServer {
             }),
             json!({
                 "name": "list_backups",
-                "description": "List backups on a specific storage",
+                "description": "List backups",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "storage": { "type": "string" },
-                        "vmid": { "type": "integer", "description": "Filter by VM ID (optional)" }
+                        "vmid": { "type": "integer", "description": "Filter VM ID" }
                     },
                     "required": ["node", "storage"]
                 }
             }),
             json!({
                 "name": "create_backup",
-                "description": "Create a backup (vzdump) of a VM or Container",
+                "description": "Create backup",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "storage": { "type": "string", "description": "Target storage" },
-                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"], "description": "Backup mode" },
+                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"], "description": "Mode" },
                         "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"], "description": "Compression" },
-                        "remove": { "type": "boolean", "description": "Remove old backups (prune)?" }
+                        "remove": { "type": "boolean", "description": "Prune old?" }
                     },
                     "required": ["node", "vmid"]
                 }
             }),
             json!({
                 "name": "restore_backup",
-                "description": "Restore a VM or Container from a backup",
+                "description": "Restore backup",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "vmid": { "type": "integer", "description": "ID to restore to" },
-                        "archive": { "type": "string", "description": "Backup volume ID (volid)" },
+                        "vmid": { "type": "integer", "description": "Restore to ID" },
+                        "archive": { "type": "string", "description": "Volume ID (volid)" },
                         "storage": { "type": "string", "description": "Target storage" },
                         "type": { "type": "string", "enum": ["qemu", "lxc"] },
-                        "force": { "type": "boolean", "description": "Overwrite existing?" }
+                        "force": { "type": "boolean", "description": "Overwrite?" }
                     },
                     "required": ["node", "vmid", "archive", "type"]
                 }
@@ -3811,46 +3811,46 @@ impl McpServer {
         vec![
             json!({
                 "name": "scan_storage_remote",
-                "description": "Scan a remote server for storage targets",
+                "description": "Scan remote storage",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "type": { "type": "string", "enum": ["nfs", "cifs", "iscsi", "lvm", "zfs", "pbs"], "description": "Storage type" },
-                        "server": { "type": "string", "description": "Hostname or IP of the remote server" },
-                        "username": { "type": "string", "description": "Username (for cifs/pbs)" },
-                        "password": { "type": "string", "description": "Password (for cifs/pbs)" }
+                        "node": { "type": "string" },
+                        "type": { "type": "string", "enum": ["nfs", "cifs", "iscsi", "lvm", "zfs", "pbs"], "description": "Type" },
+                        "server": { "type": "string", "description": "Host/IP" },
+                        "username": { "type": "string" },
+                        "password": { "type": "string" }
                     },
                     "required": ["node", "type", "server"]
                 }
             }),
             json!({
                 "name": "list_templates",
-                "description": "List container templates on a storage",
+                "description": "List CT templates",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "storage": { "type": "string", "description": "Storage name (default: local)" },
-                        "content": { "type": "string", "description": "Content type (default: vztmpl)" }
+                        "node": { "type": "string" },
+                        "storage": { "type": "string", "description": "Storage (default: local)" },
+                        "content": { "type": "string", "description": "Type (default: vztmpl)" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "list_storage",
-                "description": "List all storage on a node",
+                "description": "List node storage",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "list_cluster_storage",
-                "description": "List all storage definitions in the cluster configuration",
+                "description": "List cluster storage defs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -3859,97 +3859,97 @@ impl McpServer {
             }),
             json!({
                 "name": "list_isos",
-                "description": "List ISO images on a specific storage",
+                "description": "List ISOs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" },
-                        "storage": { "type": "string", "description": "Storage name" }
+                        "node": { "type": "string" },
+                        "storage": { "type": "string" }
                     },
                     "required": ["node", "storage"]
                 }
             }),
             json!({
                 "name": "add_storage",
-                "description": "Add a new storage definition",
+                "description": "Add storage def",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "storage": { "type": "string", "description": "Storage ID" },
-                        "type": { "type": "string", "enum": ["dir", "nfs", "cifs", "lvm", "lvmthin", "zfs", "iscsi", "rbd", "cephfs"], "description": "Storage type" },
-                        "content": { "type": "string", "description": "Allowed content types (comma separated, e.g. 'iso,backup')" },
-                        "nodes": { "type": "array", "items": { "type": "string" }, "description": "Restrict to specific nodes" },
-                        "enable": { "type": "boolean", "description": "Enable storage (default: true)" },
-                        "path": { "type": "string", "description": "File system path (for dir, nfs, etc.)" },
-                        "server": { "type": "string", "description": "Server IP/Hostname (for nfs, cifs, iscsi, etc.)" },
-                        "share": { "type": "string", "description": "Share name (for cifs)" },
-                        "export": { "type": "string", "description": "Export path (for nfs)" },
-                        "username": { "type": "string", "description": "Username (for cifs)" },
-                        "password": { "type": "string", "description": "Password (for cifs)" },
-                        "pool": { "type": "string", "description": "Pool name (for zfs, rbd)" },
-                        "vgname": { "type": "string", "description": "Volume Group name (for lvm)" }
+                        "storage": { "type": "string", "description": "ID" },
+                        "type": { "type": "string", "enum": ["dir", "nfs", "cifs", "lvm", "lvmthin", "zfs", "iscsi", "rbd", "cephfs"], "description": "Type" },
+                        "content": { "type": "string", "description": "Allowed types (e.g. 'iso,backup')" },
+                        "nodes": { "type": "array", "items": { "type": "string" }, "description": "Restrict to nodes" },
+                        "enable": { "type": "boolean", "description": "Enable (default: true)" },
+                        "path": { "type": "string", "description": "Path" },
+                        "server": { "type": "string", "description": "Server" },
+                        "share": { "type": "string", "description": "Share" },
+                        "export": { "type": "string", "description": "Export" },
+                        "username": { "type": "string" },
+                        "password": { "type": "string" },
+                        "pool": { "type": "string", "description": "Pool" },
+                        "vgname": { "type": "string", "description": "VG name" }
                     },
                     "required": ["storage", "type"]
                 }
             }),
             json!({
                 "name": "delete_storage",
-                "description": "Delete a storage definition",
+                "description": "Delete storage def",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "storage": { "type": "string", "description": "Storage ID" }
+                        "storage": { "type": "string", "description": "ID" }
                     },
                     "required": ["storage"]
                 }
             }),
             json!({
                 "name": "update_storage",
-                "description": "Update a storage definition",
+                "description": "Update storage def",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "storage": { "type": "string", "description": "Storage ID" },
-                        "content": { "type": "string", "description": "Allowed content types" },
-                        "nodes": { "type": "string", "description": "Comma separated list of nodes" },
-                        "enable": { "type": "boolean", "description": "Enable/Disable" }
+                        "storage": { "type": "string", "description": "ID" },
+                        "content": { "type": "string", "description": "Allowed types" },
+                        "nodes": { "type": "string", "description": "Restrict to nodes" },
+                        "enable": { "type": "boolean" }
                     },
                     "required": ["storage"]
                 }
             }),
             json!({
                 "name": "download_url",
-                "description": "Download an ISO or Container template from a URL to storage",
+                "description": "Download ISO/Template",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "storage": { "type": "string" },
-                        "url": { "type": "string", "description": "The URL to download from" },
+                        "url": { "type": "string", "description": "Source URL" },
                         "filename": { "type": "string", "description": "Target filename" },
-                        "content": { "type": "string", "enum": ["iso", "vztmpl"], "description": "Content type" },
-                        "checksum": { "type": "string", "description": "Optional checksum" },
-                        "checksum_algorithm": { "type": "string", "enum": ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"], "description": "Optional checksum algorithm" }
+                        "content": { "type": "string", "enum": ["iso", "vztmpl"], "description": "Type" },
+                        "checksum": { "type": "string" },
+                        "checksum_algorithm": { "type": "string", "enum": ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"] }
                     },
                     "required": ["node", "storage", "url", "filename", "content"]
                 }
             }),
             json!({
                 "name": "delete_storage_content",
-                "description": "Delete a specific volume/file from storage",
+                "description": "Delete storage volume",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "storage": { "type": "string", "description": "Storage ID" },
-                        "volume": { "type": "string", "description": "Volume ID (e.g. 'local:iso/image.iso')" }
+                        "node": { "type": "string" },
+                        "storage": { "type": "string" },
+                        "volume": { "type": "string", "description": "Volume ID" }
                     },
                     "required": ["node", "storage", "volume"]
                 }
             }),
             json!({
                 "name": "get_storage_volume",
-                "description": "Get details about a specific storage volume",
+                "description": "Get storage volume info",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -3967,35 +3967,35 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_networks",
-                "description": "List network interfaces and bridges on a node",
+                "description": "List node network interfaces",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "The node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "create_network_bridge",
-                "description": "Create a network bridge (vmbr)",
+                "description": "Create network bridge",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "iface": { "type": "string", "description": "Interface Name (e.g. vmbr0)" },
-                        "bridge_ports": { "type": "string", "description": "Bridge ports (e.g. eno1)" },
-                        "cidr": { "type": "string", "description": "IP/CIDR (e.g. 192.168.1.10/24)" },
+                        "iface": { "type": "string", "description": "Name (e.g. vmbr0)" },
+                        "bridge_ports": { "type": "string", "description": "Ports" },
+                        "cidr": { "type": "string", "description": "IP/CIDR" },
                         "gateway": { "type": "string", "description": "Gateway IP" },
-                        "autostart": { "type": "boolean", "description": "Autostart" },
-                        "comments": { "type": "string", "description": "Comments" }
+                        "autostart": { "type": "boolean" },
+                        "comments": { "type": "string" }
                     },
                     "required": ["node", "iface"]
                 }
             }),
             json!({
                 "name": "create_network_bond",
-                "description": "Create a network bond",
+                "description": "Create network bond",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4069,8 +4069,8 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name (optional)" },
-                        "vmid": { "type": "integer", "description": "VM ID (optional)" }
+                        "node": { "type": "string", "description": "Node (opt)" },
+                        "vmid": { "type": "integer", "description": "VM ID (opt)" }
                     },
                     "required": []
                 }
@@ -4098,13 +4098,13 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_firewall_rule",
-                "description": "Delete a firewall rule",
+                "description": "Delete firewall rule",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "pos": { "type": "integer", "description": "Rule position/index (optional if digest provided, but usually required)" }
+                        "pos": { "type": "integer", "description": "Index" }
                     },
                     "required": ["pos"]
                 }
@@ -4120,51 +4120,51 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "level": { "type": "string", "enum": ["cluster", "node"], "description": "Scope level" },
-                        "node": { "type": "string", "description": "Node name (required if level is 'node')" }
+                        "level": { "type": "string", "enum": ["cluster", "node"], "description": "Scope" },
+                        "node": { "type": "string" }
                     },
                     "required": ["level"]
                 }
             }),
             json!({
                 "name": "create_firewall_alias",
-                "description": "Create a firewall alias",
+                "description": "Create firewall alias",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "level": { "type": "string", "enum": ["cluster", "node"] },
-                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
-                        "name": { "type": "string", "description": "Alias name" },
-                        "cidr": { "type": "string", "description": "Network/IP (CIDR)" },
-                        "comment": { "type": "string", "description": "Description" }
+                        "node": { "type": "string" },
+                        "name": { "type": "string" },
+                        "cidr": { "type": "string", "description": "CIDR" },
+                        "comment": { "type": "string" }
                     },
                     "required": ["level", "name", "cidr"]
                 }
             }),
             json!({
                 "name": "update_firewall_alias",
-                "description": "Update a firewall alias",
+                "description": "Update firewall alias",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "level": { "type": "string", "enum": ["cluster", "node"] },
-                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
-                        "name": { "type": "string", "description": "Alias name to update" },
-                        "cidr": { "type": "string", "description": "New Network/IP (CIDR)" },
-                        "comment": { "type": "string", "description": "New Description" }
+                        "node": { "type": "string" },
+                        "name": { "type": "string" },
+                        "cidr": { "type": "string" },
+                        "comment": { "type": "string" }
                     },
                     "required": ["level", "name", "cidr"]
                 }
             }),
             json!({
                 "name": "delete_firewall_alias",
-                "description": "Delete a firewall alias",
+                "description": "Delete firewall alias",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "level": { "type": "string", "enum": ["cluster", "node"] },
-                        "node": { "type": "string", "description": "Node name (required if level is 'node')" },
-                        "name": { "type": "string", "description": "Alias name to delete" }
+                        "node": { "type": "string" },
+                        "name": { "type": "string" }
                     },
                     "required": ["level", "name"]
                 }
@@ -4176,37 +4176,37 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_certificates",
-                "description": "List certificates installed on a node",
+                "description": "List node certs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "upload_certificate",
-                "description": "Upload a custom SSL certificate and private key",
+                "description": "Upload SSL cert/key",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "certificates": { "type": "string", "description": "PEM encoded certificate chain" },
-                        "key": { "type": "string", "description": "PEM encoded private key" },
-                        "force": { "type": "boolean", "description": "Overwrite existing (default: false)" },
-                        "restart": { "type": "boolean", "description": "Restart pveproxy (default: false)" }
+                        "node": { "type": "string" },
+                        "certificates": { "type": "string", "description": "PEM chain" },
+                        "key": { "type": "string", "description": "PEM key" },
+                        "force": { "type": "boolean" },
+                        "restart": { "type": "boolean", "description": "Restart pveproxy?" }
                     },
                     "required": ["node", "certificates", "key"]
                 }
             }),
             json!({
                 "name": "generate_acme_certificate",
-                "description": "Trigger an ACME certificate order/renewal",
+                "description": "Renew ACME cert",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
@@ -4218,37 +4218,37 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_repositories",
-                "description": "List configured APT repositories on a node",
+                "description": "List APT repos",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "add_repository",
-                "description": "Add a standard Proxmox repository",
+                "description": "Add Proxmox repo",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "handle": { "type": "string", "description": "Repository handle (e.g. 'pve-no-subscription', 'pve-enterprise')" }
+                        "node": { "type": "string" },
+                        "handle": { "type": "string", "description": "Handle" }
                     },
                     "required": ["node", "handle"]
                 }
             }),
             json!({
                 "name": "update_repository_state",
-                "description": "Enable or disable a repository",
+                "description": "Set repo state",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "path": { "type": "string", "description": "Path to repository file" },
-                        "index": { "type": "integer", "description": "Repository index" },
-                        "enabled": { "type": "boolean", "description": "Enable/Disable" }
+                        "node": { "type": "string" },
+                        "path": { "type": "string" },
+                        "index": { "type": "integer" },
+                        "enabled": { "type": "boolean" }
                     },
                     "required": ["node", "path", "index", "enabled"]
                 }
@@ -4260,7 +4260,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_security_groups",
-                "description": "List all firewall security groups",
+                "description": "List security groups",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4269,46 +4269,46 @@ impl McpServer {
             }),
             json!({
                 "name": "create_security_group",
-                "description": "Create a new security group",
+                "description": "Create security group",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "name": { "type": "string", "description": "Group name" },
-                        "comment": { "type": "string", "description": "Description" }
+                        "name": { "type": "string" },
+                        "comment": { "type": "string" }
                     },
                     "required": ["name"]
                 }
             }),
             json!({
                 "name": "delete_security_group",
-                "description": "Delete a security group",
+                "description": "Delete security group",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "name": { "type": "string", "description": "Group name to delete" }
+                        "name": { "type": "string" }
                     },
                     "required": ["name"]
                 }
             }),
             json!({
                 "name": "list_security_group_rules",
-                "description": "List rules in a security group",
+                "description": "List group rules",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "name": { "type": "string", "description": "Group name" }
+                        "name": { "type": "string" }
                     },
                     "required": ["name"]
                 }
             }),
             json!({
                 "name": "add_security_group_rule",
-                "description": "Add a rule to a security group",
+                "description": "Add group rule",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "name": { "type": "string", "description": "Group name" },
-                        "type": { "type": "string", "enum": ["in", "out"], "description": "Direction" },
+                        "name": { "type": "string" },
+                        "type": { "type": "string", "enum": ["in", "out"], "description": "Dir" },
                         "action": { "type": "string", "enum": ["ACCEPT", "DROP", "REJECT"] },
                         "source": { "type": "string" },
                         "dest": { "type": "string" },
@@ -4316,7 +4316,7 @@ impl McpServer {
                         "dport": { "type": "string" },
                         "sport": { "type": "string" },
                         "comment": { "type": "string" },
-                        "enable": { "type": "integer", "description": "Enable rule (0 or 1)" }
+                        "enable": { "type": "integer", "description": "Enable (0/1)" }
                     },
                     "required": ["name", "type", "action"]
                 }
@@ -4328,56 +4328,56 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_tasks",
-                "description": "List recent tasks on a node",
+                "description": "List node tasks",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "limit": { "type": "integer", "description": "Max tasks to list (default: 50)" }
+                        "limit": { "type": "integer", "description": "Limit" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "get_task_status",
-                "description": "Get the status of a specific task (UPID)",
+                "description": "Get task status",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "upid": { "type": "string", "description": "Unique Process ID" }
+                        "upid": { "type": "string", "description": "UPID" }
                     },
                     "required": ["node", "upid"]
                 }
             }),
             json!({
                 "name": "read_task_log",
-                "description": "Read the log of a specific task (UPID)",
+                "description": "Read task log",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "upid": { "type": "string", "description": "Unique Process ID" }
+                        "upid": { "type": "string", "description": "UPID" }
                     },
                     "required": ["node", "upid"]
                 }
             }),
             json!({
                 "name": "wait_for_task",
-                "description": "Wait for a task to finish (with timeout)",
+                "description": "Wait for task",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "upid": { "type": "string", "description": "Unique Process ID" },
-                        "timeout": { "type": "integer", "description": "Timeout in seconds (default: 60)" }
+                        "upid": { "type": "string", "description": "UPID" },
+                        "timeout": { "type": "integer", "description": "Timeout (s)" }
                     },
                     "required": ["node", "upid"]
                 }
             }),
             json!({
                 "name": "list_services",
-                "description": "List system services on a node",
+                "description": "List node services",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4388,12 +4388,12 @@ impl McpServer {
             }),
             json!({
                 "name": "manage_service",
-                "description": "Manage a system service (Start, Stop, Restart, Reload)",
+                "description": "Manage node service",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "service": { "type": "string", "description": "Service name (e.g. pvestatd)" },
+                        "service": { "type": "string", "description": "Service" },
                         "action": { "type": "string", "enum": ["start", "stop", "restart", "reload"] }
                     },
                     "required": ["node", "service", "action"]
@@ -4401,7 +4401,7 @@ impl McpServer {
             }),
             json!({
                 "name": "list_apt_updates",
-                "description": "List available APT updates on a node",
+                "description": "List APT updates",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4412,7 +4412,7 @@ impl McpServer {
             }),
             json!({
                 "name": "run_apt_update",
-                "description": "Run apt-get update on a node (Async, returns UPID)",
+                "description": "Run APT update",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4423,7 +4423,7 @@ impl McpServer {
             }),
             json!({
                 "name": "get_apt_versions",
-                "description": "Get versions of installed Proxmox packages",
+                "description": "Get PVE versions",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4434,7 +4434,7 @@ impl McpServer {
             }),
             json!({
                 "name": "get_subscription_info",
-                "description": "Get subscription status for a node",
+                "description": "Get node subscription",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4445,19 +4445,19 @@ impl McpServer {
             }),
             json!({
                 "name": "set_subscription_key",
-                "description": "Set a new subscription key",
+                "description": "Set sub key",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
-                        "key": { "type": "string", "description": "The subscription key" }
+                        "key": { "type": "string" }
                     },
                     "required": ["node", "key"]
                 }
             }),
             json!({
                 "name": "check_subscription",
-                "description": "Force update/check of the subscription",
+                "description": "Check subscription",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4473,7 +4473,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_users",
-                "description": "List all users in the cluster",
+                "description": "List cluster users",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4482,37 +4482,37 @@ impl McpServer {
             }),
             json!({
                 "name": "create_user",
-                "description": "Create a new user",
+                "description": "Create user",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "userid": { "type": "string", "description": "User ID (e.g. user@pve)" },
-                        "password": { "type": "string", "description": "Initial password" },
-                        "email": { "type": "string", "description": "E-mail address" },
-                        "firstname": { "type": "string", "description": "First name" },
-                        "lastname": { "type": "string", "description": "Last name" },
-                        "expire": { "type": "integer", "description": "Account expiration date (seconds since epoch)" },
-                        "enable": { "type": "boolean", "description": "Enable the account (default: true)" },
-                        "comment": { "type": "string", "description": "Comment/Note" },
-                        "groups": { "type": "array", "items": { "type": "string" }, "description": "List of groups" }
+                        "password": { "type": "string" },
+                        "email": { "type": "string" },
+                        "firstname": { "type": "string" },
+                        "lastname": { "type": "string" },
+                        "expire": { "type": "integer", "description": "Expiry (epoch)" },
+                        "enable": { "type": "boolean" },
+                        "comment": { "type": "string" },
+                        "groups": { "type": "array", "items": { "type": "string" }, "description": "Groups" }
                     },
                     "required": ["userid", "password"]
                 }
             }),
             json!({
                 "name": "delete_user",
-                "description": "Delete a user",
+                "description": "Delete user",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "userid": { "type": "string", "description": "User ID to delete" }
+                        "userid": { "type": "string" }
                     },
                     "required": ["userid"]
                 }
             }),
             json!({
                 "name": "list_roles",
-                "description": "List all defined roles and their privileges",
+                "description": "List roles",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4521,43 +4521,43 @@ impl McpServer {
             }),
             json!({
                 "name": "create_role",
-                "description": "Create a new role with specific privileges",
+                "description": "Create role",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "roleid": { "type": "string", "description": "The Role ID" },
-                        "privs": { "type": "string", "description": "Comma separated list of privileges" }
+                        "roleid": { "type": "string" },
+                        "privs": { "type": "string", "description": "Comma separated privs" }
                     },
                     "required": ["roleid", "privs"]
                 }
             }),
             json!({
                 "name": "update_role",
-                "description": "Update role privileges",
+                "description": "Update role",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "roleid": { "type": "string", "description": "The Role ID" },
-                        "privs": { "type": "string", "description": "Comma separated list of privileges" },
-                        "append": { "type": "boolean", "description": "Append privileges instead of replacing (default: false)" }
+                        "roleid": { "type": "string" },
+                        "privs": { "type": "string" },
+                        "append": { "type": "boolean" }
                     },
                     "required": ["roleid", "privs"]
                 }
             }),
             json!({
                 "name": "delete_role",
-                "description": "Delete a role",
+                "description": "Delete role",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "roleid": { "type": "string", "description": "The Role ID" }
+                        "roleid": { "type": "string" }
                     },
                     "required": ["roleid"]
                 }
             }),
             json!({
                 "name": "list_acls",
-                "description": "List all Access Control List (ACL) entries",
+                "description": "List ACLs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4566,17 +4566,17 @@ impl McpServer {
             }),
             json!({
                 "name": "update_acl",
-                "description": "Update Access Control List (Add/Remove permissions)",
+                "description": "Update ACL",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "path": { "type": "string", "description": "The path (e.g. /vms/100, /storage/local)" },
-                        "users": { "type": "string", "description": "Comma separated list of users" },
-                        "groups": { "type": "string", "description": "Comma separated list of groups" },
-                        "tokens": { "type": "string", "description": "Comma separated list of API tokens" },
-                        "roles": { "type": "string", "description": "Comma separated list of roles" },
-                        "delete": { "type": "integer", "enum": [0, 1], "description": "Remove specified permissions instead of adding" },
-                        "propagate": { "type": "integer", "enum": [0, 1], "description": "Propagate to sub-paths" }
+                        "path": { "type": "string", "description": "Path (e.g. /vms/100)" },
+                        "users": { "type": "string", "description": "Users" },
+                        "groups": { "type": "string", "description": "Groups" },
+                        "tokens": { "type": "string", "description": "API tokens" },
+                        "roles": { "type": "string", "description": "Roles" },
+                        "delete": { "type": "integer", "enum": [0, 1], "description": "Remove?" },
+                        "propagate": { "type": "integer", "enum": [0, 1] }
                     },
                     "required": ["path", "roles"]
                 }
@@ -4588,7 +4588,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_pools",
-                "description": "List all resource pools",
+                "description": "List resource pools",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4597,56 +4597,56 @@ impl McpServer {
             }),
             json!({
                 "name": "create_pool",
-                "description": "Create a new resource pool",
+                "description": "Create pool",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "poolid": { "type": "string", "description": "The Pool ID" },
-                        "comment": { "type": "string", "description": "Optional comment" }
+                        "poolid": { "type": "string" },
+                        "comment": { "type": "string" }
                     },
                     "required": ["poolid"]
                 }
             }),
             json!({
                 "name": "get_pool_details",
-                "description": "Get detailed information about a resource pool",
+                "description": "Get pool details",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "poolid": { "type": "string", "description": "The Pool ID" }
+                        "poolid": { "type": "string" }
                     },
                     "required": ["poolid"]
                 }
             }),
             json!({
                 "name": "update_pool",
-                "description": "Update a resource pool (add/remove members or change comment)",
+                "description": "Update pool",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "poolid": { "type": "string", "description": "The Pool ID" },
-                        "comment": { "type": "string", "description": "New comment" },
-                        "vms": { "type": "string", "description": "List of VMs to add/remove (comma separated IDs)" },
-                        "storage": { "type": "string", "description": "List of Storage IDs to add/remove" },
-                        "delete": { "type": "integer", "enum": [0, 1], "description": "Remove specified items instead of adding" }
+                        "poolid": { "type": "string" },
+                        "comment": { "type": "string" },
+                        "vms": { "type": "string", "description": "VM IDs" },
+                        "storage": { "type": "string", "description": "Storage IDs" },
+                        "delete": { "type": "integer", "enum": [0, 1] }
                     },
                     "required": ["poolid"]
                 }
             }),
             json!({
                 "name": "delete_pool",
-                "description": "Delete a resource pool",
+                "description": "Delete pool",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "poolid": { "type": "string", "description": "The Pool ID" }
+                        "poolid": { "type": "string" }
                     },
                     "required": ["poolid"]
                 }
             }),
             json!({
                 "name": "list_replication_jobs",
-                "description": "List all configured replication jobs",
+                "description": "List replication jobs",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4655,14 +4655,14 @@ impl McpServer {
             }),
             json!({
                 "name": "create_replication_job",
-                "description": "Create a new replication job",
+                "description": "Create replication job",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "Job ID" },
-                        "target": { "type": "string", "description": "Target node" },
-                        "schedule": { "type": "string", "description": "Schedule (e.g. '*/15')" },
-                        "rate": { "type": "number", "description": "Rate limit in MB/s" },
+                        "id": { "type": "string" },
+                        "target": { "type": "string" },
+                        "schedule": { "type": "string" },
+                        "rate": { "type": "number", "description": "MB/s" },
                         "comment": { "type": "string" },
                         "enable": { "type": "boolean" }
                     },
@@ -4671,11 +4671,11 @@ impl McpServer {
             }),
             json!({
                 "name": "update_replication_job",
-                "description": "Update a replication job configuration",
+                "description": "Update replication job",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "Job ID" },
+                        "id": { "type": "string" },
                         "schedule": { "type": "string" },
                         "rate": { "type": "number" },
                         "comment": { "type": "string" },
@@ -4686,18 +4686,18 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_replication_job",
-                "description": "Delete a replication job",
+                "description": "Delete replication job",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "Job ID" }
+                        "id": { "type": "string" }
                     },
                     "required": ["id"]
                 }
             }),
             json!({
                 "name": "list_ha_resources",
-                "description": "List all High Availability (HA) resources",
+                "description": "List HA resources",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4706,7 +4706,7 @@ impl McpServer {
             }),
             json!({
                 "name": "list_ha_groups",
-                "description": "List all High Availability (HA) groups",
+                "description": "List HA groups",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4715,27 +4715,27 @@ impl McpServer {
             }),
             json!({
                 "name": "add_ha_resource",
-                "description": "Add a VM or Container to HA management",
+                "description": "Add HA resource",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "sid": { "type": "string", "description": "Service ID (e.g. vm:100 or ct:200)" },
+                        "sid": { "type": "string", "description": "Service ID (e.g. vm:100)" },
                         "comment": { "type": "string" },
-                        "group": { "type": "string", "description": "HA group name" },
+                        "group": { "type": "string" },
                         "max_relocate": { "type": "integer" },
                         "max_restart": { "type": "integer" },
-                        "state": { "type": "string", "enum": ["started", "stopped", "enabled", "disabled", "ignored"], "description": "Desired state" }
+                        "state": { "type": "string", "enum": ["started", "stopped", "enabled", "disabled", "ignored"] }
                     },
                     "required": ["sid"]
                 }
             }),
             json!({
                 "name": "update_ha_resource",
-                "description": "Update HA resource configuration or state",
+                "description": "Update HA resource",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "sid": { "type": "string", "description": "Service ID" },
+                        "sid": { "type": "string" },
                         "comment": { "type": "string" },
                         "group": { "type": "string" },
                         "max_relocate": { "type": "integer" },
@@ -4747,11 +4747,11 @@ impl McpServer {
             }),
             json!({
                 "name": "remove_ha_resource",
-                "description": "Remove a resource from HA management",
+                "description": "Remove HA resource",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "sid": { "type": "string", "description": "Service ID" }
+                        "sid": { "type": "string" }
                     },
                     "required": ["sid"]
                 }
@@ -4763,7 +4763,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_pci_mappings",
-                "description": "List all cluster-wide PCI resource mappings",
+                "description": "List PCI mappings",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4772,12 +4772,12 @@ impl McpServer {
             }),
             json!({
                 "name": "create_pci_mapping",
-                "description": "Create a new cluster-wide PCI resource mapping",
+                "description": "Create PCI mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "The ID of the mapping (logical name, e.g., 'nvidia-t4')" },
-                        "map": { "type": "string", "description": "Comma-separated list of mapping entries (node=N,path=P,...)" },
+                        "id": { "type": "string" },
+                        "map": { "type": "string", "description": "Entries" },
                         "description": { "type": "string" }
                     },
                     "required": ["id", "map"]
@@ -4785,7 +4785,7 @@ impl McpServer {
             }),
             json!({
                 "name": "update_pci_mapping",
-                "description": "Update an existing PCI resource mapping",
+                "description": "Update PCI mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4798,7 +4798,7 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_pci_mapping",
-                "description": "Delete a PCI resource mapping",
+                "description": "Delete PCI mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4809,7 +4809,7 @@ impl McpServer {
             }),
             json!({
                 "name": "list_usb_mappings",
-                "description": "List all cluster-wide USB resource mappings",
+                "description": "List USB mappings",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4818,12 +4818,12 @@ impl McpServer {
             }),
             json!({
                 "name": "create_usb_mapping",
-                "description": "Create a new cluster-wide USB resource mapping",
+                "description": "Create USB mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "The ID of the mapping (logical name)" },
-                        "map": { "type": "string", "description": "Comma-separated list of mapping entries (node=N,path=P,...)" },
+                        "id": { "type": "string" },
+                        "map": { "type": "string" },
                         "description": { "type": "string" }
                     },
                     "required": ["id", "map"]
@@ -4831,7 +4831,7 @@ impl McpServer {
             }),
             json!({
                 "name": "update_usb_mapping",
-                "description": "Update an existing USB resource mapping",
+                "description": "Update USB mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4844,7 +4844,7 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_usb_mapping",
-                "description": "Delete a USB resource mapping",
+                "description": "Delete USB mapping",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -4860,7 +4860,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_metric_servers",
-                "description": "List configured metric export servers",
+                "description": "List metric servers",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4869,29 +4869,29 @@ impl McpServer {
             }),
             json!({
                 "name": "create_metric_server",
-                "description": "Configure a new metric export server (InfluxDB/Graphite)",
+                "description": "Add metric server",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "ID/Name" },
-                        "type": { "type": "string", "enum": ["influxdb", "graphite"], "description": "Server type" },
-                        "server": { "type": "string", "description": "Server IP/Hostname" },
-                        "port": { "type": "integer", "description": "Server Port" },
-                        "path": { "type": "string", "description": "Path (InfluxDB only)" },
-                        "bucket": { "type": "string", "description": "Bucket (InfluxDB v2)" },
-                        "organization": { "type": "string", "description": "Organization (InfluxDB v2)" },
-                        "token": { "type": "string", "description": "Token (InfluxDB v2)" }
+                        "id": { "type": "string" },
+                        "type": { "type": "string", "enum": ["influxdb", "graphite"] },
+                        "server": { "type": "string" },
+                        "port": { "type": "integer" },
+                        "path": { "type": "string" },
+                        "bucket": { "type": "string" },
+                        "organization": { "type": "string" },
+                        "token": { "type": "string" }
                     },
                     "required": ["id", "type", "server", "port"]
                 }
             }),
             json!({
                 "name": "update_metric_server",
-                "description": "Update a metric export server configuration",
+                "description": "Update metric server",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "ID/Name" },
+                        "id": { "type": "string" },
                         "server": { "type": "string" },
                         "port": { "type": "integer" },
                         "disable": { "type": "integer", "enum": [0, 1] }
@@ -4901,11 +4901,11 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_metric_server",
-                "description": "Remove a metric export server",
+                "description": "Remove metric server",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "ID/Name" }
+                        "id": { "type": "string" }
                     },
                     "required": ["id"]
                 }
@@ -4917,7 +4917,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_backup_schedules",
-                "description": "List all cluster-wide backup schedules",
+                "description": "List backup schedules",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -4926,30 +4926,30 @@ impl McpServer {
             }),
             json!({
                 "name": "create_backup_schedule",
-                "description": "Create a new cluster-wide backup schedule",
+                "description": "Create backup schedule",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "vmid": { "type": "string", "description": "Comma-separated list of VMIDs or 'all'" },
-                        "storage": { "type": "string", "description": "Target storage ID" },
-                        "schedule": { "type": "string", "description": "Backup schedule (Proxmox schedule format, e.g., 'daily', '02:00')" },
-                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"], "description": "Backup mode" },
-                        "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"], "description": "Compression algorithm" },
-                        "enabled": { "type": "boolean", "description": "Whether the schedule is enabled" },
-                        "node": { "type": "string", "description": "Restrict to specific node" },
-                        "all": { "type": "boolean", "description": "Backup all VMs" },
-                        "exclude": { "type": "string", "description": "Comma-separated list of VMIDs to exclude" }
+                        "vmid": { "type": "string", "description": "VMIDs/all" },
+                        "storage": { "type": "string" },
+                        "schedule": { "type": "string", "description": "PVE schedule" },
+                        "mode": { "type": "string", "enum": ["snapshot", "suspend", "stop"] },
+                        "compress": { "type": "string", "enum": ["zstd", "gzip", "lzo"] },
+                        "enabled": { "type": "boolean" },
+                        "node": { "type": "string" },
+                        "all": { "type": "boolean" },
+                        "exclude": { "type": "string" }
                     },
                     "required": ["storage", "schedule"]
                 }
             }),
             json!({
                 "name": "update_backup_schedule",
-                "description": "Update an existing backup schedule",
+                "description": "Update backup schedule",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "The ID of the backup job (e.g., backup-1234)" },
+                        "id": { "type": "string", "description": "Job ID" },
                         "vmid": { "type": "string" },
                         "storage": { "type": "string" },
                         "schedule": { "type": "string" },
@@ -4962,11 +4962,11 @@ impl McpServer {
             }),
             json!({
                 "name": "delete_backup_schedule",
-                "description": "Delete a backup schedule",
+                "description": "Delete backup schedule",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "id": { "type": "string", "description": "The ID of the backup job" }
+                        "id": { "type": "string" }
                     },
                     "required": ["id"]
                 }
@@ -4978,11 +4978,11 @@ impl McpServer {
         vec![
             json!({
                 "name": "get_ceph_status",
-                "description": "Get Ceph cluster status from a node",
+                "description": "Get Ceph status",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
@@ -4993,37 +4993,37 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
             }),
             json!({
                 "name": "create_ceph_pool",
-                "description": "Create a Ceph pool",
+                "description": "Create Ceph pool",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "name": { "type": "string", "description": "Pool name" },
-                        "pg_num": { "type": "integer", "description": "Placement groups (default: 128)" },
-                        "add_storages": { "type": "integer", "description": "Configure VM/CT storage (0 or 1, default 1)" },
-                        "min_size": { "type": "integer", "description": "Minimum replicas" },
-                        "size": { "type": "integer", "description": "Replicas" },
-                        "crush_rule": { "type": "string", "description": "Crush rule name" }
+                        "node": { "type": "string" },
+                        "name": { "type": "string" },
+                        "pg_num": { "type": "integer" },
+                        "add_storages": { "type": "integer", "description": "0/1" },
+                        "min_size": { "type": "integer" },
+                        "size": { "type": "integer" },
+                        "crush_rule": { "type": "string" }
                     },
                     "required": ["node", "name"]
                 }
             }),
             json!({
                 "name": "delete_ceph_pool",
-                "description": "Delete a Ceph pool",
+                "description": "Delete Ceph pool",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" },
-                        "name": { "type": "string", "description": "Pool name" },
-                        "remove_storages": { "type": "boolean", "description": "Remove associated VM/CT storages (default: false)" }
+                        "node": { "type": "string" },
+                        "name": { "type": "string" },
+                        "remove_storages": { "type": "boolean" }
                     },
                     "required": ["node", "name"]
                 }
@@ -5034,7 +5034,7 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
@@ -5045,7 +5045,7 @@ impl McpServer {
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "node": { "type": "string", "description": "Node name" }
+                        "node": { "type": "string" }
                     },
                     "required": ["node"]
                 }
@@ -5057,7 +5057,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "list_sdn_zones",
-                "description": "List all SDN Zones",
+                "description": "List SDN Zones",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -5066,32 +5066,32 @@ impl McpServer {
             }),
             json!({
                 "name": "create_sdn_zone",
-                "description": "Create a new SDN Zone",
+                "description": "Create SDN Zone",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "zone": { "type": "string", "description": "Zone ID" },
-                        "type": { "type": "string", "enum": ["simple", "vlan", "qinq", "vxlan", "evpn"], "description": "Zone Type" },
-                        "mtu": { "type": "integer", "description": "MTU" },
-                        "nodes": { "type": "string", "description": "Comma separated list of nodes (optional)" }
+                        "zone": { "type": "string" },
+                        "type": { "type": "string", "enum": ["simple", "vlan", "qinq", "vxlan", "evpn"] },
+                        "mtu": { "type": "integer" },
+                        "nodes": { "type": "string" }
                     },
                     "required": ["zone", "type"]
                 }
             }),
             json!({
                 "name": "delete_sdn_zone",
-                "description": "Delete an SDN Zone",
+                "description": "Delete SDN Zone",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "zone": { "type": "string", "description": "Zone ID" }
+                        "zone": { "type": "string" }
                     },
                     "required": ["zone"]
                 }
             }),
             json!({
                 "name": "list_sdn_vnets",
-                "description": "List all SDN Vnets",
+                "description": "List SDN Vnets",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -5100,32 +5100,32 @@ impl McpServer {
             }),
             json!({
                 "name": "create_sdn_vnet",
-                "description": "Create a new SDN Vnet",
+                "description": "Create SDN Vnet",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "vnet": { "type": "string", "description": "Vnet ID" },
-                        "zone": { "type": "string", "description": "Zone ID" },
-                        "tag": { "type": "integer", "description": "VLAN Tag/ID" },
-                        "alias": { "type": "string", "description": "Alias" }
+                        "vnet": { "type": "string" },
+                        "zone": { "type": "string" },
+                        "tag": { "type": "integer" },
+                        "alias": { "type": "string" }
                     },
                     "required": ["vnet", "zone"]
                 }
             }),
             json!({
                 "name": "delete_sdn_vnet",
-                "description": "Delete an SDN Vnet",
+                "description": "Delete SDN Vnet",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "vnet": { "type": "string", "description": "Vnet ID" }
+                        "vnet": { "type": "string" }
                     },
                     "required": ["vnet"]
                 }
             }),
             json!({
                 "name": "apply_sdn_changes",
-                "description": "Apply pending SDN changes to the cluster",
+                "description": "Apply SDN changes",
                 "inputSchema": {
                     "type": "object",
                     "properties": {},
@@ -5139,7 +5139,7 @@ impl McpServer {
         vec![
             json!({
                 "name": "vm_agent_ping",
-                "description": "Ping the QEMU Guest Agent inside a VM",
+                "description": "Ping VM Guest Agent",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -5151,62 +5151,62 @@ impl McpServer {
             }),
             json!({
                 "name": "vm_exec",
-                "description": "Execute a command inside a VM via QEMU Agent (Async, returns PID)",
+                "description": "Exec command in VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "command": { "type": "string", "description": "Command to run (e.g. 'ls -l /')" },
-                        "input_data": { "type": "string", "description": "Input data to pass to stdin" }
+                        "command": { "type": "string", "description": "e.g. 'ls -l /'" },
+                        "input_data": { "type": "string" }
                     },
                     "required": ["node", "vmid", "command"]
                 }
             }),
             json!({
                 "name": "vm_exec_status",
-                "description": "Get status/output of a command executed via QEMU Agent",
+                "description": "Get VM exec status",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "pid": { "type": "integer", "description": "PID from vm_exec" }
+                        "pid": { "type": "integer" }
                     },
                     "required": ["node", "vmid", "pid"]
                 }
             }),
             json!({
                 "name": "vm_read_file",
-                "description": "Read a file from inside a VM via QEMU Agent",
+                "description": "Read file from VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "file": { "type": "string", "description": "Path to file" }
+                        "file": { "type": "string" }
                     },
                     "required": ["node", "vmid", "file"]
                 }
             }),
             json!({
                 "name": "vm_write_file",
-                "description": "Write to a file inside a VM via QEMU Agent",
+                "description": "Write file to VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "file": { "type": "string", "description": "Path to file" },
-                        "content": { "type": "string", "description": "Content to write" },
-                        "encode": { "type": "boolean", "description": "Base64 encode content? (default: false)" }
+                        "file": { "type": "string" },
+                        "content": { "type": "string" },
+                        "encode": { "type": "boolean" }
                     },
                     "required": ["node", "vmid", "file", "content"]
                 }
             }),
             json!({
                 "name": "list_pci_devices",
-                "description": "List available PCI devices on a node",
+                "description": "List node PCI devices",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -5217,7 +5217,7 @@ impl McpServer {
             }),
             json!({
                 "name": "list_usb_devices",
-                "description": "List available USB devices on a node",
+                "description": "List node USB devices",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -5228,16 +5228,16 @@ impl McpServer {
             }),
             json!({
                 "name": "add_pci_device",
-                "description": "Add a PCI device to a VM",
+                "description": "Add PCI device to VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "device_id": { "type": "string", "description": "e.g. hostpci0" },
-                        "host": { "type": "string", "description": "PCI ID (0000:00:00.0) or mapping" },
-                        "pcie": { "type": "boolean", "description": "PCIe flag" },
-                        "mdev": { "type": "string", "description": "Mediated device type" },
+                        "host": { "type": "string", "description": "PCI ID/mapping" },
+                        "pcie": { "type": "boolean" },
+                        "mdev": { "type": "string" },
                         "extra_options": { "type": "string" }
                     },
                     "required": ["node", "vmid", "device_id", "host"]
@@ -5245,15 +5245,15 @@ impl McpServer {
             }),
             json!({
                 "name": "add_usb_device",
-                "description": "Add a USB device to a VM",
+                "description": "Add USB device to VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
                         "device_id": { "type": "string", "description": "e.g. usb0" },
-                        "host": { "type": "string", "description": "host=ID or spice" },
-                        "usb3": { "type": "boolean", "description": "USB3 flag" },
+                        "host": { "type": "string", "description": "host=ID/spice" },
+                        "usb3": { "type": "boolean" },
                         "extra_options": { "type": "string" }
                     },
                     "required": ["node", "vmid", "device_id", "host"]
@@ -5261,28 +5261,28 @@ impl McpServer {
             }),
             json!({
                 "name": "remove_vm_device",
-                "description": "Remove a PCI or USB device from a VM",
+                "description": "Remove PCI/USB from VM",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "device_id": { "type": "string", "description": "Device ID to remove (e.g. hostpci0, usb0)" }
+                        "device_id": { "type": "string" }
                     },
                     "required": ["node", "vmid", "device_id"]
                 }
             }),
             json!({
                 "name": "add_lxc_mountpoint",
-                "description": "Add a bind mount to an LXC container",
+                "description": "Add CT mountpoint",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "node": { "type": "string" },
                         "vmid": { "type": "integer" },
-                        "mp_id": { "type": "string", "description": "Mount point ID (e.g. mp0)" },
-                        "volume": { "type": "string", "description": "Host path or storage volume" },
-                        "path": { "type": "string", "description": "Path inside container" },
+                        "mp_id": { "type": "string", "description": "e.g. mp0" },
+                        "volume": { "type": "string" },
+                        "path": { "type": "string" },
                         "read_only": { "type": "boolean" },
                         "backup": { "type": "boolean" },
                         "extra_options": { "type": "string" }
@@ -5292,7 +5292,7 @@ impl McpServer {
             }),
             json!({
                 "name": "remove_lxc_mountpoint",
-                "description": "Remove a mount point from an LXC container",
+                "description": "Remove CT mountpoint",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
