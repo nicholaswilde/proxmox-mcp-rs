@@ -1,8 +1,8 @@
 # Implementation Plan: MCP Token Optimization (mcp_optimization_20260215)
 
 ## Phase 1: Benchmarking & Analysis
-- [ ] Task: Create a baseline measurement script to count tokens in `list_tools` and sample tool responses (e.g., `list_vms`, `get_node_status`).
-- [ ] Task: Identify specific redundant or low-value fields in `proxmox::vm::VmSummary`, `proxmox::system::NodeStatus`, and other key structs.
+- [x] Task: Create a baseline measurement script to count tokens in `list_tools` and sample tool responses (e.g., `list_vms`, `get_node_status`).
+- [x] Task: Identify specific redundant or low-value fields in `proxmox::vm::VmSummary`, `proxmox::system::NodeStatus`, and other key structs.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Benchmarking & Analysis' (Protocol in workflow.md)
 
 ## Phase 2: Tool Description Optimization
