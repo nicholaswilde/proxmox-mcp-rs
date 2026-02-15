@@ -18,12 +18,19 @@
 - [ ] Task: Verify reduction in average response tokens against baseline.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Response Payload Thinning' (Protocol in workflow.md)
 
-## Phase 4: Resource & Schema Refinement
+## Phase 4: Tool Consolidation
+- [ ] Task: Identify tool groups suitable for consolidation (e.g., VM power actions, Firewall management, Storage operations).
+- [ ] Task: Implement consolidated tools in `src/mcp.rs` (e.g., `vm_power_action`, `manage_firewall_alias`).
+- [ ] Task: Deprecate or remove redundant granular tools.
+- [ ] Task: Update `tests/mcp_integration.rs` to use consolidated tools.
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Tool Consolidation' (Protocol in workflow.md)
+
+## Phase 5: Resource & Schema Refinement
 - [ ] Task: Optimize MCP resource names and descriptions in `src/mcp.rs`.
 - [ ] Task: Review and compress JSON schema definitions for complex tool arguments.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Resource & Schema Refinement' (Protocol in workflow.md)
+- [ ] Task: Conductor - User Manual Verification 'Phase 5: Resource & Schema Refinement' (Protocol in workflow.md)
 
-## Phase 5: Final Validation
+## Phase 6: Final Validation
 - [ ] Task: Perform final token count measurements and compare against Acceptance Criteria.
 - [ ] Task: Manual verification of agent capability with the optimized server.
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: Final Validation' (Protocol in workflow.md)
+- [ ] Task: Conductor - User Manual Verification 'Phase 6: Final Validation' (Protocol in workflow.md)
