@@ -43,6 +43,11 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Increase code coverage to >90% and integrate with Coveralls.io.**
   *Link: [./tracks/coverage_90_coveralls_20260214/](./tracks/coverage_90_coveralls_20260214/)*
 
+---
+
+- [ ] **Track: Optimize this MCP server to reduce the number of tokens used by the agent.**
+  *Link: [./tracks/mcp_optimization_20260215/](./tracks/mcp_optimization_20260215/)*
+
 
 
 
