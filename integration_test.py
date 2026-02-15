@@ -97,9 +97,39 @@ def run_test():
         
         if "result" in call_resp:
             content = call_resp["result"]["content"][0]["text"]
-            print(f"<- Proxmox Response:\n{content}")
+            print(f"<- Proxmox Response (list_nodes):\n{content}")
         elif "error" in call_resp:
             print(f"<- Proxmox API Error: {call_resp['error']}")
+
+        # 5. Call list_vms
+        print("-> Calling tool 'list_vms'...")
+        call_req = create_request("tools/call", {
+            "name": "list_vms",
+            "arguments": {}
+        }, 4)
+        process.stdin.write(json.dumps(call_req) + "\n")
+        process.stdin.flush()
+        response = process.stdout.readline()
+        call_resp = json.loads(response)
+        if "result" in call_resp:
+            print(f"<- Success! list_vms returned data.")
+        elif "error" in call_resp:
+            print(f"<- Proxmox API Error (list_vms): {call_resp['error']}")
+
+        # 6. Call list_cluster_storage
+        print("-> Calling tool 'list_cluster_storage'...")
+        call_req = create_request("tools/call", {
+            "name": "list_cluster_storage",
+            "arguments": {}
+        }, 5)
+        process.stdin.write(json.dumps(call_req) + "\n")
+        process.stdin.flush()
+        response = process.stdout.readline()
+        call_resp = json.loads(response)
+        if "result" in call_resp:
+            print(f"<- Success! list_cluster_storage returned data.")
+        elif "error" in call_resp:
+            print(f"<- Proxmox API Error (list_cluster_storage): {call_resp['error']}")
 
     except Exception as e:
         print(f"Test failed: {e}")

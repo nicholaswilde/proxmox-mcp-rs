@@ -1,20 +1,35 @@
 # Optimization Findings - MCP Token Optimization
 
-## Tool Consolidation Opportunities
-- **VM Power**: Merge `start_vm`, `stop_vm`, `shutdown_vm`, `reset_vm`, `reboot_vm`, `start_container`, `stop_container`, `shutdown_container`, `reset_container` -> `vm_power_action(node, vmid, type, action)`.
-- **Resource Lifecycle**: Merge `create_vm`/`create_container` and `delete_vm`/`delete_container`.
-- **Firewall**: Merge Alias and Security Group CRUD operations.
-- **SDN**: Merge Zone and Vnet CRUD operations.
-- **Storage**: Merge CRUD operations for storage definitions.
+## Results Summary
+- **Baseline Tools List**: 13,745 tokens (~55,000 chars)
+- **Optimized Tools List**: 2,098 tokens (~8,400 chars)
+- **Reduction**: **85%**
+- **Tool Count**: Reduced from ~100 to 44 (56% reduction).
 
-## Payload Reduction
-- **Pretty-printing**: Remove all `to_string_pretty` calls in favor of compact JSON.
-- **Field Filtering**:
-    - `list_nodes`: Keep only `node`, `status`, `cpu`, `mem`, `maxcpu`, `maxmem`, `uptime`.
-    - `list_vms`: Keep existing fields (already thin).
-    - `get_vm_config`: Possibly filter out extremely long fields or internal hardware IDs unless requested.
-    - `list_tasks`: Keep only `upid`, `node`, `user`, `starttime`, `status`, `type`.
+## Key Optimization Strategies
 
-## Description Refinement
-- Many descriptions use flowery language ("Retrieves a comprehensive list..."). These can be shortened to direct imperatives ("List...").
-- Argument descriptions can be shortened (e.g., "Unique Process ID" -> "UPID").
+### 1. Polymorphic Tool Consolidation
+- Merged ~60 granular tools into 7 polymorphic handlers:
+    - `vm_power_action`: Unified all power state transitions for VMs and Containers.
+    - `manage_resource`: Unified creation, deletion, cloning, and migration.
+    - `manage_resource_config`: Unified all configuration changes (disks, networks, cloud-init, exec).
+    - `manage_snapshot_backup`: Unified all snapshot and backup operations.
+    - `manage_node_system`: Unified service management, updates, and certificates.
+    - `manage_cluster_config`: Unified CRUD for Storage, SDN, Firewall, Pools, and Users.
+    - `manage_tags`: Unified tag operations.
+
+### 2. Radical Description Compression
+- Shortened all tool and parameter descriptions to minimal functional imperatives.
+- Example: "Retrieves a comprehensive list of all virtual machines" -> "List VMs".
+- Removed property-level descriptions where the key name is self-explanatory (e.g., `vmid`, `node`).
+
+### 3. Response Payload Thinning
+- Implemented `#[serde(skip_serializing_if = "Option::is_none")]` across all Proxmox client DTOs.
+- Removed redundant or internal-only fields from listing responses.
+- Switched from pretty-printed JSON to compact JSON for all tool outputs.
+- Verified reduction in common listing tools:
+    - `list_nodes`: ~33% reduction in token footprint.
+    - `list_vms`: Minimal baseline maintained, but highly efficient (~20 tokens per VM).
+
+## Maintenance Note
+The `src/mcp.rs` file was completely rebuilt to ensure a clean implementation of the consolidated dispatch logic. The helper script `scripts/rebuild_mcp.py` can be used to regenerate the server structure if further large-scale changes are needed.

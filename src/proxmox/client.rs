@@ -30,10 +30,12 @@ struct TicketData {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VmInfo {
     pub vmid: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<String>,
-    #[serde(rename = "type")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub vm_type: Option<String>,
 }
 
@@ -41,35 +43,51 @@ pub struct VmInfo {
 pub struct NodeInfo {
     pub node: String,
     pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mem: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub maxcpu: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub maxmem: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub uptime: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StorageInfo {
     pub storage: String,
-    #[serde(rename = "type")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub storage_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub used: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub total: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub avail: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub shared: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub active: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub enabled: Option<u16>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskInfo {
     pub upid: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub starttime: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[serde(rename = "type")]
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub task_type: Option<String>,
 }
 

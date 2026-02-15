@@ -54,8 +54,8 @@ async fn test_tool_definition() {
     let tools = res["tools"].as_array().unwrap();
 
     assert!(
-        tools.iter().any(|t| t["name"] == "add_lxc_bind_mount"),
-        "Tool add_lxc_bind_mount not found in tools/list"
+        tools.iter().any(|t| t["name"] == "manage_resource_config"),
+        "Tool manage_resource_config not found in tools/list"
     );
 }
 
@@ -74,12 +74,13 @@ async fn test_call_add_lxc_bind_mount() {
     let args = json!({
         "node": "pve1",
         "vmid": 100,
+        "action": "add_lxc_bind_mount",
         "mp_id": "mp0",
         "source": "/host/path",
         "target": "/container/path",
         "read_only": true
     });
-    let result = server.call_tool("add_lxc_bind_mount", &args).await;
+    let result = server.call_tool("manage_resource_config", &args).await;
 
     assert!(result.is_ok());
     let content = result.unwrap();
