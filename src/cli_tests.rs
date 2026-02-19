@@ -7,6 +7,13 @@ mod tests {
     fn test_version_format() {
         let cmd = Args::command();
         let version = cmd.get_version().expect("Version should be set");
+        let expected_version = env!("CARGO_PKG_VERSION");
+
+        assert_eq!(
+            version, expected_version,
+            "CLI version {} should match CARGO_PKG_VERSION {}",
+            version, expected_version
+        );
 
         // Check that version does not start with 'v'
         assert!(
