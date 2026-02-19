@@ -2,7 +2,7 @@
 
 ## Documentation Style
 - **Technical Precision:** All documentation, error messages, and logs should use precise technical terminology related to Proxmox VE and the Model Context Protocol.
-- **Clarity over Brevity:** Ensure that tool descriptions and parameter requirements are explicitly stated to minimize ambiguity for LLM clients.
+- **Conciseness for Efficiency:** All tool and argument descriptions should be systematically shortened to minimal functional imperatives (e.g., "List VMs") to minimize token usage and maximize agent context window.
 - **Consistent Terminology:** Use consistent naming conventions that map directly to Proxmox API concepts (e.g., `vmid`, `node`, `storage`).
 - **README Updates:** All Proxmox functions and tools must be documented in the `README.md`.
 

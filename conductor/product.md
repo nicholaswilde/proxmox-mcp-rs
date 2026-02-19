@@ -9,6 +9,7 @@ The primary users of **proxmox-mcp-rs** are DevOps engineers and system administ
 ## Core Goals
 - **High Performance:** Provide a significantly faster, single-binary alternative to existing Python-based Proxmox MCP implementations.
 - **Resource Efficiency:** Maintain a minimal resource footprint suitable for local execution or containerized environments.
+- **Token Efficiency:** Optimized tool definitions and payloads to minimize token usage and maximize the agent's context window.
 - **Reliability:** Leverage Rust's type safety and concurrency model to ensure robust interaction with the Proxmox API.
 
 ## Technical Features
