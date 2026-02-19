@@ -100,7 +100,7 @@ Before marking any task complete, verify:
 - [ ] Type safety is enforced (e.g., type hints, TypeScript types, Go types)
 - [ ] No linting or static analysis errors (using the project's configured tools)
 - [ ] Works correctly on mobile (if applicable)
-- [ ] Documentation updated if needed
+- [ ] Documentation updated (README.md, compose.yaml, config.toml.example)
 - [ ] Taskfile.yml updated with any new development commands
 - [ ] No security vulnerabilities introduced
 

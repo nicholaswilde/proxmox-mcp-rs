@@ -35,17 +35,17 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `list_vms` / `list_containers`: Resource discovery.
   - `list_storage` / `list_cluster_storage`: Storage status and definitions.
   - `list_networks`: Node network interfaces.
-  - `list_firewall_rules` / `list_firewall_aliases` / `list_security_groups`: Firewall inspection.
+  - `list_firewall_rules` / `list_firewall_aliases` / `list_security_groups` / `list_security_group_rules`: Firewall inspection.
   - `list_tasks`: Node task history.
   - `list_backups` / `list_snapshots`: Backup and snapshot inventory.
   - `list_templates` / `list_isos`: Image and template discovery.
   - `list_pools` / `list_users` / `list_roles` / `list_acls`: Access control inspection.
-  - `list_apt_updates` / `list_services` / `list_certificates`: System maintenance.
+  - `list_apt_updates` / `list_services` / `list_certificates` / `list_repositories`: System maintenance.
   - `list_pci_devices` / `list_usb_devices`: Hardware discovery.
   - `list_pci_mappings` / `list_usb_mappings`: Resource mapping inventory.
   - `list_metric_servers`: External monitoring config.
   - `list_sdn_zones` / `list_sdn_vnets`: Software Defined Network status.
-  - `list_ceph_pools` / `list_ceph_osds`: Ceph storage status.
+  - `list_ceph_pools` / `list_ceph_osds` / `list_ceph_monitors`: Ceph storage status.
   - `list_backup_schedules`: Cluster backup jobs.
 
   ### Stats & Logs
@@ -54,6 +54,10 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_vm_config`: Full hardware/software configuration.
   - `get_task_status` / `read_task_log`: Detailed task monitoring.
   - `get_ceph_status`: Ceph health and status.
+  - `get_storage_volume`: Details for a specific volume.
+  - `get_pool_details`: Members and configuration of a pool.
+  - `get_subscription_info`: Proxmox subscription status.
+  - `get_apt_versions`: Package version details.
 
   ### Utilities
   - `bulk_vm_action`: Concurrent power actions on multiple IDs.
@@ -62,6 +66,8 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_console_url`: Generate console links (NoVNC/xterm.js).
   - `wait_for_task`: Synchronous task waiting.
   - `apply_sdn_changes`: Commit pending network changes.
+  - `vm_agent_ping` / `vm_exec_status`: Guest agent health and command tracking.
+  - `vm_read_file` / `vm_write_file`: File operations via guest agent.
   - `load_all_tools`: Catalog expansion for Lazy Mode.
 
 - **Resources:**

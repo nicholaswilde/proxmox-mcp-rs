@@ -5,6 +5,7 @@
 - **Conciseness for Efficiency:** All tool and argument descriptions should be systematically shortened to minimal functional imperatives (e.g., "List VMs") to minimize token usage and maximize agent context window.
 - **Consistent Terminology:** Use consistent naming conventions that map directly to Proxmox API concepts (e.g., `vmid`, `node`, `storage`).
 - **README Updates:** All Proxmox functions and tools must be documented in the `README.md`.
+- **Infrastructure Documentation:** Update `compose.yaml` and `config.toml.example` whenever new tools, functions, or settings are added or modified.
 
 ## Development Principles
 - **Idiomatic Rust:** Code should follow standard Rust conventions and idioms. Use `cargo fmt` and `cargo clippy` to maintain quality.
