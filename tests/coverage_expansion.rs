@@ -104,7 +104,7 @@ async fn test_coverage_final_v9() {
         .unwrap();
 
     Mock::given(method("GET"))
-        .and(path("/api2/json/nodes/pve1/ceph/pools"))
+        .and(path("/api2/json/nodes/pve1/ceph/pool"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({"data": []})))
         .mount(&mock_server)
         .await;
@@ -114,7 +114,7 @@ async fn test_coverage_final_v9() {
         .unwrap();
 
     Mock::given(method("POST"))
-        .and(path("/api2/json/nodes/pve1/ceph/pools"))
+        .and(path("/api2/json/nodes/pve1/ceph/pool"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({"data": "UPID:..."})))
         .mount(&mock_server)
         .await;
@@ -127,7 +127,7 @@ async fn test_coverage_final_v9() {
         .unwrap();
 
     Mock::given(method("DELETE"))
-        .and(path("/api2/json/nodes/pve1/ceph/pools/test-pool"))
+        .and(path("/api2/json/nodes/pve1/ceph/pool/test-pool"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({"data": "UPID:..."})))
         .mount(&mock_server)
         .await;

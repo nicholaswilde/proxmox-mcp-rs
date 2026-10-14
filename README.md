@@ -53,6 +53,7 @@ It is designed to be a faster, single-binary alternative to the Python-based [Pr
   - `get_vm_config`: Full hardware/software configuration.
   - `get_task_status` / `read_task_log`: Detailed task monitoring.
   - `get_ceph_status`: Ceph health and status.
+  - `get_ceph_health`: Compact Ceph health summary (HEALTH_OK/WARN/ERR, checks, OSD and placement group counts, usage), capped at 1 KB.
   - `get_storage_volume`: Details for a specific volume.
   - `get_pool_details`: Members and configuration of a pool.
   - `get_subscription_info`: Proxmox subscription status.

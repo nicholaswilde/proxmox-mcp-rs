@@ -11,15 +11,21 @@ impl ProxmoxClient {
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
+    pub async fn get_cluster_ceph_status(&self) -> Result<Value> {
+        Ok(self
+            .request(Method::GET, "cluster/ceph/status", None)
+            .await?)
+    }
+
     // --- Ceph Pools ---
 
     pub async fn get_ceph_pools(&self, node: &str) -> Result<Vec<Value>> {
-        let path = format!("nodes/{}/ceph/pools", node);
+        let path = format!("nodes/{}/ceph/pool", node);
         Ok(self.request(Method::GET, &path, None).await?)
     }
 
     pub async fn create_ceph_pool(&self, node: &str, name: &str, params: &Value) -> Result<String> {
-        let path = format!("nodes/{}/ceph/pools", node);
+        let path = format!("nodes/{}/ceph/pool", node);
         let mut body = params.as_object().cloned().unwrap_or_default();
         body.insert("name".to_string(), serde_json::json!(name));
 
@@ -35,7 +41,7 @@ impl ProxmoxClient {
         name: &str,
         remove_storages: bool,
     ) -> Result<String> {
-        let path = format!("nodes/{}/ceph/pools/{}", node, name);
+        let path = format!("nodes/{}/ceph/pool/{}", node, name);
         let params = serde_json::json!({
             "remove_storages": if remove_storages { 1 } else { 0 }
         });
@@ -45,7 +51,7 @@ impl ProxmoxClient {
 
     // --- Ceph OSDs ---
 
-    pub async fn get_ceph_osds(&self, node: &str) -> Result<Vec<Value>> {
+    pub async fn get_ceph_osds(&self, node: &str) -> Result<Value> {
         let path = format!("nodes/{}/ceph/osd", node);
         Ok(self.request(Method::GET, &path, None).await?)
     }
