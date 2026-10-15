@@ -891,41 +891,53 @@ mod unit_tests {
         clients.insert("default".to_string(), client);
         let server = McpServer::new(clients, "default".to_string(), false);
 
-        // Test 401
-        let req = crate::mcp::JsonRpcRequest {
-            jsonrpc: "2.0".to_string(),
-            method: "tools/call".to_string(),
-            params: Some(json!({ "name": "list_nodes", "arguments": {} })),
-            id: Some(json!(1)),
-        };
-        // We capture stdout in run_stdio, but handle_request returns Result<Value>.
-        // Wait, handle_request returns Err on failure. run_stdio wraps it.
-        // We can check the error returned by handle_request.
-        let res = server.handle_request(req).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        // The error is anyhow::Error wrapping ProxmoxError.
+        // Test 401: call_tool returns Err with ProxmoxError
+        let tool_res = server.call_tool("list_nodes", &json!({})).await;
+        assert!(tool_res.is_err());
+        let err = tool_res.err().unwrap();
         let pve_err = err.downcast_ref::<crate::proxmox::ProxmoxError>().unwrap();
         match pve_err {
             crate::proxmox::ProxmoxError::Api(status, _) => assert_eq!(status.as_u16(), 401),
             _ => panic!("Expected Api error"),
         }
 
-        // Test 404
+        // Test 401: handle_request returns CallToolResult with isError: true (MCP spec compliant)
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            method: "tools/call".to_string(),
+            params: Some(json!({ "name": "list_nodes", "arguments": {} })),
+            id: Some(json!(1)),
+        };
+        let res = server.handle_request(req).await.unwrap();
+        assert_eq!(res["isError"], true);
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("401 Unauthorized"));
+
+        // Test 404: call_tool returns Err with ProxmoxError
+        let tool_res = server.call_tool("list_vms", &json!({})).await;
+        assert!(tool_res.is_err());
+        let err = tool_res.err().unwrap();
+        let pve_err = err.downcast_ref::<crate::proxmox::ProxmoxError>().unwrap();
+        match pve_err {
+            crate::proxmox::ProxmoxError::Api(status, _) => assert_eq!(status.as_u16(), 404),
+            _ => panic!("Expected Api error"),
+        }
+
+        // Test 404: handle_request returns CallToolResult with isError: true (MCP spec compliant)
         let req = crate::mcp::JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             method: "tools/call".to_string(),
             params: Some(json!({ "name": "list_vms", "arguments": {} })),
             id: Some(json!(2)),
         };
-        let res = server.handle_request(req).await;
-        assert!(res.is_err());
-        let err = res.err().unwrap();
-        let pve_err = err.downcast_ref::<crate::proxmox::ProxmoxError>().unwrap();
-        match pve_err {
-            crate::proxmox::ProxmoxError::Api(status, _) => assert_eq!(status.as_u16(), 404),
-            _ => panic!("Expected Api error"),
-        }
+        let res = server.handle_request(req).await.unwrap();
+        assert_eq!(res["isError"], true);
+        assert!(res["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("404 Not Found"));
     }
 
     #[tokio::test]
@@ -1254,5 +1266,43 @@ mod unit_tests {
         let client = create_test_client(&mock_server.uri());
         let res = client.find_vm_location(999).await;
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_issue_29_mcp_spec_call_tool_result_on_upstream_401() {
+        let mock_server = MockServer::start().await;
+
+        // Proxmox returns 401 Unauthorized (e.g. invalid token, privilege separation)
+        Mock::given(method("GET"))
+            .and(path("/api2/json/cluster/resources"))
+            .respond_with(ResponseTemplate::new(401).set_body_string("permission check failed"))
+            .mount(&mock_server)
+            .await;
+
+        let client = create_test_client(&mock_server.uri());
+        let mut clients = std::collections::HashMap::new();
+        clients.insert("default".to_string(), client);
+        let server = McpServer::new(clients, "default".to_string(), false);
+
+        let req = crate::mcp::JsonRpcRequest {
+            jsonrpc: "2.0".to_string(),
+            id: Some(json!(1)),
+            method: "tools/call".to_string(),
+            params: Some(json!({
+                "name": "list_vms",
+                "arguments": {}
+            })),
+        };
+
+        // Per MCP specification, tool execution failure MUST return CallToolResult with isError: true,
+        // not a top-level JSON-RPC protocol error (which causes LibreChat to misinterpret as an OAuth challenge).
+        let res = server
+            .handle_request(req)
+            .await
+            .expect("handle_request should succeed with CallToolResult");
+        assert_eq!(res["isError"], true);
+        let text = res["content"][0]["text"].as_str().unwrap();
+        assert!(text.contains("401 Unauthorized"));
+        assert!(text.contains("permission check failed"));
     }
 }

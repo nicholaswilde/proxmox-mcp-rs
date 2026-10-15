@@ -187,11 +187,27 @@ impl McpServer {
             "tools/list" => Ok(json!({"tools": self.get_tool_definitions()})),
             "tools/call" => {
                 if let Some(params) = req.params {
-                    self.call_tool(
-                        params.get("name").and_then(|n| n.as_str()).unwrap_or(""),
-                        params.get("arguments").unwrap_or(&Value::Null),
-                    )
-                    .await
+                    let name = match params.get("name").and_then(|n| n.as_str()) {
+                        Some(name) => name,
+                        None => anyhow::bail!("Missing or invalid 'name' parameter"),
+                    };
+                    let arguments = params.get("arguments").unwrap_or(&Value::Null);
+                    match self.call_tool(name, arguments).await {
+                        Ok(res) => Ok(res),
+                        Err(e) => {
+                            if e.to_string().starts_with("Unknown tool:") {
+                                Err(e)
+                            } else {
+                                Ok(json!({
+                                    "content": [{
+                                        "type": "text",
+                                        "text": format!("Error: {}", e)
+                                    }],
+                                    "isError": true
+                                }))
+                            }
+                        }
+                    }
                 } else {
                     anyhow::bail!("Missing params");
                 }
