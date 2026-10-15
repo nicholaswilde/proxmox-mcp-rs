@@ -1,6 +1,6 @@
 use axum::http::StatusCode;
 use axum::{
-    extract::{Query, Request, State},
+    extract::{Query, RawQuery, Request, State},
     middleware::{self, Next},
     response::{
         sse::{Event, Sse},
@@ -67,6 +67,7 @@ pub async fn run_http_server(
 
 async fn sse_handler(
     State(state): State<AppState>,
+    RawQuery(raw_query): RawQuery,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let session_id = Uuid::new_v4().to_string();
     let (tx, rx) = mpsc::channel(100);
@@ -75,8 +76,19 @@ async fn sse_handler(
 
     info!("New SSE session connected: {}", session_id);
 
-    // Send the endpoint event immediately
-    let endpoint_url = format!("/message?session_id={}", session_id);
+    // Send the endpoint event immediately, preserving query token if provided
+    let endpoint_url = if let Some(query) = raw_query {
+        let params: HashMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
+            .into_owned()
+            .collect();
+        if let Some(token) = params.get("token") {
+            format!("/message?session_id={}&token={}", session_id, token)
+        } else {
+            format!("/message?session_id={}", session_id)
+        }
+    } else {
+        format!("/message?session_id={}", session_id)
+    };
     let _ = tx
         .send(Ok(Event::default().event("endpoint").data(endpoint_url)))
         .await;
@@ -335,6 +347,38 @@ mod tests {
             response.headers().get("content-type").unwrap(),
             "text/event-stream"
         );
+    }
+
+    #[tokio::test]
+    async fn test_sse_handler_with_token_query() {
+        let client = crate::proxmox::ProxmoxClient::new("localhost", 8006, true).unwrap();
+        let mut clients = HashMap::new();
+        clients.insert("default".to_string(), client);
+        let mcp_server = McpServer::new(clients, "default".to_string(), false);
+
+        let sessions = Arc::new(DashMap::new());
+        let state = AppState {
+            mcp_server,
+            sessions: sessions.clone(),
+            auth_token: Some("secret".to_string()),
+        };
+
+        let app = Router::new()
+            .route("/sse", get(sse_handler))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                auth_middleware,
+            ))
+            .with_state(state);
+
+        let req = Request::builder()
+            .uri("/sse?token=secret")
+            .body(Body::empty())
+            .unwrap();
+        let response = app.oneshot(req).await.unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(sessions.len(), 1);
     }
 
     #[tokio::test]
