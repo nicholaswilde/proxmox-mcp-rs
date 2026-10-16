@@ -149,6 +149,9 @@ jobs:
 
     - name: Rust Cache
       uses: swatinem/rust-cache@v2
+      with:
+        key: ${{ matrix.target }}
+        cache-targets: false
 
     - name: Use Cross
       if: matrix.os == 'ubuntu-latest' && matrix.target != ''
