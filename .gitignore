@@ -33,3 +33,8 @@ config.json
 .env
 lcov.info
 target/llvm-cov-target/
+
+# Agentic tools
+.codegraph/
+.serena/
+
