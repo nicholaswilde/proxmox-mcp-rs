@@ -7,7 +7,11 @@ edition = "2021"
 tokio = { version = "1.28", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "cookies"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "rustls-tls",
+  "cookies",
+] }
 anyhow = "1.0"
 log = "0.4"
 url = "2.4"
@@ -34,14 +38,59 @@ clap_mangen = "0.2"
 
 # Profile for final production releases (smaller, faster)
 [profile.release]
-opt-level = "z"         # Optimize for size
-lto = true              # Link Time Optimization (smaller binary)
-codegen-units = 1       # Reduce parallel code generation for better optimization
-panic = "abort"         # Remove stack unwinding (smaller binary)
-strip = true            # Strip symbols (smaller binary)
+opt-level = "z"   # Optimize for size
+lto = true        # Link Time Optimization (smaller binary)
+codegen-units = 1 # Reduce parallel code generation for better optimization
+panic = "abort"   # Remove stack unwinding (smaller binary)
+strip = true      # Strip symbols (smaller binary)
 
 # Profile for CI/CD builds (inherits from dev)
 [profile.ci]
 inherits = "dev"
-incremental = false     # Disable incremental compilation for CI (often slower/buggy in CI cache)
-debug = 0               # No debug info needed for basic CI checks (speeds up build)
+incremental = false # Disable incremental compilation for CI (often slower/buggy in CI cache)
+debug = 0           # No debug info needed for basic CI checks (speeds up build)
+
+[package.metadata.deb]
+maintainer = "Nicholas Wilde <ncwilde43@gmail.com>"
+copyright = "2026 Nicholas Wilde"
+license-file = ["LICENSE", "4"]
+extended-description = "A Model Context Protocol (MCP) server for Proxmox Virtual Environment (PVE) and Proxmox Backup Server (PBS)."
+section = "utils"
+priority = "optional"
+assets = [
+  [
+    "target/release/proxmox-mcp-rs",
+    "usr/bin/",
+    "755",
+  ],
+  [
+    "assets/man/proxmox-mcp-rs.1",
+    "usr/share/man/man1/",
+    "644",
+  ],
+  [
+    "assets/completions/proxmox-mcp-rs.bash",
+    "usr/share/bash-completion/completions/proxmox-mcp-rs",
+    "644",
+  ],
+  [
+    "assets/completions/_proxmox-mcp-rs",
+    "usr/share/zsh/vendor-completions/_proxmox-mcp-rs",
+    "644",
+  ],
+  [
+    "assets/completions/proxmox-mcp-rs.fish",
+    "usr/share/fish/vendor_completions.d/proxmox-mcp-rs.fish",
+    "644",
+  ],
+  [
+    "config.toml.example",
+    "usr/share/doc/proxmox-mcp-rs/config.toml.example",
+    "644",
+  ],
+  [
+    "README.md",
+    "usr/share/doc/proxmox-mcp-rs/README.md",
+    "644",
+  ],
+]
