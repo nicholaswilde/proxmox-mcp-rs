@@ -1,0 +1,132 @@
+#compdef proxmox-mcp-rs
+
+autoload -U is-at-least
+
+_proxmox-mcp-rs() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-c+[Config file path]:CONFIG:_default' \
+'--config=[Config file path]:CONFIG:_default' \
+'-H+[Proxmox Host (e.g., 192.168.1.10)]:HOST:_default' \
+'--host=[Proxmox Host (e.g., 192.168.1.10)]:HOST:_default' \
+'-p+[Proxmox Port (default\: 8006)]:PORT:_default' \
+'--port=[Proxmox Port (default\: 8006)]:PORT:_default' \
+'-u+[Proxmox User (e.g., root@pam)]:USER:_default' \
+'--user=[Proxmox User (e.g., root@pam)]:USER:_default' \
+'(-n --token-name -v --token-value)-P+[Proxmox Password]:PASSWORD:_default' \
+'(-n --token-name -v --token-value)--password=[Proxmox Password]:PASSWORD:_default' \
+'-n+[API Token Name (e.g., mytoken)]:TOKEN_NAME:_default' \
+'--token-name=[API Token Name (e.g., mytoken)]:TOKEN_NAME:_default' \
+'-v+[API Token Value (UUID)]:TOKEN_VALUE:_default' \
+'--token-value=[API Token Value (UUID)]:TOKEN_VALUE:_default' \
+'-L+[Log level (error, warn, info, debug, trace)]:LOG_LEVEL:_default' \
+'--log-level=[Log level (error, warn, info, debug, trace)]:LOG_LEVEL:_default' \
+'--log-dir=[Log file directory]:LOG_DIR:_default' \
+'--log-filename=[Log filename prefix]:LOG_FILENAME:_default' \
+'--log-rotate=[Log rotation strategy (daily, hourly, never)]:LOG_ROTATE:_default' \
+'-t+[Server type (stdio or http)]:SERVER_TYPE:_default' \
+'--server-type=[Server type (stdio or http)]:SERVER_TYPE:_default' \
+'--http-host=[HTTP Host (only for http type)]:HTTP_HOST:_default' \
+'-l+[HTTP Port (only for http type)]:HTTP_PORT:_default' \
+'--http-port=[HTTP Port (only for http type)]:HTTP_PORT:_default' \
+'--http-auth-token=[HTTP Auth Token (only for http type)]:HTTP_AUTH_TOKEN:_default' \
+'-k[Disable SSL verification (for self-signed certs)]' \
+'--no-verify-ssl[Disable SSL verification (for self-signed certs)]' \
+'--log-file-enable[Enable logging to a file]' \
+'--lazy-mode[Enable Lazy Loading mode (starts with minimal tools)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_proxmox-mcp-rs_commands" \
+"*::: :->proxmox-mcp-rs" \
+&& ret=0
+    case $state in
+    (proxmox-mcp-rs)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:proxmox-mcp-rs-command-$line[1]:"
+        case $line[1] in
+            (completions)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+':shell -- The shell to generate the script for:(bash elvish fish powershell zsh)' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+":: :_proxmox-mcp-rs__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:proxmox-mcp-rs-help-command-$line[1]:"
+        case $line[1] in
+            (completions)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_proxmox-mcp-rs_commands] )) ||
+_proxmox-mcp-rs_commands() {
+    local commands; commands=(
+'completions:Generate shell completion scripts' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'proxmox-mcp-rs commands' commands "$@"
+}
+(( $+functions[_proxmox-mcp-rs__completions_commands] )) ||
+_proxmox-mcp-rs__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'proxmox-mcp-rs completions commands' commands "$@"
+}
+(( $+functions[_proxmox-mcp-rs__help_commands] )) ||
+_proxmox-mcp-rs__help_commands() {
+    local commands; commands=(
+'completions:Generate shell completion scripts' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'proxmox-mcp-rs help commands' commands "$@"
+}
+(( $+functions[_proxmox-mcp-rs__help__completions_commands] )) ||
+_proxmox-mcp-rs__help__completions_commands() {
+    local commands; commands=()
+    _describe -t commands 'proxmox-mcp-rs help completions commands' commands "$@"
+}
+(( $+functions[_proxmox-mcp-rs__help__help_commands] )) ||
+_proxmox-mcp-rs__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'proxmox-mcp-rs help help commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_proxmox-mcp-rs" ]; then
+    _proxmox-mcp-rs "$@"
+else
+    compdef _proxmox-mcp-rs proxmox-mcp-rs
+fi

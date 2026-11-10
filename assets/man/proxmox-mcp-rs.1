@@ -1,0 +1,132 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH proxmox-mcp-rs 1  "proxmox-mcp-rs 0.3.35" 
+.SH NAME
+proxmox\-mcp\-rs
+.SH SYNOPSIS
+\fBproxmox\-mcp\-rs\fR [\fB\-c\fR|\fB\-\-config\fR] [\fB\-H\fR|\fB\-\-host\fR] [\fB\-p\fR|\fB\-\-port\fR] [\fB\-u\fR|\fB\-\-user\fR] [\fB\-P\fR|\fB\-\-password\fR] [\fB\-n\fR|\fB\-\-token\-name\fR] [\fB\-v\fR|\fB\-\-token\-value\fR] [\fB\-k\fR|\fB\-\-no\-verify\-ssl\fR] [\fB\-L\fR|\fB\-\-log\-level\fR] [\fB\-\-log\-file\-enable\fR] [\fB\-\-log\-dir\fR] [\fB\-\-log\-filename\fR] [\fB\-\-log\-rotate\fR] [\fB\-t\fR|\fB\-\-server\-type\fR] [\fB\-\-http\-host\fR] [\fB\-l\fR|\fB\-\-http\-port\fR] [\fB\-\-http\-auth\-token\fR] [\fB\-\-lazy\-mode\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIsubcommands\fR]
+.SH DESCRIPTION
+.SH OPTIONS
+.TP
+\fB\-c\fR, \fB\-\-config\fR \fI<CONFIG>\fR
+Config file path
+.RS
+May also be specified with the \fBPROXMOX_CONFIG\fR environment variable. 
+.RE
+.TP
+\fB\-H\fR, \fB\-\-host\fR \fI<HOST>\fR
+Proxmox Host (e.g., 192.168.1.10)
+.RS
+May also be specified with the \fBPROXMOX_HOST\fR environment variable. 
+.RE
+.TP
+\fB\-p\fR, \fB\-\-port\fR \fI<PORT>\fR
+Proxmox Port (default: 8006)
+.RS
+May also be specified with the \fBPROXMOX_PORT\fR environment variable. 
+.RE
+.TP
+\fB\-u\fR, \fB\-\-user\fR \fI<USER>\fR
+Proxmox User (e.g., root@pam)
+.RS
+May also be specified with the \fBPROXMOX_USER\fR environment variable. 
+.RE
+.TP
+\fB\-P\fR, \fB\-\-password\fR \fI<PASSWORD>\fR
+Proxmox Password
+.RS
+May also be specified with the \fBPROXMOX_PASSWORD\fR environment variable. 
+.RE
+.TP
+\fB\-n\fR, \fB\-\-token\-name\fR \fI<TOKEN_NAME>\fR
+API Token Name (e.g., mytoken)
+.RS
+May also be specified with the \fBPROXMOX_TOKEN_NAME\fR environment variable. 
+.RE
+.TP
+\fB\-v\fR, \fB\-\-token\-value\fR \fI<TOKEN_VALUE>\fR
+API Token Value (UUID)
+.RS
+May also be specified with the \fBPROXMOX_TOKEN_VALUE\fR environment variable. 
+.RE
+.TP
+\fB\-k\fR, \fB\-\-no\-verify\-ssl\fR
+Disable SSL verification (for self\-signed certs)
+.RS
+May also be specified with the \fBPROXMOX_NO_VERIFY_SSL\fR environment variable. 
+.RE
+.TP
+\fB\-L\fR, \fB\-\-log\-level\fR \fI<LOG_LEVEL>\fR [default: info]
+Log level (error, warn, info, debug, trace)
+.RS
+May also be specified with the \fBPROXMOX_LOG_LEVEL\fR environment variable. 
+.RE
+.TP
+\fB\-\-log\-file\-enable\fR
+Enable logging to a file
+.RS
+May also be specified with the \fBPROXMOX_LOG_FILE_ENABLE\fR environment variable. 
+.RE
+.TP
+\fB\-\-log\-dir\fR \fI<LOG_DIR>\fR [default: .]
+Log file directory
+.RS
+May also be specified with the \fBPROXMOX_LOG_DIR\fR environment variable. 
+.RE
+.TP
+\fB\-\-log\-filename\fR \fI<LOG_FILENAME>\fR [default: proxmox\-mcp\-rs.log]
+Log filename prefix
+.RS
+May also be specified with the \fBPROXMOX_LOG_FILENAME\fR environment variable. 
+.RE
+.TP
+\fB\-\-log\-rotate\fR \fI<LOG_ROTATE>\fR [default: daily]
+Log rotation strategy (daily, hourly, never)
+.RS
+May also be specified with the \fBPROXMOX_LOG_ROTATE\fR environment variable. 
+.RE
+.TP
+\fB\-t\fR, \fB\-\-server\-type\fR \fI<SERVER_TYPE>\fR
+Server type (stdio or http)
+.RS
+May also be specified with the \fBPROXMOX_SERVER_TYPE\fR environment variable. 
+.RE
+.TP
+\fB\-\-http\-host\fR \fI<HTTP_HOST>\fR
+HTTP Host (only for http type)
+.RS
+May also be specified with the \fBPROXMOX_HTTP_HOST\fR environment variable. 
+.RE
+.TP
+\fB\-l\fR, \fB\-\-http\-port\fR \fI<HTTP_PORT>\fR
+HTTP Port (only for http type)
+.RS
+May also be specified with the \fBPROXMOX_HTTP_PORT\fR environment variable. 
+.RE
+.TP
+\fB\-\-http\-auth\-token\fR \fI<HTTP_AUTH_TOKEN>\fR
+HTTP Auth Token (only for http type)
+.RS
+May also be specified with the \fBPROXMOX_HTTP_AUTH_TOKEN\fR environment variable. 
+.RE
+.TP
+\fB\-\-lazy\-mode\fR
+Enable Lazy Loading mode (starts with minimal tools)
+.RS
+May also be specified with the \fBPROXMOX_LAZY_MODE\fR environment variable. 
+.RE
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH SUBCOMMANDS
+.TP
+proxmox\-mcp\-rs\-completions(1)
+Generate shell completion scripts
+.TP
+proxmox\-mcp\-rs\-help(1)
+Print this message or the help of the given subcommand(s)
+.SH VERSION
+v0.3.35
