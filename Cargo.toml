@@ -2,6 +2,8 @@
 name = "proxmox-mcp-rs"
 version = "0.3.35"
 edition = "2021"
+authors = ["Nicholas Wilde <ncwilde43@gmail.com>"]
+description = "A Model Context Protocol (MCP) server for Proxmox (PVE and PBS)"
 
 [dependencies]
 tokio = { version = "1.28", features = ["full"] }
